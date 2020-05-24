@@ -37,13 +37,13 @@ enum ovsdb_log_mode {
     OVSDB_LOG_READ,
     OVSDB_LOG_WRITE
 };
-
+/* struct ovsdb_log是对ovsdb日志文件的封装 */
 struct ovsdb_log {
     off_t prev_offset;
     off_t offset;
-    char *name;
+    char *name; /* 日志文件的名称 */
     struct lockfile *lockfile;
-    FILE *stream;
+    FILE *stream; /* 文件的描述符 */
     struct ovsdb_error *read_error;
     bool write_error;
     enum ovsdb_log_mode mode;
@@ -52,6 +52,8 @@ struct ovsdb_log {
 /* Attempts to open 'name' with the specified 'open_mode'.  On success, stores
  * the new log into '*filep' and returns NULL; otherwise returns NULL and
  * stores NULL into '*filep'.
+ * 用指定的open_mode打开对应的文件(name),一旦成功,将new log存入filep中,返回NULL
+ * 否则的话,返回NULL,将NULL存入filep中
  *
  * Whether the file will be locked using lockfile_lock() depends on 'locking':
  * use true to lock it, false not to lock it, or -1 to lock it only if

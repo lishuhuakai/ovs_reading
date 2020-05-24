@@ -107,18 +107,18 @@ ovs_cmdl_run_command(struct ovs_cmdl_context *ctx, const struct ovs_cmdl_command
     if (ctx->argc < 1) {
         ovs_fatal(0, "missing command name; use --help for help");
     }
-
+    /* 遍历commands数组,匹配对应的命令 */
     for (p = commands; p->name != NULL; p++) {
-        if (!strcmp(p->name, ctx->argv[0])) {
+        if (!strcmp(p->name, ctx->argv[0])) { /* 匹配命令的名称 */
             int n_arg = ctx->argc - 1;
-            if (n_arg < p->min_args) {
+            if (n_arg < p->min_args) { /* 参数个数校验 */
                 VLOG_FATAL( "'%s' command requires at least %d arguments",
                             p->name, p->min_args);
             } else if (n_arg > p->max_args) {
                 VLOG_FATAL("'%s' command takes at most %d arguments",
                            p->name, p->max_args);
             } else {
-                p->handler(ctx);
+                p->handler(ctx); /* 调用对应的回调函数 */
                 if (ferror(stdout)) {
                     VLOG_FATAL("write to stdout failed");
                 }

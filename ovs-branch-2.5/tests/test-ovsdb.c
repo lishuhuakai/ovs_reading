@@ -73,6 +73,7 @@ main(int argc, char *argv[])
     return 0;
 }
 
+/* 参数解析 */
 static void
 parse_options(int argc, char *argv[], struct test_ovsdb_pvt_context *pvt)
 {
