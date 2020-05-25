@@ -25,12 +25,12 @@ struct ovsdb_table_schema;
 
 /* A column or a column schema (currently there is no distinction). */
 struct ovsdb_column {
-    unsigned int index;
-    char *name;
+    unsigned int index; /* 记录列在表中的位置 */
+    char *name; /* 列的名称 */
 
-    bool mutable;
-    bool persistent;
-    struct ovsdb_type type;
+    bool mutable; /* 是否可变 */
+    bool persistent; /* 是否是持久的 */
+    struct ovsdb_type type; /* 值的类型 */
 };
 
 /* A few columns appear in every table with standardized column indexes.
@@ -52,12 +52,11 @@ void ovsdb_column_destroy(struct ovsdb_column *);
 
 struct ovsdb_error *ovsdb_column_from_json(const struct json *,
                                            const char *name,
-                                           struct ovsdb_column **)
-    OVS_WARN_UNUSED_RESULT;
+                                           struct ovsdb_column **) OVS_WARN_UNUSED_RESULT;
 struct json *ovsdb_column_to_json(const struct ovsdb_column *);
-
-/* An unordered set of distinct columns. */
 
+/* An unordered set of distinct columns. */
+/* 列的集合 */
 struct ovsdb_column_set {
     const struct ovsdb_column **columns;
     size_t n_columns, allocated_columns;

@@ -52,6 +52,11 @@ ovsdb_function_to_string(enum ovsdb_function function)
     return NULL;
 }
 
+/* 解析cluase
+ * @param ts 表的元数据
+ * @param json 待解析的json串
+ * @param clause 解析的结构放入此结构中
+ */
 static OVS_WARN_UNUSED_RESULT struct ovsdb_error *
 ovsdb_clause_from_json(const struct ovsdb_table_schema *ts,
                        const struct json *json,
@@ -72,7 +77,7 @@ ovsdb_clause_from_json(const struct ovsdb_table_schema *ts,
     }
     array = json_array(json);
 
-    column_name = json_string(array->elems[0]);
+    column_name = json_string(array->elems[0]); /* 列的名称 */
     clause->column = ovsdb_table_schema_get_column(ts, column_name);
     if (!clause->column) {
         return ovsdb_syntax_error(json, "unknown column",
@@ -82,6 +87,7 @@ ovsdb_clause_from_json(const struct ovsdb_table_schema *ts,
     type = clause->column->type;
 
     function_name = json_string(array->elems[1]);
+    /* 填充对应的比较函数 */
     error = ovsdb_function_from_string(function_name, &clause->function);
     if (error) {
         return error;
@@ -110,23 +116,24 @@ ovsdb_clause_from_json(const struct ovsdb_table_schema *ts,
         }
         break;
 
-    case OVSDB_F_EQ:
+    case OVSDB_F_EQ: /* 等于或者不等于 */
     case OVSDB_F_NE:
         break;
 
-    case OVSDB_F_EXCLUDES:
+    case OVSDB_F_EXCLUDES: /* 不包括 */
         if (!ovsdb_type_is_scalar(&type)) {
             type.n_min = 0;
             type.n_max = UINT_MAX;
         }
         break;
 
-    case OVSDB_F_INCLUDES:
+    case OVSDB_F_INCLUDES: /* 是否存在于 */
         if (!ovsdb_type_is_scalar(&type)) {
             type.n_min = 0;
         }
         break;
     }
+    /* 解析对应的参数值 */
     return ovsdb_datum_from_json(&clause->arg, &type, array->elems[2], symtab);
 }
 
@@ -164,6 +171,11 @@ compare_clauses_3way(const void *a_, const void *b_)
     }
 }
 
+/* 从json串中解析出condition
+ * @param ts 表的元数据
+ * @param json 待解析的json串
+ * @param cnd 解析的条件会放入此结构中
+ */
 struct ovsdb_error *
 ovsdb_condition_from_json(const struct ovsdb_table_schema *ts,
                           const struct json *json,
@@ -279,6 +291,7 @@ ovsdb_clause_evaluate(const struct ovsdb_row *row,
     OVS_NOT_REACHED();
 }
 
+/* 条件匹配 */
 bool
 ovsdb_condition_evaluate(const struct ovsdb_row *row,
                          const struct ovsdb_condition *cnd)

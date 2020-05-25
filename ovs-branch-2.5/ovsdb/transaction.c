@@ -32,6 +32,7 @@
 
 struct ovsdb_txn {
     struct ovsdb *db;
+    /* txn_tables主要用于快速定位那些表发生了更改 */
     struct ovs_list txn_tables; /* Contains "struct ovsdb_txn_table"s. */
     struct ds comment;
 };
@@ -40,6 +41,7 @@ struct ovsdb_txn {
 struct ovsdb_txn_table {
     struct ovs_list node;       /* Element in ovsdb_txn's txn_tables list. */
     struct ovsdb_table *table;
+    /* 主要用于快速定位那些row发生了更改 */
     struct hmap txn_rows;       /* Contains "struct ovsdb_txn_row"s. */
 
     /* This has the same form as the 'indexes' member of struct ovsdb_table,
@@ -97,6 +99,7 @@ for_each_txn_row(struct ovsdb_txn *txn,
  * processed.  */
 static unsigned int serial;
 
+/* 创建一个事务 */
 struct ovsdb_txn *
 ovsdb_txn_create(struct ovsdb *db)
 {
@@ -770,11 +773,12 @@ ovsdb_txn_commit_(struct ovsdb_txn *txn, bool durable)
 
     /* Figure out what actually changed, and abort early if the transaction
      * was really a no-op. */
+    /* 要找出那些东西改变了,如果什么都没有做的话,什么也不干 */
     error = for_each_txn_row(txn, determine_changes);
     if (error) {
         return OVSDB_WRAP_BUG("can't happen", error);
     }
-    if (list_is_empty(&txn->txn_tables)) {
+    if (list_is_empty(&txn->txn_tables)) { /* 没有更改 */
         ovsdb_txn_abort(txn);
         return NULL;
     }
@@ -842,6 +846,9 @@ ovsdb_txn_commit_(struct ovsdb_txn *txn, bool durable)
     return NULL;
 }
 
+/* 执行提交操作
+ *
+ */
 struct ovsdb_error *
 ovsdb_txn_commit(struct ovsdb_txn *txn, bool durable)
 {
@@ -867,10 +874,14 @@ ovsdb_txn_for_each_change(const struct ovsdb_txn *txn,
    }
 }
 
+/* 构建事务表
+ * @param txn 事务
+ * @param table ovsdb表数据
+ */
 static struct ovsdb_txn_table *
 ovsdb_txn_create_txn_table(struct ovsdb_txn *txn, struct ovsdb_table *table)
 {
-    if (!table->txn_table) {
+    if (!table->txn_table) { /* 事务表为空 */
         struct ovsdb_txn_table *txn_table;
         size_t i;
 
@@ -883,32 +894,39 @@ ovsdb_txn_create_txn_table(struct ovsdb_txn *txn, struct ovsdb_table *table)
         for (i = 0; i < table->schema->n_indexes; i++) {
             hmap_init(&txn_table->txn_indexes[i]);
         }
+        /* 加入链表,方便快速定位那些表发生了更改 */
         list_push_back(&txn->txn_tables, &txn_table->node);
     }
     return table->txn_table;
 }
 
+/* 创建事务行
+ * @param txn 事务
+ * @param table 表数据
+ * @param old_ 老数据
+ * @param new 新数据
+ */
 static struct ovsdb_txn_row *
 ovsdb_txn_row_create(struct ovsdb_txn *txn, struct ovsdb_table *table,
                      const struct ovsdb_row *old_, struct ovsdb_row *new)
 {
     const struct ovsdb_row *row = old_ ? old_ : new;
     struct ovsdb_row *old = CONST_CAST(struct ovsdb_row *, old_);
-    size_t n_columns = shash_count(&table->schema->columns);
+    size_t n_columns = shash_count(&table->schema->columns); /* 元素个数 */
     struct ovsdb_txn_table *txn_table;
     struct ovsdb_txn_row *txn_row;
 
     txn_row = xzalloc(offsetof(struct ovsdb_txn_row, changed)
                       + bitmap_n_bytes(n_columns));
     txn_row->uuid = *ovsdb_row_get_uuid(row);
-    txn_row->table = row->table;
-    txn_row->old = old;
-    txn_row->new = new;
+    txn_row->table = row->table; /* 记录下表 */
+    txn_row->old = old; /* 记录下旧的行 */
+    txn_row->new = new; /* 记录下新的行 */
     txn_row->n_refs = old ? old->n_refs : 0;
     txn_row->serial = serial - 1;
 
     if (old) {
-        old->txn_row = txn_row;
+        old->txn_row = txn_row; /* 记录下事务行 */
     }
     if (new) {
         new->txn_row = txn_row;
@@ -942,6 +960,9 @@ ovsdb_txn_row_modify(struct ovsdb_txn *txn, const struct ovsdb_row *ro_row_)
     }
 }
 
+/* 插入一行
+ *
+ */
 void
 ovsdb_txn_row_insert(struct ovsdb_txn *txn, struct ovsdb_row *row)
 {
@@ -951,6 +972,7 @@ ovsdb_txn_row_insert(struct ovsdb_txn *txn, struct ovsdb_row *row)
     uuid_generate(ovsdb_row_get_version_rw(row));
 
     ovsdb_txn_row_create(txn, table, NULL, row);
+    /* 将数据插入表的row之中 */
     hmap_insert(&table->rows, &row->hmap_node, hash);
 }
 
@@ -1055,7 +1077,7 @@ for_each_txn_row(struct ovsdb_txn *txn,
         struct ovsdb_txn_table *t, *next_txn_table;
 
         any_work = false;
-        LIST_FOR_EACH_SAFE (t, next_txn_table, node, &txn->txn_tables) {
+        LIST_FOR_EACH_SAFE (t, next_txn_table, node, &txn->txn_tables) { /* 遍历表,表的数据都发生了更改 */
             if (t->serial != serial) {
                 t->serial = serial;
                 t->n_processed = 0;
@@ -1064,7 +1086,7 @@ for_each_txn_row(struct ovsdb_txn *txn,
             while (t->n_processed < hmap_count(&t->txn_rows)) {
                 struct ovsdb_txn_row *r, *next_txn_row;
 
-                HMAP_FOR_EACH_SAFE (r, next_txn_row, hmap_node, &t->txn_rows) {
+                HMAP_FOR_EACH_SAFE (r, next_txn_row, hmap_node, &t->txn_rows) { /* 遍历修改了的行 */
                     if (r->serial != serial) {
                         struct ovsdb_error *error;
 

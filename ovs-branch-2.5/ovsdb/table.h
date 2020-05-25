@@ -50,11 +50,11 @@ struct json *ovsdb_table_schema_to_json(const struct ovsdb_table_schema *,
 
 const struct ovsdb_column *ovsdb_table_schema_get_column(
     const struct ovsdb_table_schema *, const char *name);
-
+
 /* Database table. */
 
 struct ovsdb_table {
-    struct ovsdb_table_schema *schema;
+    struct ovsdb_table_schema *schema; /* 表的元数据 */
     struct ovsdb_txn_table *txn_table; /* Only if table is in a transaction. */
     struct hmap rows;           /* Contains "struct ovsdb_row"s. */
 

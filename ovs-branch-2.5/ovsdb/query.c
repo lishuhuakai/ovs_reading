@@ -22,13 +22,18 @@
 #include "row.h"
 #include "table.h"
 
+/* 执行查询操作
+ * @param table 表数据
+ * @param cnd 查询条件
+ * @param output_row 回调函数
+ */
 void
 ovsdb_query(struct ovsdb_table *table, const struct ovsdb_condition *cnd,
             bool (*output_row)(const struct ovsdb_row *, void *aux), void *aux)
 {
     if (cnd->n_clauses > 0
-        && cnd->clauses[0].column->index == OVSDB_COL_UUID
-        && cnd->clauses[0].function == OVSDB_F_EQ) {
+        && cnd->clauses[0].column->index == OVSDB_COL_UUID /* 第一列是uuid */
+        && cnd->clauses[0].function == OVSDB_F_EQ) { /* 匹配条件为uuid = xxx */
         /* Optimize the case where the query has a clause of the form "uuid ==
          * <some-uuid>", since we have an index on UUID. */
         const struct ovsdb_row *row;

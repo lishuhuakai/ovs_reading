@@ -42,8 +42,11 @@ struct ovsdb_weak_ref {
 };
 
 /* A row in a database table. */
+/* 表中的一行 */
 struct ovsdb_row {
+    /* hmap_node 用于将此行插入ovsdb_table的rows表中 */
     struct hmap_node hmap_node;    /* Element in ovsdb_table's 'rows' hmap. */
+    /* 此行属于那张表 */
     struct ovsdb_table *table;     /* Table to which this belongs. */
     struct ovsdb_txn_row *txn_row; /* Transaction that row is in, if any. */
 
@@ -56,11 +59,11 @@ struct ovsdb_row {
      * pointing to this table and a 'refType' of "strong".  A row with nonzero
      * 'n_refs' cannot be deleted.  Updated and checked only at transaction
      * commit. */
-    size_t n_refs;
+    size_t n_refs; /* 强引用的个数 */
 
     /* One datum for each column (shash_count(&table->schema->columns)
      * elements). */
-    struct ovsdb_datum fields[];
+    struct ovsdb_datum fields[]; /* 用于存储真实的数据 */
 
     /* Followed by table->schema->n_indexes "struct hmap_node"s.  In rows that
      * have have been committed as part of the database, the hmap_node with

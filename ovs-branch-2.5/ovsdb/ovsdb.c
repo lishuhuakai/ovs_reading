@@ -320,6 +320,9 @@ ovsdb_set_ref_table(const struct shash *tables,
     }
 }
 
+/* 根据数据库的元数据,创建一个数据库
+ *
+ */
 struct ovsdb *
 ovsdb_create(struct ovsdb_schema *schema)
 {
@@ -335,17 +338,19 @@ ovsdb_create(struct ovsdb_schema *schema)
     shash_init(&db->tables);
     SHASH_FOR_EACH (node, &schema->tables) {
         struct ovsdb_table_schema *ts = node->data;
+        /* 递归向下构建数据库 */
         shash_add(&db->tables, node->name, ovsdb_table_create(ts));
     }
 
     /* Set all the refTables. */
+    /* 设置好引用关系 */
     SHASH_FOR_EACH (node, &schema->tables) {
         struct ovsdb_table_schema *table = node->data;
         struct shash_node *node2;
 
-        SHASH_FOR_EACH (node2, &table->columns) {
+        SHASH_FOR_EACH (node2, &table->columns) { /* 遍历列 */
             struct ovsdb_column *column = node2->data;
-
+            /* 键和值都需要设定好引用关系 */
             ovsdb_set_ref_table(&db->tables, &column->type.key);
             ovsdb_set_ref_table(&db->tables, &column->type.value);
         }

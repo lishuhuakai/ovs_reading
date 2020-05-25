@@ -69,6 +69,11 @@ type_mismatch(const struct ovsdb_mutation *m, const struct json *json)
     return error;
 }
 
+/* 从JSON串中解析出mutation,将结果放入m之中
+ * @param ts 表的元数据
+ * @param json 待解析的json串
+ * @param m 解析后的结果会放入此结构体之中
+ */
 static OVS_WARN_UNUSED_RESULT struct ovsdb_error *
 ovsdb_mutation_from_json(const struct ovsdb_table_schema *ts,
                          const struct json *json,
@@ -87,7 +92,7 @@ ovsdb_mutation_from_json(const struct ovsdb_table_schema *ts,
         return ovsdb_syntax_error(json, NULL, "Parse error in mutation.");
     }
     array = json_array(json);
-
+    /* 列的名称 */
     column_name = json_string(array->elems[0]);
     m->column = ovsdb_table_schema_get_column(ts, column_name);
     if (!m->column) {
@@ -95,12 +100,13 @@ ovsdb_mutation_from_json(const struct ovsdb_table_schema *ts,
                                   "No column %s in table %s.",
                                   column_name, ts->name);
     }
+    /* 如果列不可变动,直接返回错误 */
     if (!m->column->mutable) {
         return ovsdb_syntax_error(json, "constraint violation",
                                   "Cannot mutate immutable column %s in "
                                   "table %s.", column_name, ts->name);
     }
-
+    /* 记录下列的类型 */
     ovsdb_type_clone(&m->type, &m->column->type);
 
     mutator_name = json_string(array->elems[1]);
@@ -116,6 +122,7 @@ ovsdb_mutation_from_json(const struct ovsdb_table_schema *ts,
     case OVSDB_M_MUL:
     case OVSDB_M_DIV:
     case OVSDB_M_MOD:
+        /* + - * / mod 只能在int,real以及标量之间进行 */
         if ((!ovsdb_type_is_scalar(&m->type) && !ovsdb_type_is_set(&m->type))
             || (m->type.key.type != OVSDB_TYPE_INTEGER
                 && m->type.key.type != OVSDB_TYPE_REAL)
@@ -124,13 +131,14 @@ ovsdb_mutation_from_json(const struct ovsdb_table_schema *ts,
             return type_mismatch(m, json);
         }
         ovsdb_base_type_clear_constraints(&m->type.key);
-        m->type.n_min = m->type.n_max = 1;
+        m->type.n_min = m->type.n_max = 1; /* 只有一个 */
         error = ovsdb_datum_from_json(&m->arg, &m->type, array->elems[2],
                                       symtab);
         break;
 
     case OVSDB_M_INSERT:
     case OVSDB_M_DELETE:
+        /* 插入以及删除只能在set和map上执行 */
         if (!ovsdb_type_is_set(&m->type) && !ovsdb_type_is_map(&m->type)) {
             return type_mismatch(m, json);
         }
@@ -272,6 +280,12 @@ check_real_range(double x)
     return x >= -DBL_MAX && x <= DBL_MAX ? 0 : ME_RANGE;
 }
 
+/* 对标量执行操作
+ * @param dst_type 类型
+ * @param dst 待操作的数据
+ * @param arg 参数值
+ * @param mutation 操作函数
+ */
 static struct ovsdb_error *
 mutate_scalar(const struct ovsdb_type *dst_type, struct ovsdb_datum *dst,
               const union ovsdb_atom *arg,
@@ -285,7 +299,7 @@ mutate_scalar(const struct ovsdb_type *dst_type, struct ovsdb_datum *dst,
         int64_t y = arg->integer;
         for (i = 0; i < dst->n; i++) {
             enum ovsdb_mutation_scalar_error me;
-
+            /* 对整数执行的操作 */
             me = (mutation->mutate_integer)(&dst->keys[i].integer, y);
             if (me != ME_OK) {
                 return ovsdb_mutation_scalar_error(me, mutation->mutator);
@@ -296,7 +310,7 @@ mutate_scalar(const struct ovsdb_type *dst_type, struct ovsdb_datum *dst,
         for (i = 0; i < dst->n; i++) {
             double *x = &dst->keys[i].real;
             enum ovsdb_mutation_scalar_error me;
-
+            /* 对浮点数执行的操作 */
             me = (mutation->mutate_real)(x, y);
             if (me == ME_OK) {
                 me = check_real_range(*x);
@@ -341,15 +355,20 @@ ovsdb_mutation_check_count(struct ovsdb_datum *dst,
     return NULL;
 }
 
+
+/*
+ * @param row 待操作的列
+ * @param set 待执行的操作(mutation)
+ */
 struct ovsdb_error *
 ovsdb_mutation_set_execute(struct ovsdb_row *row,
                            const struct ovsdb_mutation_set *set)
 {
     size_t i;
 
-    for (i = 0; i < set->n_mutations; i++) {
+    for (i = 0; i < set->n_mutations; i++) { /* 遍历mutation */
         const struct ovsdb_mutation *m = &set->mutations[i];
-        struct ovsdb_datum *dst = &row->fields[m->column->index];
+        struct ovsdb_datum *dst = &row->fields[m->column->index];  /* 抽取出待操作的列的数据 */
         const struct ovsdb_type *dst_type = &m->column->type;
         const struct ovsdb_datum *arg = &set->mutations[i].arg;
         const struct ovsdb_type *arg_type = &m->type;

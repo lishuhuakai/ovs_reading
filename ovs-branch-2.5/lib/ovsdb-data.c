@@ -344,9 +344,9 @@ ovsdb_atom_parse_uuid(struct uuid *uuid, const struct json *json,
 }
 
 static struct ovsdb_error * OVS_WARN_UNUSED_RESULT
-ovsdb_atom_from_json__(union ovsdb_atom *atom,
-                       const struct ovsdb_base_type *base,
-                       const struct json *json,
+ovsdb_atom_from_json__(union ovsdb_atom *atom, /* 解析的结果 */
+                       const struct ovsdb_base_type *base, /* 解析规则 */
+                       const struct json *json, /* 待解析的json串 */
                        struct ovsdb_symbol_table *symtab)
 {
     enum ovsdb_atomic_type type = base->type;
@@ -357,7 +357,7 @@ ovsdb_atom_from_json__(union ovsdb_atom *atom,
 
     case OVSDB_TYPE_INTEGER:
         if (json->type == JSON_INTEGER) {
-            atom->integer = json->u.integer;
+            atom->integer = json->u.integer; /* 记录真实的值 */
             return NULL;
         }
         break;
@@ -406,6 +406,7 @@ ovsdb_atom_from_json__(union ovsdb_atom *atom,
  * returns an error and the contents of 'atom' are indeterminate.  The caller
  * is responsible for freeing the error or the atom that is returned.
  *
+ *
  * Violations of constraints expressed by 'base' are treated as errors.
  *
  * If 'symtab' is nonnull, then named UUIDs in 'symtab' are accepted.  Refer to
@@ -413,9 +414,9 @@ ovsdb_atom_from_json__(union ovsdb_atom *atom,
  * accepts.  If 'base' is a reference and a symbol is parsed, then the symbol's
  * 'strong_ref' or 'weak_ref' member is set to true, as appropriate. */
 struct ovsdb_error *
-ovsdb_atom_from_json(union ovsdb_atom *atom,
-                     const struct ovsdb_base_type *base,
-                     const struct json *json,
+ovsdb_atom_from_json(union ovsdb_atom *atom, /* 解析的结果会放入atom中 */
+                     const struct ovsdb_base_type *base, /* 解析规则 */
+                     const struct json *json, /* 待解析的json串 */
                      struct ovsdb_symbol_table *symtab)
 {
     struct ovsdb_error *error;
@@ -466,7 +467,7 @@ ovsdb_atom_to_json(const union ovsdb_atom *atom, enum ovsdb_atomic_type type)
 }
 
 static char *
-ovsdb_atom_from_string__(union ovsdb_atom *atom,
+ovsdb_atom_from_string__(union ovsdb_atom *atom, /* 解析结果 */
                          const struct ovsdb_base_type *base, const char *s,
                          struct ovsdb_symbol_table *symtab)
 {
@@ -550,6 +551,7 @@ ovsdb_atom_from_string__(union ovsdb_atom *atom,
 
 /* Initializes 'atom' to a value of type 'base' parsed from 's', which takes
  * one of the following forms:
+ * 解析字符串s,依据base指定的类型,结果写入到atom中
  *
  *      - OVSDB_TYPE_INTEGER: A decimal integer optionally preceded by a sign.
  *
@@ -716,6 +718,7 @@ check_string_constraints(const char *s,
  *
  * Checking UUID constraints is deferred to transaction commit time, so this
  * function does nothing for UUID constraints. */
+ /* 检查解析出来的结果是否符合类型的定义 */
 struct ovsdb_error *
 ovsdb_atom_check_constraints(const union ovsdb_atom *atom,
                              const struct ovsdb_base_type *base)
@@ -1043,6 +1046,7 @@ ovsdb_datum_sort__(struct ovsdb_datum *datum, enum ovsdb_atomic_type key_type,
  * This function returns NULL if successful, otherwise an error message.  The
  * caller must free the returned error when it is no longer needed.  On error,
  * 'datum' is sorted but not unique. */
+ /* 对元素的值进行排序 */
 struct ovsdb_error *
 ovsdb_datum_sort(struct ovsdb_datum *datum, enum ovsdb_atomic_type key_type)
 {
@@ -1153,20 +1157,20 @@ ovsdb_datum_check_constraints(const struct ovsdb_datum *datum,
 
     return NULL;
 }
-
+/* 从json串中解析出相应的值(datum) */
 static struct ovsdb_error *
-ovsdb_datum_from_json__(struct ovsdb_datum *datum,
-                        const struct ovsdb_type *type,
+ovsdb_datum_from_json__(struct ovsdb_datum *datum, /* 解析的结果 */
+                        const struct ovsdb_type *type, /* 类型的定义 */
                         const struct json *json,
                         struct ovsdb_symbol_table *symtab)
 {
     struct ovsdb_error *error;
 
-    if (ovsdb_type_is_map(type)
+    if (ovsdb_type_is_map(type) /* 类型为map */
         || (json->type == JSON_ARRAY
             && json->u.array.n > 0
             && json->u.array.elems[0]->type == JSON_STRING
-            && !strcmp(json->u.array.elems[0]->u.string, "set"))) {
+            && !strcmp(json->u.array.elems[0]->u.string, "set"))) { /* 类型为set */
         bool is_map = ovsdb_type_is_map(type);
         const char *class = is_map ? "map" : "set";
         const struct json *inner;
@@ -1178,8 +1182,8 @@ ovsdb_datum_from_json__(struct ovsdb_datum *datum,
             return error;
         }
 
-        n = inner->u.array.n;
-        if (n < type->n_min || n > type->n_max) {
+        n = inner->u.array.n; /* 元素的个数 */
+        if (n < type->n_min || n > type->n_max) { /* type */
             return ovsdb_syntax_error(json, NULL, "%s must have %u to "
                                       "%u members but %"PRIuSIZE" are present",
                                       class, type->n_min, type->n_max, n);
@@ -1194,7 +1198,7 @@ ovsdb_datum_from_json__(struct ovsdb_datum *datum,
             const struct json *value = NULL;
 
             if (!is_map) {
-                key = element;
+                key = element; /* key */
             } else {
                 error = parse_json_pair(element, &key, &value);
                 if (error) {
@@ -1242,6 +1246,7 @@ ovsdb_datum_from_json__(struct ovsdb_datum *datum,
  * returns NULL and initializes 'datum' with the parsed datum.  On failure,
  * returns an error and the contents of 'datum' are indeterminate.  The caller
  * is responsible for freeing the error or the datum that is returned.
+ * 解析json作为参数type所描述的那种类型,如果成功,返回NULL,
  *
  * Violations of constraints expressed by 'type' are treated as errors.
  *
@@ -1249,10 +1254,10 @@ ovsdb_datum_from_json__(struct ovsdb_datum *datum,
  * RFC 7047 for information about this, and for the syntax that this function
  * accepts. */
 struct ovsdb_error *
-ovsdb_datum_from_json(struct ovsdb_datum *datum,
+ovsdb_datum_from_json(struct ovsdb_datum *datum, /* 待填充的datum */
                       const struct ovsdb_type *type,
-                      const struct json *json,
-                      struct ovsdb_symbol_table *symtab)
+                      const struct json *json, /* 待解析的json串 */
+                      struct ovsdb_symbol_table *symtab) /* 符号表 */
 {
     struct ovsdb_error *error;
 
@@ -1274,25 +1279,26 @@ ovsdb_datum_from_json(struct ovsdb_datum *datum,
  * 'type' constraints on datum->n are ignored.
  *
  * Refer to RFC 7047 for the format of the JSON that this function produces. */
+ /* 将ovsdb中一个真实的值转换为json串 */
 struct json *
-ovsdb_datum_to_json(const struct ovsdb_datum *datum,
-                    const struct ovsdb_type *type)
+ovsdb_datum_to_json(const struct ovsdb_datum *datum, /* 真实的值 */
+                    const struct ovsdb_type *type) /* 值的元信息 */
 {
-    if (ovsdb_type_is_map(type)) {
+    if (ovsdb_type_is_map(type)) { /*  如果是map类型 */
         struct json **elems;
         size_t i;
 
         elems = xmalloc(datum->n * sizeof *elems);
-        for (i = 0; i < datum->n; i++) {
+        for (i = 0; i < datum->n; i++) { /* 填充键值对 */
             elems[i] = json_array_create_2(
                 ovsdb_atom_to_json(&datum->keys[i], type->key.type),
                 ovsdb_atom_to_json(&datum->values[i], type->value.type));
         }
 
         return wrap_json("map", json_array_create(elems, datum->n));
-    } else if (datum->n == 1) {
+    } else if (datum->n == 1) { /* 非map,仅仅只有一个元素 */
         return ovsdb_atom_to_json(&datum->keys[0], type->key.type);
-    } else {
+    } else { /* 非map,多个元素 */
         struct json **elems;
         size_t i;
 
@@ -1328,6 +1334,12 @@ parse_atom_token(const char **s, const struct ovsdb_base_type *base,
     return error;
 }
 
+/* 根据type来解析键值对
+ * @param s 待解析的字符串
+ * @param type 解析值的类型参考
+ * @param key, value 解析后的结果会放入这两个参数之中
+ * @param symtab 系统表,主要用于引用
+ */
 static char *
 parse_key_value(const char **s, const struct ovsdb_type *type,
                 union ovsdb_atom *key, union ovsdb_atom *value,
@@ -1373,6 +1385,9 @@ free_key_value(const struct ovsdb_type *type,
  *
  * Optionally, a symbol table may be supplied as 'symtab'.  It is passed to
  * ovsdb_atom_to_string(). */
+/* 从给定的s中解析出ovsdb数值datum, s由一系列的由空格或者冒号分隔开的原子类型组成,对于map
+ * 类型而言,'='分隔了键值对.
+ */
 char *
 ovsdb_datum_from_string(struct ovsdb_datum *datum,
                         const struct ovsdb_type *type, const char *s,
@@ -1403,8 +1418,8 @@ ovsdb_datum_from_string(struct ovsdb_datum *datum,
 
     while (*p && *p != end_delim) {
         union ovsdb_atom key, value;
-
-        if (ovsdb_token_is_delim(*p)) {
+        /* 如果解析的过程中,遇到了非end_delim的分隔符,说明出现错误 */
+        if (ovsdb_token_is_delim(*p)) { /* 如果p是分隔符 */
             char *type_str = ovsdb_type_to_english(type);
             error = xasprintf("%s: unexpected \"%c\" parsing %s",
                               s, *p, type_str);
@@ -1417,6 +1432,7 @@ ovsdb_datum_from_string(struct ovsdb_datum *datum,
         if (error) {
             goto error;
         }
+        /* 将键值对加入datum之中 */
         ovsdb_datum_add_unsafe(datum, &key, &value, type);
         free_key_value(type, &key, &value);
 

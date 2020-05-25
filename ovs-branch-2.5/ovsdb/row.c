@@ -26,6 +26,10 @@
 #include "sort.h"
 #include "table.h"
 
+/*
+ * 为row分配内存
+ * @param table 表的元数据,需要根据元数据来分配内存
+ */
 static struct ovsdb_row *
 allocate_row(const struct ovsdb_table *table)
 {
@@ -43,6 +47,9 @@ allocate_row(const struct ovsdb_table *table)
     return row;
 }
 
+/*
+ * 根据表的元数据,创建一个默认元素
+ */
 struct ovsdb_row *
 ovsdb_row_create(const struct ovsdb_table *table)
 {
@@ -52,6 +59,7 @@ ovsdb_row_create(const struct ovsdb_table *table)
     row = allocate_row(table);
     SHASH_FOR_EACH (node, &table->schema->columns) {
         const struct ovsdb_column *column = node->data;
+        /* 填充默认值 */
         ovsdb_datum_init_default(&row->fields[column->index], &column->type);
     }
     return row;
@@ -104,6 +112,9 @@ ovsdb_row_destroy(struct ovsdb_row *row)
     }
 }
 
+/*
+ * 为row计算hash
+ */
 uint32_t
 ovsdb_row_hash_columns(const struct ovsdb_row *row,
                        const struct ovsdb_column_set *columns,
@@ -192,6 +203,11 @@ ovsdb_row_columns_to_string(const struct ovsdb_row *row,
     }
 }
 
+/*
+ * @param row 解析后的结果会放入此结构中
+ * @param json 待解析的json串
+ * @param included 每一列的元数据
+ */
 struct ovsdb_error *
 ovsdb_row_from_json(struct ovsdb_row *row, const struct json *json,
                     struct ovsdb_symbol_table *symtab,
@@ -206,17 +222,17 @@ ovsdb_row_from_json(struct ovsdb_row *row, const struct json *json,
     }
 
     SHASH_FOR_EACH (node, json_object(json)) {
-        const char *column_name = node->name;
+        const char *column_name = node->name; /* 列名 */
         const struct ovsdb_column *column;
         struct ovsdb_datum datum;
-
+        /* 根据列的名称获取列的元数据 */
         column = ovsdb_table_schema_get_column(schema, column_name);
         if (!column) {
             return ovsdb_syntax_error(json, "unknown column",
                                       "No column %s in table %s.",
                                       column_name, schema->name);
         }
-
+        /* 根据元数据解析出json中的值,放入datum */
         error = ovsdb_datum_from_json(&datum, &column->type, node->data,
                                       symtab);
         if (error) {

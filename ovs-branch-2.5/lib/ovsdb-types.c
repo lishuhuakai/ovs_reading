@@ -66,7 +66,7 @@ ovsdb_atomic_type_to_string(enum ovsdb_atomic_type type)
         return "<invalid>";
     }
 }
-
+/* 将ovsdb原子类型转换成为json串 */
 struct json *
 ovsdb_atomic_type_to_json(enum ovsdb_atomic_type type)
 {
@@ -91,7 +91,7 @@ ovsdb_atomic_type_from_string(const char *string, enum ovsdb_atomic_type *type)
     }
     return true;
 }
-
+/* 从json结构中获取原子类型(atomic_type) */
 struct ovsdb_error *
 ovsdb_atomic_type_from_json(enum ovsdb_atomic_type *type,
                             const struct json *json)
@@ -112,7 +112,7 @@ ovsdb_atomic_type_from_json(enum ovsdb_atomic_type *type,
 }
 
 /* ovsdb_base_type */
-
+/* 给base_type填充默认的限定值 */
 void
 ovsdb_base_type_init(struct ovsdb_base_type *base, enum ovsdb_atomic_type type)
 {
@@ -156,13 +156,14 @@ ovsdb_base_type_init(struct ovsdb_base_type *base, enum ovsdb_atomic_type type)
 
 /* Returns the type of the 'enum_' member for an ovsdb_base_type whose 'type'
  * is 'atomic_type'. */
+ /* 返回enum_ */
 const struct ovsdb_type *
 ovsdb_base_type_get_enum_type(enum ovsdb_atomic_type atomic_type)
 {
     static struct ovsthread_once once = OVSTHREAD_ONCE_INITIALIZER;
     static struct ovsdb_type *types[OVSDB_N_TYPES];
 
-    if (ovsthread_once_start(&once)) {
+    if (ovsthread_once_start(&once)) { /* 保证仅仅会初始化一次 */
         enum ovsdb_atomic_type i;
 
         for (i = 0; i < OVSDB_N_TYPES; i++) {
@@ -336,7 +337,7 @@ parse_optional_uint(struct ovsdb_parser *parser, const char *member,
     }
     return NULL;
 }
-
+/* 从json串中解析出base_type */
 struct ovsdb_error *
 ovsdb_base_type_from_json(struct ovsdb_base_type *base,
                           const struct json *json)
@@ -345,7 +346,7 @@ ovsdb_base_type_from_json(struct ovsdb_base_type *base,
     struct ovsdb_error *error;
     const struct json *type, *enum_;
 
-    if (json->type == JSON_STRING) {
+    if (json->type == JSON_STRING) { /*  */
         error = ovsdb_atomic_type_from_json(&base->type, json);
         if (error) {
             return error;
@@ -353,10 +354,10 @@ ovsdb_base_type_from_json(struct ovsdb_base_type *base,
         ovsdb_base_type_init(base, base->type);
         return NULL;
     }
-
+    /* {"type": "integer", "enum": ["set", [-1, 4, 5]]} */
     ovsdb_parser_init(&parser, json, "ovsdb type");
-    type = ovsdb_parser_member(&parser, "type", OP_STRING);
-    if (ovsdb_parser_has_error(&parser)) {
+    type = ovsdb_parser_member(&parser, "type", OP_STRING); /* 解析type */
+    if (ovsdb_parser_has_error(&parser)) { /* 解析出错 */
         base->type = OVSDB_TYPE_VOID;
         return ovsdb_parser_finish(&parser);
     }
@@ -369,7 +370,7 @@ ovsdb_base_type_from_json(struct ovsdb_base_type *base,
 
     ovsdb_base_type_init(base, base->type);
 
-    enum_ = ovsdb_parser_member(&parser, "enum", OP_ANY | OP_OPTIONAL);
+    enum_ = ovsdb_parser_member(&parser, "enum", OP_ANY | OP_OPTIONAL); /* 解析枚举值 */
     if (enum_) {
         base->enum_ = xmalloc(sizeof *base->enum_);
         error = ovsdb_datum_from_json(
@@ -381,7 +382,7 @@ ovsdb_base_type_from_json(struct ovsdb_base_type *base,
         }
     } else if (base->type == OVSDB_TYPE_INTEGER) {
         const struct json *min, *max;
-
+        /* 限定值 */
         min = ovsdb_parser_member(&parser, "minInteger",
                                   OP_INTEGER | OP_OPTIONAL);
         max = ovsdb_parser_member(&parser, "maxInteger",
@@ -611,7 +612,10 @@ ovsdb_type_to_english(const struct ovsdb_type *type)
         return ds_cstr(&s);
     }
 }
-
+/* 从json串中解析出type
+ * @param type 待解析的type
+ * @param json 待解析的json串
+ */
 struct ovsdb_error *
 ovsdb_type_from_json(struct ovsdb_type *type, const struct json *json)
 {
@@ -627,9 +631,11 @@ ovsdb_type_from_json(struct ovsdb_type *type, const struct json *json)
         struct ovsdb_parser parser;
 
         ovsdb_parser_init(&parser, json, "ovsdb type");
+        /* 键和值的类型 */
         key = ovsdb_parser_member(&parser, "key", OP_STRING | OP_OBJECT);
         value = ovsdb_parser_member(&parser, "value",
                                     OP_STRING | OP_OBJECT | OP_OPTIONAL);
+        /* 个数限定 */
         min = ovsdb_parser_member(&parser, "min", OP_INTEGER | OP_OPTIONAL);
         max = ovsdb_parser_member(&parser, "max",
                                   OP_INTEGER | OP_STRING | OP_OPTIONAL);

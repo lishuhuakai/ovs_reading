@@ -49,7 +49,7 @@ const char *ovsdb_function_to_string(enum ovsdb_function);
 
 struct ovsdb_clause {
     enum ovsdb_function function;
-    const struct ovsdb_column *column;
+    const struct ovsdb_column *column; /* 某一列 */
     struct ovsdb_datum arg;
 };
 

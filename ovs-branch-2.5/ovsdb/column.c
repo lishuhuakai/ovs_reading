@@ -60,7 +60,11 @@ ovsdb_column_destroy(struct ovsdb_column *column)
     free(column->name);
     free(column);
 }
-
+/* 从json串中解析column
+ * @param name 列的名称
+ * @param json 待解析的json
+ * @param columnp 解析的结果会放入此结构之中
+ */
 struct ovsdb_error *
 ovsdb_column_from_json(const struct json *json, const char *name,
                        struct ovsdb_column **columnp)
@@ -83,7 +87,7 @@ ovsdb_column_from_json(const struct json *json, const char *name,
     if (error) {
         return error;
     }
-
+    /* 解析类型 */
     error = ovsdb_type_from_json(&type, type_json);
     if (error) {
         return error;
@@ -168,7 +172,7 @@ ovsdb_column_set_from_json(const struct json *json,
             }
 
             s = json->u.array.elems[i]->u.string;
-            column = shash_find_data(&schema->columns, s);
+            column = shash_find_data(&schema->columns, s); /* 找到对应的column */
             if (!column) {
                 error = ovsdb_syntax_error(json, NULL, "%s is not a valid "
                                            "column name", s);

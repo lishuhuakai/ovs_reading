@@ -3036,7 +3036,7 @@ stdout:
 ovsdb error: schema version "xxx" not in format x.y.z
 1279. ovsdb-schema.at:94:  ok
 
-
+=================条件的解析
 OVSDB -- conditions
 
 1280. ovsdb-condition.at:3: testing null condition ...
@@ -3464,7 +3464,7 @@ OVSDB -- conditions
       {"r": ["set", []]}]'
 1296. ovsdb-condition.at:634:  ok
 
-
+====================解析mutation
 OVSDB -- mutations
 
 1297. ovsdb-mutation.at:3: testing null mutation ...
@@ -3781,7 +3781,7 @@ OVSDB -- mutations
       {"i": ["map", [[3, 5]]]}']
 1315. ovsdb-mutation.at:779:  ok
 
-
+===================进行查询操作
 OVSDB -- queries
 
 1316. ovsdb-query.at:3: testing queries on scalars ...

@@ -41,40 +41,40 @@ struct ovsdb_error *ovsdb_atomic_type_from_json(enum ovsdb_atomic_type *,
                                                 const struct json *);
 const char *ovsdb_atomic_type_to_string(enum ovsdb_atomic_type);
 struct json *ovsdb_atomic_type_to_json(enum ovsdb_atomic_type);
-
+
 /* An atomic type plus optional constraints. */
 
 enum ovsdb_ref_type {
     OVSDB_REF_STRONG,           /* Target must exist. */
     OVSDB_REF_WEAK              /* Delete reference if target disappears. */
 };
-
+/* 基础类型 */
 struct ovsdb_base_type {
     enum ovsdb_atomic_type type;
 
     /* If nonnull, a datum with keys of type 'type' that expresses all the
      * valid values for this base_type. */
-    struct ovsdb_datum *enum_;
+    struct ovsdb_datum *enum_; /* 如果非空,那么enum_中的值包含了此种类型所能表达的所有的值 */
 
     union {
-        struct ovsdb_integer_constraints {
+        struct ovsdb_integer_constraints { /* 整型的限制 */
             int64_t min;        /* minInteger or INT64_MIN. */
             int64_t max;        /* maxInteger or INT64_MAX. */
         } integer;
 
-        struct ovsdb_real_constraints {
+        struct ovsdb_real_constraints { /* 浮点型的限制值 */
             double min;         /* minReal or -DBL_MAX. */
             double max;         /* minReal or DBL_MAX. */
         } real;
 
         /* No constraints for Boolean types. */
 
-        struct ovsdb_string_constraints {
+        struct ovsdb_string_constraints { /* 字符型的限制值 */
             unsigned int minLen; /* minLength or 0. */
             unsigned int maxLen; /* maxLength or UINT_MAX. */
         } string;
 
-        struct ovsdb_uuid_constraints {
+        struct ovsdb_uuid_constraints { /* uuid的限定值 */
             char *refTableName; /* Name of referenced table, or NULL. */
             struct ovsdb_table *refTable; /* Referenced table, if available. */
             enum ovsdb_ref_type refType;  /* Reference type. */
@@ -112,28 +112,33 @@ static inline bool ovsdb_base_type_is_ref(const struct ovsdb_base_type *);
 static inline bool ovsdb_base_type_is_strong_ref(
     const struct ovsdb_base_type *);
 static inline bool ovsdb_base_type_is_weak_ref(const struct ovsdb_base_type *);
-
+
 /* An OVSDB type.
- *
+ * 此结构体代表了可选的
  * Several rules constrain the valid types.  See ovsdb_type_is_valid() (in
  * ovsdb-types.c) for details.
  *
  * If 'value_type' is OVSDB_TYPE_VOID, 'n_min' is 1, and 'n_max' is 1, then the
  * type is a single atomic 'key_type'.
+ * 如果value_type是OVSDB_TYPE_VOID,那么n_min为1,n_max也为1,那么这种类型是单个原子类型key_type
  *
  * If 'value_type' is OVSDB_TYPE_VOID and 'n_min' or 'n_max' (or both) has a
  * value other than 1, then the type is a set of 'key_type'.  If 'n_min' is 0
  * and 'n_max' is 1, then the type can also be considered an optional
  * 'key_type'.
- *
+ * 如果value_type是OVSDB_TYPE_VOID,并且n_min或者n_max(或者两者)都大于1,此类型是key_type的集合
+ * 如果n_min是0,n_max是1,那么这种类型可以视作是可选的
  * If 'value_type' is not OVSDB_TYPE_VOID, then the type is a map from
  * 'key_type' to 'value_type'.  If 'n_min' is 0 and 'n_max' is 1, then the type
  * can also be considered an optional pair of 'key_type' and 'value_type'.
+ * 如果value_type并非OVSDB_TYPE_VOID,那么这种类型代表了一种映射关系,从key_type映射到value_type
+ * 如果n_min=0,n_max=1,此类型可以视作是可选的键值对
  */
+
 struct ovsdb_type {
-    struct ovsdb_base_type key;
-    struct ovsdb_base_type value;
-    unsigned int n_min;
+    struct ovsdb_base_type key; /* key类型 */
+    struct ovsdb_base_type value; /* value类型 */
+    unsigned int n_min;         /* 最小个数 */
     unsigned int n_max;         /* UINT_MAX stands in for "unlimited". */
 };
 
@@ -221,7 +226,7 @@ static inline bool ovsdb_type_is_set(const struct ovsdb_type *type)
     return (type->value.type == OVSDB_TYPE_VOID
             && (type->n_min != 1 || type->n_max != 1));
 }
-
+/* 判断类型是否为map */
 static inline bool ovsdb_type_is_map(const struct ovsdb_type *type)
 {
     return type->value.type != OVSDB_TYPE_VOID;

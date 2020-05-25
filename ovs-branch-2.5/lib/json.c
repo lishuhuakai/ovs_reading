@@ -283,7 +283,7 @@ json_object_put_string(struct json *json, const char *name, const char *value)
 {
     json_object_put(json, name, json_string_create(value));
 }
-
+/* 获取json串中的字符 */
 const char *
 json_string(const struct json *json)
 {
@@ -1007,17 +1007,21 @@ json_lex_input(struct json_parser *p, unsigned char c)
 /* Parses 'string' as a JSON object or array and returns a newly allocated
  * 'struct json'.  The caller must free the returned structure with
  * json_destroy() when it is no longer needed.
- *
+ * 将string作为JSON来解析,返回一个新分配的struct json,调用者必须用json_destroy函数
+ * 来销毁返回的结构体,如果不再使用的话.
  * 'string' must be encoded in UTF-8.
- *
+ * string必须是utf-8编码的.
  * If 'string' is valid JSON, then the returned 'struct json' will be either an
  * object (JSON_OBJECT) or an array (JSON_ARRAY).
+ * 如果string是有效的json串,返回的struct json将会是一个object(JSON_OBJECT)或者是一个数组(JSON_ARRAY)
  *
  * If 'string' is not valid JSON, then the returned 'struct json' will be a
  * string (JSON_STRING) that describes the particular error encountered during
  * parsing.  (This is an acceptable means of error reporting because at its top
  * level JSON must be either an object or an array; a bare string is not
- * valid.) */
+ * valid.)
+ * 如果字符串无效,那么返回的struct json将会是一个string(JSON_STRING),里面描述了解析过程中碰到的错误.
+ */
 struct json *
 json_from_string(const char *string)
 {

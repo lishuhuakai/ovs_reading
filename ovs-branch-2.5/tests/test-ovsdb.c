@@ -220,7 +220,7 @@ parse_json(const char *s)
     }
     return json;
 }
-
+/* 剥离 */
 static struct json *
 unbox_json(struct json *json)
 {
@@ -332,7 +332,7 @@ do_log_io(struct ovs_cmdl_context *ctx)
 
     ovsdb_log_close(log);
 }
-
+/* 打印出原子类型的默认值 */
 static void
 do_default_atoms(struct ovs_cmdl_context *ctx OVS_UNUSED)
 {
@@ -397,7 +397,7 @@ do_default_data(struct ovs_cmdl_context *ctx OVS_UNUSED)
         }
     }
 }
-
+/* 解析原子类型 */
 static void
 do_parse_atomic_type(struct ovs_cmdl_context *ctx)
 {
@@ -409,7 +409,7 @@ do_parse_atomic_type(struct ovs_cmdl_context *ctx)
     json_destroy(json);
     print_and_free_json(ovsdb_atomic_type_to_json(type));
 }
-
+/* 解析基础类型 */
 static void
 do_parse_base_type(struct ovs_cmdl_context *ctx)
 {
@@ -422,11 +422,11 @@ do_parse_base_type(struct ovs_cmdl_context *ctx)
     print_and_free_json(ovsdb_base_type_to_json(&base));
     ovsdb_base_type_destroy(&base);
 }
-
+/* 类型解析 */
 static void
 do_parse_type(struct ovs_cmdl_context *ctx)
 {
-    struct ovsdb_type type;
+    struct ovsdb_type type; /* 待解析的类型 */
     struct json *json;
 
     json = unbox_json(parse_json(ctx->argv[1]));
@@ -435,21 +435,21 @@ do_parse_type(struct ovs_cmdl_context *ctx)
     print_and_free_json(ovsdb_type_to_json(&type));
     ovsdb_type_destroy(&type);
 }
-
+/* 解析原子值 */
 static void
 do_parse_atoms(struct ovs_cmdl_context *ctx)
 {
     struct ovsdb_base_type base;
     struct json *json;
     int i;
-
+    /* 首先解析类型 */
     json = unbox_json(parse_json(ctx->argv[1]));
     check_ovsdb_error(ovsdb_base_type_from_json(&base, json));
     json_destroy(json);
 
     for (i = 2; i < ctx->argc; i++) {
         struct ovsdb_error *error;
-        union ovsdb_atom atom;
+        union ovsdb_atom atom; /* 待解析的值 */
 
         json = unbox_json(parse_json(ctx->argv[i]));
         error = ovsdb_atom_from_json(&atom, &base, json, NULL);
@@ -471,7 +471,7 @@ do_parse_atom_strings(struct ovs_cmdl_context *ctx)
     struct ovsdb_base_type base;
     struct json *json;
     int i;
-
+    /* 首先解析类型 */
     json = unbox_json(parse_json(ctx->argv[1]));
     check_ovsdb_error(ovsdb_base_type_from_json(&base, json));
     json_destroy(json);
@@ -492,11 +492,13 @@ do_parse_atom_strings(struct ovs_cmdl_context *ctx)
     ovsdb_base_type_destroy(&base);
 }
 
+/* 解析数值 */
 static void
 do_parse_data__(int argc, char *argv[],
+                /* 解析函数 */
                 struct ovsdb_error *
                 (*parse)(struct ovsdb_datum *datum,
-                         const struct ovsdb_type *type,
+                         const struct ovsdb_type *type, /* 值的类型 */
                          const struct json *json,
                          struct ovsdb_symbol_table *symtab))
 {
@@ -505,7 +507,7 @@ do_parse_data__(int argc, char *argv[],
     int i;
 
     json = unbox_json(parse_json(argv[1]));
-    check_ovsdb_error(ovsdb_type_from_json(&type, json));
+    check_ovsdb_error(ovsdb_type_from_json(&type, json)); /* 解析json,结果放入type中 */
     json_destroy(json);
 
     for (i = 2; i < argc; i++) {
@@ -522,12 +524,19 @@ do_parse_data__(int argc, char *argv[],
     ovsdb_type_destroy(&type);
 }
 
+/* 解析ovsdb 数值 */
 static void
 do_parse_data(struct ovs_cmdl_context *ctx)
 {
     do_parse_data__(ctx->argc, ctx->argv, ovsdb_datum_from_json);
 }
 
+/* 解析字符数据
+ * 例子:
+ * type ==> {"key": "integer", "value": "boolean"}
+ * value ==> 1=true
+ *
+ */
 static void
 do_parse_data_strings(struct ovs_cmdl_context *ctx)
 {
@@ -536,10 +545,11 @@ do_parse_data_strings(struct ovs_cmdl_context *ctx)
     int i;
 
     json = unbox_json(parse_json(ctx->argv[1]));
+    /* 先将type解析出来 */
     check_ovsdb_error(ovsdb_type_from_json(&type, json));
     json_destroy(json);
 
-    for (i = 2; i < ctx->argc; i++) {
+    for (i = 2; i < ctx->argc; i++) { /* 解析值 */
         struct ovsdb_datum datum;
         struct ds out;
 
@@ -608,6 +618,7 @@ do_sort_atoms(struct ovs_cmdl_context *ctx)
     ovsdb_base_type_destroy(&base);
 }
 
+/* 解析列的数据 */
 static void
 do_parse_column(struct ovs_cmdl_context *ctx)
 {
@@ -621,6 +632,11 @@ do_parse_column(struct ovs_cmdl_context *ctx)
     ovsdb_column_destroy(column);
 }
 
+/* 解析表的值
+ *  mytable
+ *   '{"columns": {"name": {"type": "string"}},
+ *     "mutable": false}'
+ */
 static void
 do_parse_table(struct ovs_cmdl_context *ctx)
 {
@@ -630,13 +646,20 @@ do_parse_table(struct ovs_cmdl_context *ctx)
 
     default_is_root = ctx->argc > 3 && !strcmp(ctx->argv[3], "true");
 
-    json = parse_json(ctx->argv[2]);
+    json = parse_json(ctx->argv[2]); /* table的json串 */
     check_ovsdb_error(ovsdb_table_schema_from_json(json, ctx->argv[1], &ts));
     json_destroy(json);
     print_and_free_json(ovsdb_table_schema_to_json(ts, default_is_root));
     ovsdb_table_schema_destroy(ts);
 }
 
+/* 解析列
+ *  '{"columns": {"name": {"type": "string"}}}'
+ *   '{"name": "value"}'
+ *   '{"name": ""}'
+ *   '{"name": "longer string with spaces"}'
+ *   '{}'
+ */
 static void
 do_parse_rows(struct ovs_cmdl_context *ctx)
 {
@@ -647,6 +670,7 @@ do_parse_rows(struct ovs_cmdl_context *ctx)
     int i;
 
     json = unbox_json(parse_json(ctx->argv[1]));
+    /* 先解析table */
     check_ovsdb_error(ovsdb_table_schema_from_json(json, "mytable", &ts));
     json_destroy(json);
 
@@ -662,6 +686,7 @@ do_parse_rows(struct ovs_cmdl_context *ctx)
         row = ovsdb_row_create(table);
 
         json = unbox_json(parse_json(ctx->argv[i]));
+        /* 填充row的值 */
         check_ovsdb_error(ovsdb_row_from_json(row, json, NULL, &columns));
         json_destroy(json);
 
@@ -693,6 +718,9 @@ do_parse_rows(struct ovs_cmdl_context *ctx)
     ovsdb_table_destroy(table); /* Also destroys 'ts'. */
 }
 
+/* row的比较
+ *
+ */
 static void
 do_compare_rows(struct ovs_cmdl_context *ctx)
 {
@@ -706,12 +734,13 @@ do_compare_rows(struct ovs_cmdl_context *ctx)
     int i, j;
 
     json = unbox_json(parse_json(ctx->argv[1]));
+    /* 解析表的元数据,存储到ts中 */
     check_ovsdb_error(ovsdb_table_schema_from_json(json, "mytable", &ts));
     json_destroy(json);
-
+    /* 根据元数据创建一个表的实例 */
     table = ovsdb_table_create(ts);
     ovsdb_column_set_init(&all_columns);
-    ovsdb_column_set_add_all(&all_columns, table);
+    ovsdb_column_set_add_all(&all_columns, table); /* 所有列都加入column_set中 */
 
     n_rows = ctx->argc - 2;
     rows = xmalloc(sizeof *rows * n_rows);
@@ -726,6 +755,7 @@ do_compare_rows(struct ovs_cmdl_context *ctx)
                       "[\"name\", {data}]", ctx->argv[i]);
         }
         names[i] = xstrdup(json->u.array.elems[0]->u.string);
+        /* 解析元素的值 */
         check_ovsdb_error(ovsdb_row_from_json(rows[i], json->u.array.elems[1],
                                               NULL, NULL));
         json_destroy(json);
@@ -756,6 +786,9 @@ do_compare_rows(struct ovs_cmdl_context *ctx)
     ovsdb_table_destroy(table); /* Also destroys 'ts'. */
 }
 
+/* 解析condition
+ *
+ */
 static void
 do_parse_conditions(struct ovs_cmdl_context *ctx)
 {
@@ -763,7 +796,7 @@ do_parse_conditions(struct ovs_cmdl_context *ctx)
     struct json *json;
     int exit_code = 0;
     int i;
-
+    /* 先解析表的元数据,放入ts中 */
     json = unbox_json(parse_json(ctx->argv[1]));
     check_ovsdb_error(ovsdb_table_schema_from_json(json, "mytable", &ts));
     json_destroy(json);
@@ -861,6 +894,9 @@ do_evaluate_conditions(struct ovs_cmdl_context *ctx)
     ovsdb_table_destroy(table); /* Also destroys 'ts'. */
 }
 
+/* 解析mutation
+ * 所谓mutation,指的是在列上做的变动
+ */
 static void
 do_parse_mutations(struct ovs_cmdl_context *ctx)
 {
@@ -868,7 +904,7 @@ do_parse_mutations(struct ovs_cmdl_context *ctx)
     struct json *json;
     int exit_code = 0;
     int i;
-
+    /* 解析表的元数据 */
     json = unbox_json(parse_json(ctx->argv[1]));
     check_ovsdb_error(ovsdb_table_schema_from_json(json, "mytable", &ts));
     json_destroy(json);
@@ -878,6 +914,7 @@ do_parse_mutations(struct ovs_cmdl_context *ctx)
         struct ovsdb_error *error;
 
         json = parse_json(ctx->argv[i]);
+        /* 解析mutation */
         error = ovsdb_mutation_set_from_json(ts, json, NULL, &set);
         if (!error) {
             print_and_free_json(ovsdb_mutation_set_to_json(&set));
@@ -897,6 +934,9 @@ do_parse_mutations(struct ovs_cmdl_context *ctx)
     exit(exit_code);
 }
 
+/* 执行相应的操作
+ *
+ */
 static void
 do_execute_mutations(struct ovs_cmdl_context *ctx)
 {
@@ -943,7 +983,7 @@ do_execute_mutations(struct ovs_cmdl_context *ctx)
                                               NULL, NULL));
     }
     json_destroy(json);
-
+    /* 开始执行操作 */
     for (i = 0; i < n_sets; i++) {
         printf("mutation %2"PRIuSIZE":\n", i);
         for (j = 0; j < n_rows; j++) {
@@ -1023,6 +1063,9 @@ do_query_cb(const struct ovsdb_row *row, void *cbdata_)
     return true;
 }
 
+/* 执行查询
+ *
+ */
 static void
 do_query(struct ovs_cmdl_context *ctx)
 {
@@ -1034,6 +1077,7 @@ do_query(struct ovs_cmdl_context *ctx)
     size_t i;
 
     /* Parse table schema, create table. */
+    /* 解析表的元数据 */
     json = unbox_json(parse_json(ctx->argv[1]));
     check_ovsdb_error(ovsdb_table_schema_from_json(json, "mytable", &ts));
     json_destroy(json);
@@ -1049,8 +1093,9 @@ do_query(struct ovs_cmdl_context *ctx)
     cbdata.row_uuids = xmalloc(cbdata.n_rows * sizeof *cbdata.row_uuids);
     cbdata.counts = xmalloc(cbdata.n_rows * sizeof *cbdata.counts);
     for (i = 0; i < cbdata.n_rows; i++) {
-        struct ovsdb_row *row = ovsdb_row_create(table);
-        uuid_generate(ovsdb_row_get_uuid_rw(row));
+        struct ovsdb_row *row = ovsdb_row_create(table); /* 创建一行 */
+        uuid_generate(ovsdb_row_get_uuid_rw(row)); /* 随机产生uuid */
+        /* 解析数据 */
         check_ovsdb_error(ovsdb_row_from_json(row, json->u.array.elems[i],
                                               NULL, NULL));
         if (ovsdb_table_get_row(table, ovsdb_row_get_uuid(row))) {
@@ -1070,7 +1115,7 @@ do_query(struct ovs_cmdl_context *ctx)
     for (i = 0; i < json->u.array.n; i++) {
         struct ovsdb_condition cnd;
         size_t j;
-
+        /* 解析条件 */
         check_ovsdb_error(ovsdb_condition_from_json(ts, json->u.array.elems[i],
                                                     NULL, &cnd));
 
@@ -1377,6 +1422,9 @@ static struct ovsdb *do_transact_db;
 static struct ovsdb_txn *do_transact_txn;
 static struct ovsdb_table *do_transact_table;
 
+/* 执行提交操作
+ *
+ */
 static void
 do_transact_commit(struct ovs_cmdl_context *ctx OVS_UNUSED)
 {
@@ -1444,6 +1492,7 @@ do_transact_set_i_j(struct ovsdb_row *row,
     do_transact_set_integer(row, "j", atoi(j_string));
 }
 
+/* 执行插入操作 */
 static void
 do_transact_insert(struct ovs_cmdl_context *ctx)
 {
@@ -1493,6 +1542,7 @@ compare_rows_by_uuid(const void *a_, const void *b_)
     return uuid_compare_3way(ovsdb_row_get_uuid(*ap), ovsdb_row_get_uuid(*bp));
 }
 
+/* 执行print操作 */
 static void
 do_transact_print(struct ovs_cmdl_context *ctx OVS_UNUSED)
 {
@@ -1521,6 +1571,8 @@ do_transact_print(struct ovs_cmdl_context *ctx OVS_UNUSED)
     free(rows);
 }
 
+
+/* 事务的操作 */
 static void
 do_transact(struct ovs_cmdl_context *ctx)
 {

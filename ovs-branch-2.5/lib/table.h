@@ -22,7 +22,7 @@
 #include "compiler.h"
 
 struct table_style;
-
+
 /* Manipulating tables and their rows and columns. */
 
 struct table {

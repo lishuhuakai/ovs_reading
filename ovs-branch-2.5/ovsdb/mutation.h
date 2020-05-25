@@ -46,10 +46,11 @@ struct ovsdb_error *ovsdb_mutator_from_string(const char *,
     OVS_WARN_UNUSED_RESULT;
 const char *ovsdb_mutator_to_string(enum ovsdb_mutator);
 
+/* mutation,指的是在某一类上执行的操作 */
 struct ovsdb_mutation {
-    enum ovsdb_mutator mutator;
-    const struct ovsdb_column *column;
-    struct ovsdb_datum arg;
+    enum ovsdb_mutator mutator; /* 操作类型 */
+    const struct ovsdb_column *column; /* 记录对应的列 */
+    struct ovsdb_datum arg; /* 参数值 */
     struct ovsdb_type type;
 };
 

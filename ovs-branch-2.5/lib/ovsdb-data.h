@@ -26,6 +26,7 @@ struct ovsdb_symbol_table;
 struct smap;
 
 /* One value of an atomic type (given by enum ovs_atomic_type). */
+/* 实际的值 */
 union ovsdb_atom {
     int64_t integer;
     double real;
@@ -101,9 +102,9 @@ void ovsdb_atom_to_bare(const union ovsdb_atom *, enum ovsdb_atomic_type,
 struct ovsdb_error *ovsdb_atom_check_constraints(
     const union ovsdb_atom *, const struct ovsdb_base_type *)
     OVS_WARN_UNUSED_RESULT;
-
+
 /* An instance of an OVSDB type (given by struct ovsdb_type).
- *
+ * OVSDB类型的一个实例
  * - The 'keys' must be unique and in sorted order.  Most functions that modify
  *   an ovsdb_datum maintain these invariants.  Functions that don't maintain
  *   the invariants have names that end in "_unsafe".  Use ovsdb_datum_sort()

@@ -121,6 +121,11 @@ ovsdb_table_schema_destroy(struct ovsdb_table_schema *ts)
     free(ts);
 }
 
+/* 从JSON串中解析出表的定义
+ * @param json 待解析的json串
+ * @param name 表的名称
+ * @param tsp 解析的结果将会放入这个结构体之中
+ */
 struct ovsdb_error *
 ovsdb_table_schema_from_json(const struct json *json, const char *name,
                              struct ovsdb_table_schema **tsp)
@@ -141,6 +146,7 @@ ovsdb_table_schema_from_json(const struct json *json, const char *name,
     max_rows = ovsdb_parser_member(&parser, "maxRows",
                                    OP_INTEGER | OP_OPTIONAL);
     is_root = ovsdb_parser_member(&parser, "isRoot", OP_BOOLEAN | OP_OPTIONAL);
+    /* 索引值 */
     indexes = ovsdb_parser_member(&parser, "indexes", OP_ARRAY | OP_OPTIONAL);
     error = ovsdb_parser_finish(&parser);
     if (error) {
@@ -152,7 +158,7 @@ ovsdb_table_schema_from_json(const struct json *json, const char *name,
             return ovsdb_syntax_error(json, NULL,
                                       "maxRows must be at least 1");
         }
-        n_max_rows = max_rows->u.integer;
+        n_max_rows = max_rows->u.integer; /* 最多的行数 */
     } else {
         n_max_rows = UINT_MAX;
     }
@@ -285,7 +291,9 @@ ovsdb_table_schema_get_column(const struct ovsdb_table_schema *ts,
 {
     return shash_find_data(&ts->columns, name);
 }
-
+/* 根据元数据创建一个表的实例
+ * @param ts 表的元数据
+ */
 struct ovsdb_table *
 ovsdb_table_create(struct ovsdb_table_schema *ts)
 {
