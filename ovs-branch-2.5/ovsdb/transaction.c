@@ -466,19 +466,22 @@ add_weak_ref(struct ovsdb_txn *txn,
     list_push_back(&src->src_refs, &weak->src_node);
 }
 
+/* 弱引用的检查
+ * @param txn_row 待检查的事务行
+ */
 static struct ovsdb_error * OVS_WARN_UNUSED_RESULT
 assess_weak_refs(struct ovsdb_txn *txn, struct ovsdb_txn_row *txn_row)
 {
     struct ovsdb_table *table;
     struct shash_node *node;
 
-    if (txn_row->old) {
+    if (txn_row->old) { /* 如果旧的行存在 */
         /* Mark rows that have weak references to 'txn_row' as modified, so
          * that their weak references will get reassessed. */
         struct ovsdb_weak_ref *weak, *next;
-
+		/* 遍历引用关系 */
         LIST_FOR_EACH_SAFE (weak, next, dst_node, &txn_row->old->dst_refs) {
-            if (!weak->src->txn_row) {
+            if (!weak->src->txn_row) { /* 引用此 */
                 ovsdb_txn_row_modify(txn, weak->src);
             }
         }
@@ -606,6 +609,7 @@ determine_changes(struct ovsdb_txn *txn, struct ovsdb_txn_row *txn_row)
     return NULL;
 }
 
+/* 检查表的行数是否超过限制 */
 static struct ovsdb_error * OVS_WARN_UNUSED_RESULT
 check_max_rows(struct ovsdb_txn *txn)
 {
@@ -791,6 +795,7 @@ ovsdb_txn_commit_(struct ovsdb_txn *txn, bool durable)
     }
 
     /* Delete unreferenced, non-root rows. */
+	/* 删除那些不被应用的,非root的行 */
     error = for_each_txn_row(txn, collect_garbage);
     if (error) {
         ovsdb_txn_abort(txn);
