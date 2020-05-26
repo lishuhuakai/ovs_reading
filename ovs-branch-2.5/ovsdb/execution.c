@@ -33,8 +33,9 @@
 #include "timeval.h"
 #include "transaction.h"
 
+/* 记录堆ovsdb的一次操作 */
 struct ovsdb_execution {
-    struct ovsdb *db;
+    struct ovsdb *db;  /* 待操作的数据库 */
     const struct ovsdb_session *session;
     struct ovsdb_txn *txn;
     struct ovsdb_symbol_table *symtab;
@@ -93,7 +94,9 @@ lookup_executor(const char *name)
 }
 
 /* 执行对应的操作
- * @param db 待操作
+ * @param db 待操作的数据库
+ * @param params json串
+ * @param
  */
 struct json *
 ovsdb_execute(struct ovsdb *db, const struct ovsdb_session *session,
@@ -125,7 +128,7 @@ ovsdb_execute(struct ovsdb *db, const struct ovsdb_session *session,
     x.db = db;
     x.session = session;
     x.txn = ovsdb_txn_create(db);
-    x.symtab = ovsdb_symbol_table_create();
+    x.symtab = ovsdb_symbol_table_create(); /* 系统表 */
     x.durable = false;
     x.elapsed_msec = elapsed_msec;
     x.timeout_msec = LLONG_MAX;
@@ -144,12 +147,12 @@ ovsdb_execute(struct ovsdb *db, const struct ovsdb_session *session,
         /* Parse and execute operation. */
         ovsdb_parser_init(&parser, operation,
                           "ovsdb operation %"PRIuSIZE" of %"PRIuSIZE, i, n_operations);
-        op = ovsdb_parser_member(&parser, "op", OP_ID);
+        op = ovsdb_parser_member(&parser, "op", OP_ID); /* op代表的是动作 */
         result = json_object_create();
         if (op) {
             const char *op_name = json_string(op);
             ovsdb_operation_executor *executor = lookup_executor(op_name);
-            if (executor) {
+            if (executor) { /* 找到对应的回调,执行相应的动作 */
                 error = executor(&x, &parser, result);
             } else {
                 ovsdb_parser_raise_error(&parser, "No operation \"%s\"",
@@ -278,6 +281,9 @@ parse_row(const struct json *json, const struct ovsdb_table *table,
     }
 }
 
+/* 执行插入操作
+ * @param x 操作的上下文
+ */
 static struct ovsdb_error *
 ovsdb_execute_insert(struct ovsdb_execution *x, struct ovsdb_parser *parser,
                      struct json *result)
@@ -288,9 +294,10 @@ ovsdb_execute_insert(struct ovsdb_execution *x, struct ovsdb_parser *parser,
     struct ovsdb_error *error;
     struct uuid row_uuid;
 
-    table = parse_table(x, parser, "table");
+    table = parse_table(x, parser, "table"); /* 需要对哪张表进行操作 */
+    /* 关于uuid-name这种东西,其实就是给行起了一个别名,可以通过uuid-name快速定位这一行 */
     uuid_name = ovsdb_parser_member(parser, "uuid-name", OP_ID | OP_OPTIONAL);
-    row_json = ovsdb_parser_member(parser, "row", OP_OBJECT);
+    row_json = ovsdb_parser_member(parser, "row", OP_OBJECT); /* 行对应的json串 */
     error = ovsdb_parser_get_error(parser);
     if (error) {
         return error;
@@ -300,7 +307,7 @@ ovsdb_execute_insert(struct ovsdb_execution *x, struct ovsdb_parser *parser,
         struct ovsdb_symbol *symbol;
 
         symbol = ovsdb_symbol_table_insert(x->symtab, json_string(uuid_name));
-        if (symbol->created) {
+        if (symbol->created) { /* created表示已经存在一个名为uuid_name的行了,不能重复 */
             return ovsdb_syntax_error(uuid_name, "duplicate uuid-name",
                                       "This \"uuid-name\" appeared on an "
                                       "earlier \"insert\" operation.");
@@ -312,7 +319,7 @@ ovsdb_execute_insert(struct ovsdb_execution *x, struct ovsdb_parser *parser,
     }
 
     if (!error) {
-        error = parse_row(row_json, table, x->symtab, &row, NULL);
+        error = parse_row(row_json, table, x->symtab, &row, NULL); /* 解析列的数据 */
     }
     if (!error) {
         /* Check constraints for columns not included in "row", in case the
@@ -349,6 +356,8 @@ ovsdb_execute_insert(struct ovsdb_execution *x, struct ovsdb_parser *parser,
     return error;
 }
 
+
+/* 执行select操作 */
 static struct ovsdb_error *
 ovsdb_execute_select(struct ovsdb_execution *x, struct ovsdb_parser *parser,
                      struct json *result)
@@ -360,16 +369,16 @@ ovsdb_execute_select(struct ovsdb_execution *x, struct ovsdb_parser *parser,
     struct ovsdb_column_set sort = OVSDB_COLUMN_SET_INITIALIZER;
     struct ovsdb_error *error;
 
-    table = parse_table(x, parser, "table");
-    where = ovsdb_parser_member(parser, "where", OP_ARRAY);
+    table = parse_table(x, parser, "table"); /* 查询哪张表 */
+    where = ovsdb_parser_member(parser, "where", OP_ARRAY); /* 查询条件 */
     columns_json = ovsdb_parser_member(parser, "columns",
                                        OP_ARRAY | OP_OPTIONAL);
-    sort_json = ovsdb_parser_member(parser, "sort", OP_ARRAY | OP_OPTIONAL);
+    sort_json = ovsdb_parser_member(parser, "sort", OP_ARRAY | OP_OPTIONAL); /* 排序规则 */
 
     error = ovsdb_parser_get_error(parser);
     if (!error) {
         error = ovsdb_condition_from_json(table->schema, where, x->symtab,
-                                          &condition);
+                                          &condition); /* 解析condition */
     }
     if (!error) {
         error = ovsdb_column_set_from_json(columns_json, table->schema,
@@ -543,11 +552,15 @@ delete_row_cb(const struct ovsdb_row *row, void *dr_)
     struct delete_row_cbdata *dr = dr_;
 
     dr->n_matches++;
+    /* 进行删除操作 */
     ovsdb_txn_row_delete(dr->txn, row);
 
     return true;
 }
 
+/* 执行删除操作
+ *
+ */
 static struct ovsdb_error *
 ovsdb_execute_delete(struct ovsdb_execution *x, struct ovsdb_parser *parser,
                      struct json *result)
@@ -557,7 +570,7 @@ ovsdb_execute_delete(struct ovsdb_execution *x, struct ovsdb_parser *parser,
     struct ovsdb_condition condition = OVSDB_CONDITION_INITIALIZER;
     struct ovsdb_error *error;
 
-    where = ovsdb_parser_member(parser, "where", OP_ARRAY);
+    where = ovsdb_parser_member(parser, "where", OP_ARRAY); /* 匹配条件 */
     table = parse_table(x, parser, "table");
     error = ovsdb_parser_get_error(parser);
     if (!error) {

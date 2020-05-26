@@ -97,7 +97,7 @@ ovsdb_row_destroy(struct ovsdb_row *row)
             list_remove(&weak->dst_node);
             free(weak);
         }
-		
+
         LIST_FOR_EACH_SAFE (weak, next, src_node, &row->src_refs) {
             list_remove(&weak->src_node);
             list_remove(&weak->dst_node);
@@ -403,6 +403,7 @@ ovsdb_row_hash_contains_all(const struct ovsdb_row_hash *a,
 bool
 ovsdb_row_hash_insert(struct ovsdb_row_hash *rh, const struct ovsdb_row *row)
 {
+    /* 计算出hash值,然后进行插入 */
     size_t hash = ovsdb_row_hash_columns(row, &rh->columns, 0);
     return ovsdb_row_hash_insert__(rh, row, hash);
 }

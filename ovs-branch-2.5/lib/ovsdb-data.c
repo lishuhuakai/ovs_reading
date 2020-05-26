@@ -1886,6 +1886,10 @@ ovsdb_symbol_table_put(struct ovsdb_symbol_table *symtab, const char *name,
     return symbol;
 }
 
+/* 往符号表中插入数据
+ * @param symtab 待操作的符号表
+ * @param name 符号的名称
+ */
 struct ovsdb_symbol *
 ovsdb_symbol_table_insert(struct ovsdb_symbol_table *symtab,
                           const char *name)

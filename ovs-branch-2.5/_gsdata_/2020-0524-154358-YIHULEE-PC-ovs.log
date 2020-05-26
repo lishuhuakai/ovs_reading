@@ -1,0 +1,9 @@
+2020-05-24 15:43:59: -- 分析开始 On File Change, After Delay
+2020-05-24 15:43:59: Do Not Propagate Deletions: 1-way deletions reverted: 1
+2020-05-24 15:43:59: 变更：2， 冲突：0， 复制时间：0， 复制状态：0， 错误： 0, All: 1415
+2020-05-24 15:43:59: Left to Right: Copy File: 2 
+2020-05-24 15:43:59: == 同步开始由 On File Change, After Delay
+2020-05-24 15:44:00: 覆盖复制 'G:/code/ovs_reading/ovs-branch-2.5/lib/ovsdb-types.c' -> 'sftp://200.200.95.156/home/pi/ovs_reading/lib/ovsdb-types.c' (20,479)
+2020-05-24 15:44:00: 覆盖复制 'G:/code/ovs_reading/ovs-branch-2.5/lib/ovsdb-types.h' -> 'sftp://200.200.95.156/home/pi/ovs_reading/lib/ovsdb-types.h' (8,525)
+2020-05-24 15:44:00: == 同步完成. 历时: 00:00:02, 速度: 0.00/s, 完成: 2, 错误: 0
+2020-05-24 15:44:00: 

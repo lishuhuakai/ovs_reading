@@ -4148,6 +4148,7 @@ test-ovsdb: syntax "["i","bad"]": syntax error: bad is not a valid column name
 1322. ovsdb-query.at:537:  ok
 
 
+======================事务操作
 OVSDB -- transactions
 
 1323. ovsdb-transaction.at:3: testing empty table, empty transaction ...
@@ -4779,6 +4780,7 @@ stdout:
 ./ovsdb-execution.at:1101: ${PERL} $srcdir/uuidfilt.pl stdout
 1359. ovsdb-execution.at:1101:  ok
 
+==================================索引的一致性检查=========================
 1360. ovsdb-execution.at:1101: testing index uniqueness checking ...
 ./ovsdb-execution.at:1101: test-ovsdb execute "`ordinal_schema`"  '["ordinals",
       {"op": "insert",

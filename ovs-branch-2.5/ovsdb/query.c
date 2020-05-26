@@ -54,11 +54,16 @@ ovsdb_query(struct ovsdb_table *table, const struct ovsdb_condition *cnd,
     }
 }
 
+/* 查询的回调函数
+ * @param results_ 结果集
+ * @param row 查询到的记录
+ */
 static bool
 query_row_set_cb(const struct ovsdb_row *row, void *results_)
 {
     struct ovsdb_row_set *results = results_;
-    ovsdb_row_set_add_row(results, row);
+
+    ovsdb_row_set_add_row(results, row); /* 将查询的结果直接放入查询集合内 */
     return true;
 }
 
@@ -78,13 +83,19 @@ query_distinct_cb(const struct ovsdb_row *row, void *hash_)
     return true;
 }
 
+/* 执行查询操作
+ * @param table 待查询的数据库
+ * @param condition 查询条件
+ * @param columns 待查询的列
+ * @param results 查询的结果
+ */
 void
 ovsdb_query_distinct(struct ovsdb_table *table,
                      const struct ovsdb_condition *condition,
                      const struct ovsdb_column_set *columns,
                      struct ovsdb_row_set *results)
 {
-    if (!columns || ovsdb_column_set_contains(columns, OVSDB_COL_UUID)) {
+    if (!columns || ovsdb_column_set_contains(columns, OVSDB_COL_UUID)) { /* 包含uuid,或者干脆全部的列 */
         /* All the result rows are guaranteed to be distinct anyway. */
         ovsdb_query_row_set(table, condition, results);
         return;
@@ -94,6 +105,7 @@ ovsdb_query_distinct(struct ovsdb_table *table,
         struct ovsdb_row_hash hash;
 
         ovsdb_row_hash_init(&hash, columns);
+        /* 需要查询出不一样的结果 */
         ovsdb_query(table, condition, query_distinct_cb, &hash);
         HMAP_FOR_EACH (node, hmap_node, &hash.rows) {
             ovsdb_row_set_add_row(results, node->row);
