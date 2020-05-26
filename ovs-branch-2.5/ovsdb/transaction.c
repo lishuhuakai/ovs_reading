@@ -118,10 +118,15 @@ ovsdb_txn_free(struct ovsdb_txn *txn)
     free(txn);
 }
 
+/* 取消事务行
+ * @param txn_row 事务行
+ * @param txn 事务
+ */
 static struct ovsdb_error *
 ovsdb_txn_row_abort(struct ovsdb_txn *txn OVS_UNUSED,
                     struct ovsdb_txn_row *txn_row)
 {
+	/* 核心思想是将老的重新插入,将新的移除 */
     struct ovsdb_row *old = txn_row->old;
     struct ovsdb_row *new = txn_row->new;
 
@@ -167,7 +172,9 @@ ovsdb_row_from_index_node(struct hmap_node *index_node,
 {
     return (void *) ((char *) index_node - ovsdb_row_index_offset__(table, i));
 }
-
+/* 取消事务
+ * 
+ */
 void
 ovsdb_txn_abort(struct ovsdb_txn *txn)
 {
@@ -404,25 +411,31 @@ update_ref_counts(struct ovsdb_txn *txn)
     return for_each_txn_row(txn, check_ref_count);
 }
 
+/* 执行事务提交操作
+ * @param txn 事务
+ * @param txn_row 事务行
+ */
 static struct ovsdb_error *
 ovsdb_txn_row_commit(struct ovsdb_txn *txn OVS_UNUSED,
                      struct ovsdb_txn_row *txn_row)
 {
     size_t n_indexes = txn_row->table->schema->n_indexes;
 
-    if (txn_row->old) {
+    if (txn_row->old) { /* 老的行存在 */
         size_t i;
 
         for (i = 0; i < n_indexes; i++) {
             struct hmap_node *node = ovsdb_row_get_index_node(txn_row->old, i);
+			/* 从索引中移除 */
             hmap_remove(&txn_row->table->indexes[i], node);
         }
     }
-    if (txn_row->new) {
+    if (txn_row->new) { /* 新的行存在 */
         size_t i;
 
         for (i = 0; i < n_indexes; i++) {
             struct hmap_node *node = ovsdb_row_get_index_node(txn_row->new, i);
+			/* 索引插入 */
             hmap_insert(&txn_row->table->indexes[i], node, node->hash);
         }
     }
@@ -437,6 +450,9 @@ ovsdb_txn_row_commit(struct ovsdb_txn *txn OVS_UNUSED,
     return NULL;
 }
 
+/* 添加弱引用
+ * src->dst
+ */
 static void
 add_weak_ref(struct ovsdb_txn *txn,
              const struct ovsdb_row *src_, const struct ovsdb_row *dst_)
@@ -481,7 +497,7 @@ assess_weak_refs(struct ovsdb_txn *txn, struct ovsdb_txn_row *txn_row)
         struct ovsdb_weak_ref *weak, *next;
 		/* 遍历引用关系 */
         LIST_FOR_EACH_SAFE (weak, next, dst_node, &txn_row->old->dst_refs) {
-            if (!weak->src->txn_row) { /* 引用此 */
+            if (!weak->src->txn_row) { /* 引用此行的行不在事务内 */
                 ovsdb_txn_row_modify(txn, weak->src);
             }
         }
@@ -493,7 +509,7 @@ assess_weak_refs(struct ovsdb_txn *txn, struct ovsdb_txn_row *txn_row)
          * references. */
         return NULL;
     }
-
+	/* 获得对应的表 */
     table = txn_row->table;
     SHASH_FOR_EACH (node, &table->schema->columns) {
         const struct ovsdb_column *column = node->data;
@@ -503,12 +519,13 @@ assess_weak_refs(struct ovsdb_txn *txn, struct ovsdb_txn_row *txn_row)
 
         orig_n = datum->n;
 
-        if (ovsdb_base_type_is_weak_ref(&column->type.key)) {
+        if (ovsdb_base_type_is_weak_ref(&column->type.key)) { /* 类型为弱引用  */
             for (i = 0; i < datum->n; ) {
                 const struct ovsdb_row *row;
-
+				/* 获取被引用的数据 */
                 row = ovsdb_table_get_row(column->type.key.u.uuid.refTable,
                                           &datum->keys[i].uuid);
+				/* 添加一个引用关系 */
                 if (row) {
                     add_weak_ref(txn, txn_row->new, row);
                     i++;
@@ -520,7 +537,7 @@ assess_weak_refs(struct ovsdb_txn *txn, struct ovsdb_txn_row *txn_row)
                 }
             }
         }
-
+		/* 值的类型为弱引用 */
         if (ovsdb_base_type_is_weak_ref(&column->type.value)) {
             for (i = 0; i < datum->n; ) {
                 const struct ovsdb_row *row;
@@ -528,6 +545,7 @@ assess_weak_refs(struct ovsdb_txn *txn, struct ovsdb_txn_row *txn_row)
                 row = ovsdb_table_get_row(column->type.value.u.uuid.refTable,
                                           &datum->values[i].uuid);
                 if (row) {
+					/* txn_row->new引用row */
                     add_weak_ref(txn, txn_row->new, row);
                     i++;
                 } else {
@@ -538,8 +556,8 @@ assess_weak_refs(struct ovsdb_txn *txn, struct ovsdb_txn_row *txn_row)
                 }
             }
         }
-
-        if (datum->n != orig_n) {
+		
+        if (datum->n != orig_n) { /* 值的个数发生了更改 */
             bitmap_set1(txn_row->changed, column->index);
             ovsdb_datum_sort_assert(datum, column->type.key.type);
             if (datum->n < column->type.n_min) {
@@ -718,13 +736,16 @@ duplicate_index_row(const struct ovsdb_column_set *index,
     return error;
 }
 
+/* 检查索引的唯一性
+ *
+ */
 static struct ovsdb_error * OVS_WARN_UNUSED_RESULT
 check_index_uniqueness(struct ovsdb_txn *txn OVS_UNUSED,
                        struct ovsdb_txn_row *txn_row)
 {
     struct ovsdb_txn_table *txn_table = txn_row->table->txn_table;
     struct ovsdb_table *table = txn_row->table;
-    struct ovsdb_row *row = txn_row->new;
+    struct ovsdb_row *row = txn_row->new; /* 新的行 */
     size_t i;
 
     if (!row) {
@@ -735,18 +756,20 @@ check_index_uniqueness(struct ovsdb_txn *txn OVS_UNUSED,
         const struct ovsdb_column_set *index = &table->schema->indexes[i];
         struct ovsdb_row *irow;
         uint32_t hash;
-
+		/* 计算hash值 */
         hash = ovsdb_row_hash_columns(row, index, 0);
+		/* 在事务表中要查一次,在真实表中也要查一次 */
         irow = ovsdb_index_search(&txn_table->txn_indexes[i], row, i, hash);
+		/* 如果在索引中已经存在对应的行,说明索引不唯一 */
         if (irow) {
             return duplicate_index_row(index, irow, row);
         }
-
+	
         irow = ovsdb_index_search(&table->indexes[i], row, i, hash);
         if (irow && !irow->txn_row) {
             return duplicate_index_row(index, irow, row);
         }
-
+		/* 索引的插入 */
         hmap_insert(&txn_table->txn_indexes[i],
                     ovsdb_row_get_index_node(row, i), hash);
     }
@@ -944,21 +967,26 @@ ovsdb_txn_row_create(struct ovsdb_txn *txn, struct ovsdb_table *table,
     return txn_row;
 }
 
+/* 修改txn_row
+ *  
+ */
 struct ovsdb_row *
 ovsdb_txn_row_modify(struct ovsdb_txn *txn, const struct ovsdb_row *ro_row_)
 {
     struct ovsdb_row *ro_row = CONST_CAST(struct ovsdb_row *, ro_row_);
 
-    if (ro_row->txn_row) {
+    if (ro_row->txn_row) { /* ro_row已经位于事务之中,就不再处理 */
         ovs_assert(ro_row == ro_row->txn_row->new);
         return ro_row;
     } else {
         struct ovsdb_table *table = ro_row->table;
         struct ovsdb_row *rw_row;
 
-        rw_row = ovsdb_row_clone(ro_row);
+        rw_row = ovsdb_row_clone(ro_row); /* 先拷贝一行 */
         rw_row->n_refs = ro_row->n_refs;
+		/* old -> ro_row, new -> rw_row */
         ovsdb_txn_row_create(txn, table, ro_row, rw_row);
+		/* 用新的行替换旧的行 */
         hmap_replace(&table->rows, &ro_row->hmap_node, &rw_row->hmap_node);
 
         return rw_row;

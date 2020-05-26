@@ -1300,6 +1300,7 @@ do_parse_schema(struct ovs_cmdl_context *ctx)
     ovsdb_schema_destroy(schema);
 }
 
+/* 执行相应的任务 */
 static void
 do_execute(struct ovs_cmdl_context *ctx)
 {
@@ -1312,7 +1313,7 @@ do_execute(struct ovs_cmdl_context *ctx)
     json = parse_json(ctx->argv[1]);
     check_ovsdb_error(ovsdb_schema_from_json(json, &schema));
     json_destroy(json);
-    db = ovsdb_create(schema);
+    db = ovsdb_create(schema); /* 创建一个数据库 */
 
     for (i = 2; i < ctx->argc; i++) {
         struct json *params, *result;

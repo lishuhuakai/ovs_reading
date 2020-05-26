@@ -92,6 +92,9 @@ lookup_executor(const char *name)
     return NULL;
 }
 
+/* 执行对应的操作
+ * @param db 待操作
+ */
 struct json *
 ovsdb_execute(struct ovsdb *db, const struct ovsdb_session *session,
               const struct json *params,

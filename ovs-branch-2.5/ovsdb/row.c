@@ -91,13 +91,13 @@ ovsdb_row_destroy(struct ovsdb_row *row)
         const struct ovsdb_table *table = row->table;
         struct ovsdb_weak_ref *weak, *next;
         const struct shash_node *node;
-
+		/* 删除各种引用关系 */
         LIST_FOR_EACH_SAFE (weak, next, dst_node, &row->dst_refs) {
             list_remove(&weak->src_node);
             list_remove(&weak->dst_node);
             free(weak);
         }
-
+		
         LIST_FOR_EACH_SAFE (weak, next, src_node, &row->src_refs) {
             list_remove(&weak->src_node);
             list_remove(&weak->dst_node);
