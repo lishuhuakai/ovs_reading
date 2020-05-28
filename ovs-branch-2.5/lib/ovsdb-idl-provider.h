@@ -26,7 +26,9 @@
 struct ovsdb_idl_row {
     struct hmap_node hmap_node; /* In struct ovsdb_idl_table's 'rows'. */
     struct uuid uuid;           /* Row "_uuid" field. */
+    /* 前向引用,引用的源头 */
     struct ovs_list src_arcs;   /* Forward arcs (ovsdb_idl_arc.src_node). */
+    /* 反向引用,被别人引用 */
     struct ovs_list dst_arcs;   /* Backward arcs (ovsdb_idl_arc.dst_node). */
     struct ovsdb_idl_table *table; /* Containing table. */
     struct ovsdb_datum *old;    /* Committed data (null if orphaned). */

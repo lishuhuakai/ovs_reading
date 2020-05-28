@@ -360,7 +360,7 @@ ovsdb_idl_run(struct ovsdb_idl *idl)
         }
 
         if (msg->type == JSONRPC_NOTIFY
-            && !strcmp(msg->method, "update") 
+            && !strcmp(msg->method, "update")
             && msg->params->type == JSON_ARRAY
             && msg->params->u.array.n == 2
             && msg->params->u.array.elems[0]->type == JSON_NULL) {
@@ -371,7 +371,7 @@ ovsdb_idl_run(struct ovsdb_idl *idl)
                    && idl->request_id
                    && json_equal(idl->request_id, msg->id)) {
             switch (idl->state) {
-            case IDL_S_SCHEMA_REQUESTED:
+            case IDL_S_SCHEMA_REQUESTED: /* 获取表的数据 */
                 /* Reply to our "get_schema" request. */
                 json_destroy(idl->request_id);
                 idl->request_id = NULL;
@@ -859,6 +859,9 @@ parse_schema(const struct json *schema_json)
     return schema;
 }
 
+/* 向ovsdb发送请求monitor数据库表的请求
+ *
+ */
 static void
 ovsdb_idl_send_monitor_request(struct ovsdb_idl *idl,
                                const struct json *schema_json)
@@ -881,9 +884,9 @@ ovsdb_idl_send_monitor_request(struct ovsdb_idl *idl,
                         : NULL);
 
         columns = table->need_table ? json_array_create_empty() : NULL;
-        for (j = 0; j < tc->n_columns; j++) {
+        for (j = 0; j < tc->n_columns; j++) { /* 遍历列 */
             const struct ovsdb_idl_column *column = &tc->columns[j];
-            if (table->modes[j] & OVSDB_IDL_MONITOR) {
+            if (table->modes[j] & OVSDB_IDL_MONITOR) { /* 如果需要监视表 */
                 if (table_schema
                     && !sset_contains(table_schema, column->name)) {
                     VLOG_WARN("%s table in %s database lacks %s column "
@@ -942,7 +945,7 @@ ovsdb_idl_parse_update(struct ovsdb_idl *idl, const struct json *table_updates)
     }
 }
 /* 解析数据更新
- * 
+ *
  */
 static struct ovsdb_error *
 ovsdb_idl_parse_update__(struct ovsdb_idl *idl,
@@ -993,7 +996,7 @@ ovsdb_idl_parse_update__(struct ovsdb_idl *idl,
                                           table->class->name,
                                           table_node->name);
             }
-
+            /* 一旦更新,就存在老的数据和新的数据 */
             old_json = shash_find_data(json_object(row_update), "old");
             new_json = shash_find_data(json_object(row_update), "new");
             if (old_json && old_json->type != JSON_OBJECT) {
@@ -1036,7 +1039,9 @@ ovsdb_idl_get_row(struct ovsdb_idl_table *table, const struct uuid *uuid)
 }
 
 /* Returns true if a column with mode OVSDB_IDL_MODE_RW changed, false
- * otherwise. */
+ * otherwise.
+ * 处理数据的更新
+ */
 static bool
 ovsdb_idl_process_update(struct ovsdb_idl_table *table,
                          const struct uuid *uuid, const struct json *old,
@@ -1044,7 +1049,7 @@ ovsdb_idl_process_update(struct ovsdb_idl_table *table,
 {
     struct ovsdb_idl_row *row;
 
-    row = ovsdb_idl_get_row(table, uuid);
+    row = ovsdb_idl_get_row(table, uuid); /* 通过uuid获取到行 */
     if (!new) {
         /* Delete row. */
         if (row && !ovsdb_idl_row_is_orphan(row)) {
@@ -1100,7 +1105,7 @@ ovsdb_idl_row_update(struct ovsdb_idl_row *row, const struct json *row_json,
     bool changed = false;
 
     SHASH_FOR_EACH (node, json_object(row_json)) {
-        const char *column_name = node->name;
+        const char *column_name = node->name; /* 列名 */
         const struct ovsdb_idl_column *column;
         struct ovsdb_datum datum;
         struct ovsdb_error *error;
@@ -1111,23 +1116,23 @@ ovsdb_idl_row_update(struct ovsdb_idl_row *row, const struct json *row_json,
                          column_name, UUID_ARGS(&row->uuid));
             continue;
         }
-
+        /* 解析数据 */
         error = ovsdb_datum_from_json(&datum, &column->type, node->data, NULL);
         if (!error) {
             unsigned int column_idx = column - table->class->columns;
             struct ovsdb_datum *old = &row->old[column_idx];
 
-            if (!ovsdb_datum_equals(old, &datum, &column->type)) {
+            if (!ovsdb_datum_equals(old, &datum, &column->type)) { /* 新旧数据发生了更改 */
                 ovsdb_datum_swap(old, &datum);
-                if (table->modes[column_idx] & OVSDB_IDL_ALERT) {
+                if (table->modes[column_idx] & OVSDB_IDL_ALERT) { /* 而且用户配置了==>需要得到通知 */
                     changed = true;
                     row->change_seqno[change]
                         = row->table->change_seqno[change]
-                        = row->table->idl->change_seqno + 1;
-                    if (table->modes[column_idx] & OVSDB_IDL_TRACK) {
+                        = row->table->idl->change_seqno + 1; /* 序列值发生了更改 */
+                    if (table->modes[column_idx] & OVSDB_IDL_TRACK) { /* 这一列需要被追踪 */
                         if (list_is_empty(&row->track_node)) {
                             list_push_front(&row->table->track_list,
-                                            &row->track_node);
+                                            &row->track_node); /* 放入追踪列表之中 */
                         }
                     }
                 }
@@ -1155,6 +1160,9 @@ ovsdb_idl_row_update(struct ovsdb_idl_row *row, const struct json *row_json,
  * they can appear transiently as changes from the database are received (the
  * database doesn't try to topologically sort them and circular references mean
  * it isn't always possible anyhow).
+ * 当row A通过一个具有refTable约束的列引用row B,但是row B事实上不存在,row B就被称之为
+ * 孤立行(orphan row)
+ * Orphan row不应持久化,因为数据库强制执行参照完整性.
  *
  * This function returns true if 'row' is an orphan row, otherwise false.
  */
@@ -1186,6 +1194,7 @@ ovsdb_idl_row_exists(const struct ovsdb_idl_row *row)
     return row->new != NULL;
 }
 
+/* 进行数据的解析操作 */
 static void
 ovsdb_idl_row_parse(struct ovsdb_idl_row *row)
 {
@@ -1256,11 +1265,14 @@ ovsdb_idl_row_clear_arcs(struct ovsdb_idl_row *row, bool destroy_dsts)
      * that this causes to be unreferenced, if tracking is not enabled.
      * If tracking is enabled, orphaned nodes are removed from hmap but not
      * freed.
+     * 删除所有的前向引用(forward arcs),如果destroy_dsts为真,删除孤立行(orphaned rows)
+     * 如果追踪机制(tracking)启用了,这将导致未引用 (找不到引用的行数据)
+     * 如果追踪机制(tracking)启用了,孤立节点(orphaned node)将会从hmap中移除,但是不会释放
      */
     LIST_FOR_EACH_SAFE (arc, next, src_node, &row->src_arcs) {
         list_remove(&arc->dst_node);
-        if (destroy_dsts
-            && ovsdb_idl_row_is_orphan(arc->dst)
+        if (destroy_dsts /* 如果需要对目的进行清理操作 */
+            && ovsdb_idl_row_is_orphan(arc->dst) /* 对端实际不存在 */
             && list_is_empty(&arc->dst->dst_arcs)) {
             ovsdb_idl_row_destroy(arc->dst);
         }
@@ -1269,7 +1281,9 @@ ovsdb_idl_row_clear_arcs(struct ovsdb_idl_row *row, bool destroy_dsts)
     list_init(&row->src_arcs);
 }
 
-/* Force nodes that reference 'row' to reparse. */
+/* Force nodes that reference 'row' to reparse.
+ * 解析反向引用
+ */
 static void
 ovsdb_idl_row_reparse_backrefs(struct ovsdb_idl_row *row)
 {
@@ -1306,6 +1320,7 @@ ovsdb_idl_row_create__(const struct ovsdb_idl_table_class *class)
     return row;
 }
 
+/* 创建一行数据 */
 static struct ovsdb_idl_row *
 ovsdb_idl_row_create(struct ovsdb_idl_table *table, const struct uuid *uuid)
 {
@@ -1322,12 +1337,12 @@ ovsdb_idl_row_destroy(struct ovsdb_idl_row *row)
     if (row) {
         ovsdb_idl_row_clear_old(row);
         hmap_remove(&row->table->rows, &row->hmap_node);
-        if (ovsdb_idl_track_is_set(row->table)) {
+        if (ovsdb_idl_track_is_set(row->table)) { /* 设定了追踪 */
             row->change_seqno[OVSDB_IDL_CHANGE_DELETE]
                 = row->table->change_seqno[OVSDB_IDL_CHANGE_DELETE]
                 = row->table->idl->change_seqno + 1;
         }
-        if (list_is_empty(&row->track_node)) {
+        if (list_is_empty(&row->track_node)) { /* 将节点放入表的track_list中 */
             list_push_front(&row->table->track_list, &row->track_node);
         }
     }
@@ -1354,6 +1369,10 @@ ovsdb_idl_row_destroy_postprocess(struct ovsdb_idl *idl)
     }
 }
 
+/*
+ * 插入新的行数据
+ *
+ */
 static void
 ovsdb_idl_insert_row(struct ovsdb_idl_row *row, const struct json *row_json)
 {
@@ -1363,6 +1382,7 @@ ovsdb_idl_insert_row(struct ovsdb_idl_row *row, const struct json *row_json)
     ovs_assert(!row->old && !row->new);
     row->old = row->new = xmalloc(class->n_columns * sizeof *row->old);
     for (i = 0; i < class->n_columns; i++) {
+        /* 先初始化原始的值 */
         ovsdb_datum_init_default(&row->old[i], &class->columns[i].type);
     }
     ovsdb_idl_row_update(row, row_json, OVSDB_IDL_CHANGE_INSERT);
