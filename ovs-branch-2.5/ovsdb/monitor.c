@@ -47,6 +47,7 @@ static struct hmap ovsdb_monitors = HMAP_INITIALIZER(&ovsdb_monitors);
  */
 
 /* A collection of tables being monitored. */
+/* 用于记录被关注的表 */
 struct ovsdb_monitor {
     struct ovsdb_replica replica;
     struct shash tables;     /* Holds "struct ovsdb_monitor_table"s. */
@@ -104,15 +105,16 @@ struct ovsdb_monitor_changes {
 };
 
 /* A particular table being monitored. */
+/* 记录以怎么样一种方式来关注这张表 */
 struct ovsdb_monitor_table {
-    const struct ovsdb_table *table;
+    const struct ovsdb_table *table; /* 关注的表 */
 
     /* This is the union (bitwise-OR) of the 'select' values in all of the
      * members of 'columns' below. */
-    enum ovsdb_monitor_selection select;
+    enum ovsdb_monitor_selection select; /* 关注的操作 */
 
     /* Columns being monitored. */
-    struct ovsdb_monitor_column *columns;
+    struct ovsdb_monitor_column *columns; /* 关注的列 */
     size_t n_columns;
 
     /* Contains 'ovsdb_monitor_changes' indexed by 'transaction'. */
@@ -318,6 +320,9 @@ ovsdb_monitor_create(struct ovsdb *db,
     return dbmon;
 }
 
+/* 在monitor中添加某张表
+ *
+ */
 void
 ovsdb_monitor_add_table(struct ovsdb_monitor *m,
                         const struct ovsdb_table *table)
@@ -330,6 +335,9 @@ ovsdb_monitor_add_table(struct ovsdb_monitor *m,
     hmap_init(&mt->changes);
 }
 
+/* 添加关注的列
+ *
+ */
 void
 ovsdb_monitor_add_column(struct ovsdb_monitor *dbmon,
                          const struct ovsdb_table *table,
@@ -350,7 +358,7 @@ ovsdb_monitor_add_column(struct ovsdb_monitor *dbmon,
     mt->select |= select;
     c = &mt->columns[mt->n_columns++];
     c->column = column;
-    c->select = select;
+    c->select = select; /* 所关注的具体的某一种操作 */
 }
 
 /* Check for duplicated column names. Return the first
@@ -396,6 +404,10 @@ ovsdb_monitor_table_add_changes(struct ovsdb_monitor_table *mt,
     return changes;
 };
 
+/*
+ * 查找更改
+ * @param transaction 事务id
+ */
 static struct ovsdb_monitor_changes *
 ovsdb_monitor_table_find_changes(struct ovsdb_monitor_table *mt,
                                  uint64_t transaction)
@@ -706,6 +718,12 @@ ovsdb_monitor_init_aux(struct ovsdb_monitor_aux *aux,
     aux->efficacy = OVSDB_CHANGES_NO_EFFECT;
 }
 
+/* 监视的数据发生了更改
+ * @param old 旧的行数据
+ * @param new 新的行数据
+ * @param mt 监视表
+ * @param changes 用于记录发生的更改
+ */
 static void
 ovsdb_monitor_changes_update(const struct ovsdb_row *old,
                              const struct ovsdb_row *new,
@@ -821,17 +839,17 @@ ovsdb_monitor_get_initial(const struct ovsdb_monitor *dbmon)
     struct shash_node *node;
 
     ovsdb_monitor_init_aux(&aux, dbmon);
-    SHASH_FOR_EACH (node, &dbmon->tables) {
+    SHASH_FOR_EACH (node, &dbmon->tables) { /* 遍历所关注的表 */
         struct ovsdb_monitor_table *mt = node->data;
 
-        if (mt->select & OJMS_INITIAL) {
+        if (mt->select & OJMS_INITIAL) { /* 关注了初始的值 */
             struct ovsdb_row *row;
             struct ovsdb_monitor_changes *changes;
 
             changes = ovsdb_monitor_table_find_changes(mt, 0);
             if (!changes) {
                 changes = ovsdb_monitor_table_add_changes(mt, 0);
-                HMAP_FOR_EACH (row, hmap_node, &mt->table->rows) {
+                HMAP_FOR_EACH (row, hmap_node, &mt->table->rows) { /* 遍历每一行 */
                     ovsdb_monitor_changes_update(NULL, row, mt, changes);
                 }
             } else {
@@ -968,7 +986,7 @@ ovsdb_monitor_add(struct ovsdb_monitor *new_dbmon)
             return dbmon;
         }
     }
-
+    /* 将关注器插入 */
     hmap_insert(&ovsdb_monitors, &new_dbmon->hmap_node, hash);
     return new_dbmon;
 }

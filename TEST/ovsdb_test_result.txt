@@ -12132,7 +12132,9 @@ stderr:
 2020-05-24T05:48:01Z|00002|jsonrpc|DBG|unix:socket: received reply, result=["ordinals"], id=0
 2020-05-24T05:48:01Z|00003|jsonrpc|DBG|unix:socket: send request, method="get_schema", params=["ordinals"], id=1
 2020-05-24T05:48:01Z|00004|jsonrpc|DBG|unix:socket: received reply, result={"cksum":"12345678 9","name":"ordinals","version":"5.1.3","tables":{"ordinals":{"indexes":[["number"]],"columns":{"number":{"type":"integer"},"name":{"type":"string"}}}}}, id=1
+
 2020-05-24T05:48:01Z|00005|jsonrpc|DBG|unix:socket: send request, method="monitor", params=["ordinals",null,{"ordinals":[{"columns":["name","number","_version"]}]}], id=2
+
 2020-05-24T05:48:01Z|00006|jsonrpc|DBG|unix:socket: received reply, result={"ordinals":{"0791b8b4-56c3-42dd-83c1-e1d9878581cb":{"new":{"name":"ten","number":10,"_version":["uuid","d98917a2-e396-4bc5-8cac-5fcc807fb3bb"]}}}}, id=2
 stdout:
 ./ovsdb-monitor.at:59: ovsdb-client transact unix:socket '["ordinals",
@@ -12172,6 +12174,8 @@ stderr:
 2020-05-24T05:48:02Z|00003|jsonrpc|DBG|unix:socket: send request, method="get_schema", params=["ordinals"], id=1
 2020-05-24T05:48:02Z|00004|jsonrpc|DBG|unix:socket: received reply, result={"cksum":"12345678 9","name":"ordinals","version":"5.1.3","tables":{"ordinals":{"indexes":[["number"]],"columns":{"number":{"type":"integer"},"name":{"type":"string"}}}}}, id=1
 2020-05-24T05:48:02Z|00005|jsonrpc|DBG|unix:socket: send request, method="monitor", params=["ordinals",null,{"ordinals":[{"columns":["name","number","_version"]}]}], id=2
+
+
 2020-05-24T05:48:02Z|00006|jsonrpc|DBG|unix:socket: received reply, result={"ordinals":{"dbcb8c17-4264-4457-a78c-dfac4c251dd5":{"new":{"name":"ten","number":10,"_version":["uuid","74b118e8-96ee-457d-875e-8a20e07eeec8"]}}}}, id=2
 stdout:
 ./ovsdb-monitor.at:77: ovsdb-client transact unix:socket '["ordinals",
@@ -12210,6 +12214,8 @@ stderr:
 2020-05-24T05:48:02Z|00002|jsonrpc|DBG|unix:socket: received reply, result=["ordinals"], id=0
 2020-05-24T05:48:02Z|00003|jsonrpc|DBG|unix:socket: send request, method="get_schema", params=["ordinals"], id=1
 2020-05-24T05:48:02Z|00004|jsonrpc|DBG|unix:socket: received reply, result={"cksum":"12345678 9","name":"ordinals","version":"5.1.3","tables":{"ordinals":{"indexes":[["number"]],"columns":{"number":{"type":"integer"},"name":{"type":"string"}}}}}, id=1
+
+
 2020-05-24T05:48:02Z|00005|jsonrpc|DBG|unix:socket: send request, method="monitor", params=["ordinals",null,{"ordinals":[{"columns":["name","number","_version"]}]}], id=2
 2020-05-24T05:48:02Z|00006|jsonrpc|DBG|unix:socket: received reply, result={"ordinals":{"81879fd5-5dcb-4c5d-a103-2c527a15a1d8":{"new":{"name":"ten","number":10,"_version":["uuid","cb462c5b-210f-46ca-81aa-34d330844018"]}}}}, id=2
 stdout:
@@ -12250,6 +12256,7 @@ stderr:
 2020-05-24T05:48:03Z|00002|jsonrpc|DBG|unix:socket: received reply, result=["ordinals"], id=0
 2020-05-24T05:48:03Z|00003|jsonrpc|DBG|unix:socket: send request, method="get_schema", params=["ordinals"], id=1
 2020-05-24T05:48:03Z|00004|jsonrpc|DBG|unix:socket: received reply, result={"cksum":"12345678 9","name":"ordinals","version":"5.1.3","tables":{"ordinals":{"indexes":[["number"]],"columns":{"number":{"type":"integer"},"name":{"type":"string"}}}}}, id=1
+
 2020-05-24T05:48:03Z|00005|jsonrpc|DBG|unix:socket: send request, method="monitor", params=["ordinals",null,{"ordinals":[{"columns":["name","number","_version"]}]}], id=2
 2020-05-24T05:48:03Z|00006|jsonrpc|DBG|unix:socket: received reply, result={"ordinals":{"dc995c15-f25f-49e9-a775-addfca88c5a1":{"new":{"name":"ten","number":10,"_version":["uuid","fecc03ba-441e-43a7-8805-7bd58832c9cb"]}}}}, id=2
 stdout:
@@ -12480,6 +12487,7 @@ stderr:
 ovsdb -- ovsdb-monitor monitor only some operations
 
 1532. ovsdb-monitor.at:276: testing monitor all operations ...
+# 默认是监视所有的操作
 ./ovsdb-monitor.at:276: ovsdb-tool create db schema
 stderr:
 stdout:
@@ -12497,6 +12505,7 @@ stderr:
 2020-05-24T05:48:05Z|00002|jsonrpc|DBG|unix:socket: received reply, result=["ordinals"], id=0
 2020-05-24T05:48:05Z|00003|jsonrpc|DBG|unix:socket: send request, method="get_schema", params=["ordinals"], id=1
 2020-05-24T05:48:05Z|00004|jsonrpc|DBG|unix:socket: received reply, result={"cksum":"12345678 9","name":"ordinals","version":"5.1.3","tables":{"ordinals":{"indexes":[["number"]],"columns":{"number":{"type":"integer"},"name":{"type":"string"}}}}}, id=1
+## 需要监视这张表
 2020-05-24T05:48:05Z|00005|jsonrpc|DBG|unix:socket: send request, method="monitor", params=["ordinals",null,{"ordinals":[{"columns":["name","number","_version"]}]}], id=2
 2020-05-24T05:48:05Z|00006|jsonrpc|DBG|unix:socket: received reply, result={"ordinals":{"1864aaba-c62f-469f-ad15-c244d64aafcf":{"new":{"name":"ten","number":10,"_version":["uuid","a1d68c1a-eb3e-422d-8956-b2bffd22dbf2"]}}}}, id=2
 stdout:
@@ -12506,7 +12515,7 @@ stdout:
        "row": {"number": 5, "name": "five"}}]'
 stderr:
 stdout:
-[{"uuid":["uuid","209ceacf-ebde-4615-823c-c337dafa5181"]}]
+[{"uuid":["uuid","209ceacf-ebde-4615-823c-c337dafa5181"]}]  # 插入
 ./ovsdb-monitor.at:276: ovsdb-client transact unix:socket '["ordinals",
       {"op": "update",
        "table": "ordinals",
@@ -12551,6 +12560,8 @@ stderr:
 2020-05-24T05:48:05Z|00002|jsonrpc|DBG|unix:socket: received reply, result=["ordinals"], id=0
 2020-05-24T05:48:05Z|00003|jsonrpc|DBG|unix:socket: send request, method="get_schema", params=["ordinals"], id=1
 2020-05-24T05:48:05Z|00004|jsonrpc|DBG|unix:socket: received reply, result={"cksum":"12345678 9","name":"ordinals","version":"5.1.3","tables":{"ordinals":{"indexes":[["number"]],"columns":{"number":{"type":"integer"},"name":{"type":"string"}}}}}, id=1
+
+# 只关注初始化
 2020-05-24T05:48:05Z|00005|jsonrpc|DBG|unix:socket: send request, method="monitor", params=["ordinals",null,{"ordinals":[{"select":{"modify":false,"initial":true,"insert":false,"delete":false},"columns":["name","number","_version"]}]}], id=2
 2020-05-24T05:48:05Z|00006|jsonrpc|DBG|unix:socket: received reply, result={"ordinals":{"bf62e17f-02d5-4cd6-b173-eabb930f685b":{"new":{"name":"ten","number":10,"_version":["uuid","22d33e0e-94af-4d97-a8fd-8dbb2fb45511"]}}}}, id=2
 stdout:

@@ -657,7 +657,7 @@ ovsdb_jsonrpc_lookup_db(const struct ovsdb_jsonrpc_session *s,
     const char *db_name;
     struct ovsdb *db;
 
-    params = json_array(request->params);
+    params = json_array(request->params); /* 解析请求的参数 */
     if (!params->n || params->elems[0]->type != JSON_STRING) {
         error = ovsdb_syntax_error(
             request->params, NULL,
@@ -665,7 +665,8 @@ ovsdb_jsonrpc_lookup_db(const struct ovsdb_jsonrpc_session *s,
         goto error;
     }
 
-    db_name = params->elems[0]->u.string;
+    db_name = params->elems[0]->u.string; /* 数据库的名称 */
+    /* 查找数据库 */
     db = shash_find_data(&s->up.server->dbs, db_name);
     if (!db) {
         error = ovsdb_syntax_error(
@@ -833,6 +834,9 @@ execute_transaction(struct ovsdb_jsonrpc_session *s, struct ovsdb *db,
     return NULL;
 }
 
+/* 解析客户端发送过来的请求
+ *
+ */
 static void
 ovsdb_jsonrpc_session_got_request(struct ovsdb_jsonrpc_session *s,
                                   struct jsonrpc_msg *request)
@@ -845,6 +849,7 @@ ovsdb_jsonrpc_session_got_request(struct ovsdb_jsonrpc_session *s,
             reply = execute_transaction(s, db, request);
         }
     } else if (!strcmp(request->method, "monitor")) {
+        /* 找到要监视的数据库 */
         struct ovsdb *db = ovsdb_jsonrpc_lookup_db(s, request, &reply);
         if (!reply) {
             reply = ovsdb_jsonrpc_monitor_create(s, db, request->params,
@@ -1032,8 +1037,8 @@ ovsdb_jsonrpc_trigger_complete_done(struct ovsdb_jsonrpc_session *s)
 
 /* Jsonrpc front end monitor. */
 struct ovsdb_jsonrpc_monitor {
-    struct ovsdb_jsonrpc_session *session;
-    struct ovsdb *db;
+    struct ovsdb_jsonrpc_session *session; /* 会话信息 */
+    struct ovsdb *db; /* 待操作的数据库 */
     struct hmap_node node;      /* In ovsdb_jsonrpc_session's "monitors". */
     struct json *monitor_id;
     struct ovsdb_monitor *dbmon;
@@ -1065,6 +1070,9 @@ parse_bool(struct ovsdb_parser *parser, const char *name, bool default_value)
     return json ? json_boolean(json) : default_value;
 }
 
+/* 解析关注的列
+ * @param dbmon 关注器
+ */
 static struct ovsdb_error * OVS_WARN_UNUSED_RESULT
 ovsdb_jsonrpc_parse_monitor_request(struct ovsdb_monitor *dbmon,
                                     const struct ovsdb_table *table,
@@ -1079,6 +1087,7 @@ ovsdb_jsonrpc_parse_monitor_request(struct ovsdb_monitor *dbmon,
 
     ovsdb_parser_init(&parser, monitor_request, "table %s", ts->name);
     columns = ovsdb_parser_member(&parser, "columns", OP_ARRAY | OP_OPTIONAL);
+    /* select是用来干什么的? select用于关注操作 */
     select_json = ovsdb_parser_member(&parser, "select",
                                       OP_OBJECT | OP_OPTIONAL);
     error = ovsdb_parser_finish(&parser);
@@ -1106,7 +1115,7 @@ ovsdb_jsonrpc_parse_monitor_request(struct ovsdb_monitor *dbmon,
             return error;
         }
     } else {
-        select = OJMS_INITIAL | OJMS_INSERT | OJMS_DELETE | OJMS_MODIFY;
+        select = OJMS_INITIAL | OJMS_INSERT | OJMS_DELETE | OJMS_MODIFY; /* 默认全部都要关注 */
     }
 
     ovsdb_monitor_table_add_select(dbmon, table, select);
@@ -1141,7 +1150,7 @@ ovsdb_jsonrpc_parse_monitor_request(struct ovsdb_monitor *dbmon,
 
         SHASH_FOR_EACH (node, &ts->columns) {
             const struct ovsdb_column *column = node->data;
-            if (column->index != OVSDB_COL_UUID) {
+            if (column->index != OVSDB_COL_UUID) { /* 默认关注所有的column */
                 ovsdb_monitor_add_column(dbmon, table, column, select,
                                          allocated_columns);
             }
@@ -1151,6 +1160,11 @@ ovsdb_jsonrpc_parse_monitor_request(struct ovsdb_monitor *dbmon,
     return NULL;
 }
 
+/* 构建一个监视器
+ * @param db 待监视的数据库
+ * @param params 相关参数信息
+ * @param request_id 请求的id号
+ */
 static struct jsonrpc_msg *
 ovsdb_jsonrpc_monitor_create(struct ovsdb_jsonrpc_session *s, struct ovsdb *db,
                              struct json *params,
@@ -1168,7 +1182,8 @@ ovsdb_jsonrpc_monitor_create(struct ovsdb_jsonrpc_session *s, struct ovsdb *db,
         goto error;
     }
     monitor_id = params->u.array.elems[1];
-    monitor_requests = params->u.array.elems[2];
+    /* monitor_requests类似于{"ordinals":[{"columns":["name","number","_version"]}]}*/
+    monitor_requests = params->u.array.elems[2]; /*  */
     if (monitor_requests->type != JSON_OBJECT) {
         error = ovsdb_syntax_error(monitor_requests, NULL,
                                    "monitor-requests must be object");
@@ -1185,7 +1200,7 @@ ovsdb_jsonrpc_monitor_create(struct ovsdb_jsonrpc_session *s, struct ovsdb *db,
     m->db = db;
     m->dbmon = ovsdb_monitor_create(db, m);
     m->unflushed = 0;
-    hmap_insert(&s->monitors, &m->node, json_hash(monitor_id, 0));
+    hmap_insert(&s->monitors, &m->node, json_hash(monitor_id, 0)); /* 将monitor加入hash之中 */
     m->monitor_id = json_clone(monitor_id);
 
     SHASH_FOR_EACH (node, json_object(monitor_requests)) {
@@ -1195,7 +1210,7 @@ ovsdb_jsonrpc_monitor_create(struct ovsdb_jsonrpc_session *s, struct ovsdb *db,
         const struct json *mr_value;
         size_t i;
 
-        table = ovsdb_get_table(m->db, node->name);
+        table = ovsdb_get_table(m->db, node->name); /* 要关注的表的名称 */
         if (!table) {
             error = ovsdb_syntax_error(NULL, NULL,
                                        "no table named %s", node->name);
@@ -1244,6 +1259,7 @@ ovsdb_jsonrpc_monitor_create(struct ovsdb_jsonrpc_session *s, struct ovsdb *db,
     }
 
     ovsdb_monitor_get_initial(m->dbmon);
+    /* 将更新打包成json发给客户端 */
     json = ovsdb_jsonrpc_monitor_compose_update(m, true);
     json = json ? json : json_object_create();
     return jsonrpc_create_reply(json, request_id);
