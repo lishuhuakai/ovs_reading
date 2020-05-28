@@ -78,6 +78,7 @@ struct ovsdb_monitor_column {
 };
 
 /* A row that has changed in a monitored table. */
+/* 一个已经在监视表中更改了的表 */
 struct ovsdb_monitor_row {
     struct hmap_node hmap_node; /* In ovsdb_jsonrpc_monitor_table.changes. */
     struct uuid uuid;           /* UUID of row that changed. */

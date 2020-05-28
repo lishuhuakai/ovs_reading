@@ -54,12 +54,15 @@ COVERAGE_DEFINE(txn_error);
 /* An arc from one idl_row to another.  When row A contains a UUID that
  * references row B, this is represented by an arc from A (the source) to B
  * (the destination).
+ * 从一个idl_row指向另一个idl_row,当row A包含row B的UUID,表示row A指向row B
  *
  * Arcs from a row to itself are omitted, that is, src and dst are always
  * different.
+ * 指向的源和目的都是不一样的
  *
  * Arcs are never duplicated, that is, even if there are multiple references
  * from A to B, there is only a single arc from A to B.
+ * 指向绝不重复,也就是说,尽管A和B之间存在多个引用,但是A到B只会有一个指向
  *
  * Arcs are directed: an arc from A to B is the converse of an an arc from B to
  * A.  Both an arc and its converse may both be present, if each row refers
@@ -76,17 +79,18 @@ struct ovsdb_idl_arc {
 };
 
 enum ovsdb_idl_state {
-    IDL_S_SCHEMA_REQUESTED,
+    IDL_S_SCHEMA_REQUESTED, /* 正在请求表数据 */
     IDL_S_MONITOR_REQUESTED,
     IDL_S_MONITORING
 };
 
+/* ovsdb同步句柄 */
 struct ovsdb_idl {
     const struct ovsdb_idl_class *class;
-    struct jsonrpc_session *session;
+    struct jsonrpc_session *session; /* 会话消息 */
     struct shash table_by_name;
     struct ovsdb_idl_table *tables; /* Contains "struct ovsdb_idl_table *"s.*/
-    unsigned int change_seqno;
+    unsigned int change_seqno; /* 序列值 */
     bool verify_write_only;
 
     /* Session state. */
@@ -101,6 +105,7 @@ struct ovsdb_idl {
     struct json *lock_request_id; /* JSON-RPC ID of in-flight lock request. */
 
     /* Transaction support. */
+	/* 事务支持 */
     struct ovsdb_idl_txn *txn;
     struct hmap outstanding_txns;
 };
@@ -186,6 +191,7 @@ static bool ovsdb_idl_track_is_set(struct ovsdb_idl_table *table);
  * in-memory replica of the remote database whose schema is described by
  * 'class'.  (Ordinarily 'class' is compiled from an OVSDB schema automatically
  * by ovsdb-idlc.)
+ * 创建并且返回一个和remote数据库的连接,连接将会包含一个对remote数据库的内存镜像.
  *
  * Passes 'retry' to jsonrpc_session_open().  See that function for
  * documentation.
@@ -194,6 +200,8 @@ static bool ovsdb_idl_track_is_set(struct ovsdb_idl_table *table);
  * database will be replicated by default.  ovsdb_idl_omit() and
  * ovsdb_idl_omit_alert() may be used to selectively drop some columns from
  * monitoring.
+ * 如果monitor_everything_by_default开启,remote数据库的一切都会被镜像过来,ovsdb_idl_omit()
+ * ovsdb_idl_omit_alert()这些函数可以对镜像的内容进行过滤.
  *
  * If 'monitor_everything_by_default' is false, then no columns or tables will
  * be replicated by default.  ovsdb_idl_add_column() and ovsdb_idl_add_table()
@@ -213,6 +221,7 @@ ovsdb_idl_create(const char *remote, const struct ovsdb_idl_class *class,
 
     idl = xzalloc(sizeof *idl);
     idl->class = class;
+	/* 建立和remote数据库的通信 */
     idl->session = jsonrpc_session_open(remote, retry);
     shash_init(&idl->table_by_name);
     idl->tables = xmalloc(class->n_tables * sizeof *idl->tables);
@@ -331,8 +340,8 @@ ovsdb_idl_run(struct ovsdb_idl *idl)
         struct jsonrpc_msg *msg;
         unsigned int seqno;
 
-        seqno = jsonrpc_session_get_seqno(idl->session);
-        if (idl->state_seqno != seqno) {
+        seqno = jsonrpc_session_get_seqno(idl->session); /* 获取序列值 */
+        if (idl->state_seqno != seqno) { /* 序列值发生了更改 */
             idl->state_seqno = seqno;
             json_destroy(idl->request_id);
             idl->request_id = NULL;
@@ -351,11 +360,12 @@ ovsdb_idl_run(struct ovsdb_idl *idl)
         }
 
         if (msg->type == JSONRPC_NOTIFY
-            && !strcmp(msg->method, "update")
+            && !strcmp(msg->method, "update") 
             && msg->params->type == JSON_ARRAY
             && msg->params->u.array.n == 2
             && msg->params->u.array.elems[0]->type == JSON_NULL) {
             /* Database contents changed. */
+			/* 解析数据的更新 */
             ovsdb_idl_parse_update(idl, msg->params->u.array.elems[1]);
         } else if (msg->type == JSONRPC_REPLY
                    && idl->request_id
@@ -542,10 +552,14 @@ add_ref_table(struct ovsdb_idl *idl, const struct ovsdb_base_type *base)
  * ensures that any tables referenced by 'column' will be replicated, even if
  * no columns in that table are selected for replication (see
  * ovsdb_idl_add_table() for more information).
+ * 打开OVSDB_IDL_MONITOR以及OVSDB_IDL_ALERT的开关,在column以及idl上,同时也保证任何被
+ * column引用的表也会被复制,即使那张表没有任何列被复制
  *
  * This function is only useful if 'monitor_everything_by_default' was false in
  * the call to ovsdb_idl_create().  This function should be called between
  * ovsdb_idl_create() and the first call to ovsdb_idl_run().
+ * 这个函数非常有用,如果monitor_everything_by_default被关闭,在调用ovsdb_idl_create的时候.
+ * 这个函数应当在ovsdb_idl_create()以及第一次执行ovsdb_idl_run()之间被调用.
  */
 void
 ovsdb_idl_add_column(struct ovsdb_idl *idl,
@@ -588,7 +602,7 @@ ovsdb_idl_add_table(struct ovsdb_idl *idl,
 }
 
 /* Turns off OVSDB_IDL_ALERT for 'column' in 'idl'.
- *
+ * 关闭掉alert标记
  * This function should be called between ovsdb_idl_create() and the first call
  * to ovsdb_idl_run().
  */
@@ -601,6 +615,7 @@ ovsdb_idl_omit_alert(struct ovsdb_idl *idl,
 
 /* Sets the mode for 'column' in 'idl' to 0.  See the big comment above
  * OVSDB_IDL_MONITOR for details.
+ * 将column的模式设置为0.
  *
  * This function should be called between ovsdb_idl_create() and the first call
  * to ovsdb_idl_run().
@@ -746,7 +761,7 @@ ovsdb_idl_track_clear(const struct ovsdb_idl *idl)
     }
 }
 
-
+/* 向对端发送,用于请求表的数据 */
 static void
 ovsdb_idl_send_schema_request(struct ovsdb_idl *idl)
 {
@@ -909,6 +924,10 @@ ovsdb_idl_send_monitor_request(struct ovsdb_idl *idl,
     jsonrpc_session_send(idl->session, msg);
 }
 
+/* 解析数据的更新
+ * @param table_updates 更新数据
+ * @param idl 句柄信息
+ */
 static void
 ovsdb_idl_parse_update(struct ovsdb_idl *idl, const struct json *table_updates)
 {
@@ -922,7 +941,9 @@ ovsdb_idl_parse_update(struct ovsdb_idl *idl, const struct json *table_updates)
         ovsdb_error_destroy(error);
     }
 }
-
+/* 解析数据更新
+ * 
+ */
 static struct ovsdb_error *
 ovsdb_idl_parse_update__(struct ovsdb_idl *idl,
                          const struct json *table_updates)
@@ -937,7 +958,7 @@ ovsdb_idl_parse_update__(struct ovsdb_idl *idl,
         const struct json *table_update = tables_node->data;
         const struct shash_node *table_node;
         struct ovsdb_idl_table *table;
-
+		/* 首先根据表的名称查找表 */
         table = shash_find_data(&idl->table_by_name, tables_node->name);
         if (!table) {
             return ovsdb_syntax_error(
@@ -952,7 +973,7 @@ ovsdb_idl_parse_update__(struct ovsdb_idl *idl,
                                       "not an object", table->class->name);
         }
         SHASH_FOR_EACH (table_node, json_object(table_update)) {
-            const struct json *row_update = table_node->data;
+            const struct json *row_update = table_node->data; /* 行的数据 */
             const struct json *old_json, *new_json;
             struct uuid uuid;
 

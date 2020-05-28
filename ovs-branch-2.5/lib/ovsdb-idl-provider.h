@@ -41,10 +41,11 @@ struct ovsdb_idl_row {
     struct ovs_list track_node;
 };
 
+/* 用于记录关注的列 */
 struct ovsdb_idl_column {
-    char *name;
-    struct ovsdb_type type;
-    bool mutable;
+    char *name; /* 列的名称 */
+    struct ovsdb_type type; /* 列的类型 */
+    bool mutable; /* 是否可变 */
     void (*parse)(struct ovsdb_idl_row *, const struct ovsdb_datum *);
     void (*unparse)(struct ovsdb_idl_row *);
 };
@@ -58,15 +59,17 @@ struct ovsdb_idl_table_class {
     void (*row_init)(struct ovsdb_idl_row *);
 };
 
+/* 用于镜像关注的表数据 */
 struct ovsdb_idl_table {
-    const struct ovsdb_idl_table_class *class;
+    const struct ovsdb_idl_table_class *class; /* 表的相关信息 */
     unsigned char *modes;    /* OVSDB_IDL_* bitmasks, indexed by column. */
     bool need_table;         /* Monitor table even if no columns are selected
                               * for replication. */
     struct shash columns;    /* Contains "const struct ovsdb_idl_column *"s. */
     struct hmap rows;        /* Contains "struct ovsdb_idl_row"s. */
     struct ovsdb_idl *idl;   /* Containing idl. */
-    unsigned int change_seqno[OVSDB_IDL_CHANGE_MAX];
+    unsigned int change_seqno[OVSDB_IDL_CHANGE_MAX]; /* 序列值,如果发生更改,序列值会变化 */
+	/* 用于追踪 */
     struct ovs_list track_list; /* Tracked rows (ovsdb_idl_row.track_node). */
 };
 
