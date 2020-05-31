@@ -88,7 +88,8 @@ enum ovsdb_idl_state {
 struct ovsdb_idl {
     const struct ovsdb_idl_class *class;
     struct jsonrpc_session *session; /* 会话消息 */
-    struct shash table_by_name;
+    struct shash table_by_name; /* 通过名字来查找表 */
+    /* tables用于记录所有的表 */
     struct ovsdb_idl_table *tables; /* Contains "struct ovsdb_idl_table *"s.*/
     unsigned int change_seqno; /* 序列值 */
     bool verify_write_only;
@@ -284,6 +285,9 @@ ovsdb_idl_destroy(struct ovsdb_idl *idl)
     }
 }
 
+/* 清理idl
+ *
+ */
 static void
 ovsdb_idl_clear(struct ovsdb_idl *idl)
 {
@@ -510,7 +514,7 @@ ovsdb_idl_get_last_error(const struct ovsdb_idl *idl)
 {
     return jsonrpc_session_get_last_error(idl->session);
 }
-
+
 static unsigned char *
 ovsdb_idl_get_mode(struct ovsdb_idl *idl,
                    const struct ovsdb_idl_column *column)
@@ -531,9 +535,14 @@ ovsdb_idl_get_mode(struct ovsdb_idl *idl,
     OVS_NOT_REACHED();
 }
 
+/* 添加引用表
+ * @param idl 全局句柄
+ * @param base 列的类型
+ */
 static void
 add_ref_table(struct ovsdb_idl *idl, const struct ovsdb_base_type *base)
 {
+    /*  */
     if (base->type == OVSDB_TYPE_UUID && base->u.uuid.refTableName) {
         struct ovsdb_idl_table *table;
 
@@ -603,6 +612,7 @@ ovsdb_idl_add_table(struct ovsdb_idl *idl,
 
 /* Turns off OVSDB_IDL_ALERT for 'column' in 'idl'.
  * 关闭掉alert标记
+ * 也就是说,即使这一列发生了更改,我们也无需关心
  * This function should be called between ovsdb_idl_create() and the first call
  * to ovsdb_idl_run().
  */
@@ -629,12 +639,17 @@ ovsdb_idl_omit(struct ovsdb_idl *idl, const struct ovsdb_idl_column *column)
 /* Returns the most recent IDL change sequence number that caused a
  * insert, modify or delete update to the table with class 'table_class'.
  */
+/* 获取序列值,最新的IDL更改序列值
+ * @param idl 全局句柄
+ * @param table_class 表的元数据
+ */
 unsigned int
 ovsdb_idl_table_get_seqno(const struct ovsdb_idl *idl,
                           const struct ovsdb_idl_table_class *table_class)
 {
     struct ovsdb_idl_table *table
         = ovsdb_idl_table_from_class(idl, table_class);
+    /* 获取一个最大值即可 */
     unsigned int max_seqno = table->change_seqno[OVSDB_IDL_CHANGE_INSERT];
 
     if (max_seqno < table->change_seqno[OVSDB_IDL_CHANGE_MODIFY]) {
@@ -666,6 +681,7 @@ ovsdb_idl_row_get_seqno(const struct ovsdb_idl_row *row,
  * This function should be called between ovsdb_idl_create() and
  * the first call to ovsdb_idl_run(). The column to be tracked
  * should have OVSDB_IDL_ALERT turned on.
+ * 为idl中的列,打开OVSDB_IDL_TRACK开关
  */
 void
 ovsdb_idl_track_add_column(struct ovsdb_idl *idl,
@@ -692,7 +708,9 @@ ovsdb_idl_track_add_all(struct ovsdb_idl *idl)
     }
 }
 
-/* Returns true if 'table' has any tracked column. */
+/* Returns true if 'table' has any tracked column.
+ * 判断table是否被追踪
+ */
 static bool
 ovsdb_idl_track_is_set(struct ovsdb_idl_table *table)
 {
@@ -708,6 +726,10 @@ ovsdb_idl_track_is_set(struct ovsdb_idl_table *table)
 
 /* Returns the first tracked row in table with class 'table_class'
  * for the specified 'idl'. Returns NULL if there are no tracked rows */
+/* 返回第一个被追踪的行(tracned row)
+ * @param idl 全局句柄(数据库)
+ * @param table_class 表的元数据
+ */
 const struct ovsdb_idl_row *
 ovsdb_idl_track_get_first(const struct ovsdb_idl *idl,
                           const struct ovsdb_idl_table_class *table_class)
@@ -1095,7 +1117,11 @@ ovsdb_idl_process_update(struct ovsdb_idl_table *table,
 }
 
 /* Returns true if a column with mode OVSDB_IDL_MODE_RW changed, false
- * otherwise. */
+ * otherwise.
+ * @param row 待操作的行数据
+ * @param row_json json格式的行数据
+ * @param change
+ */
 static bool
 ovsdb_idl_row_update(struct ovsdb_idl_row *row, const struct json *row_json,
                      enum ovsdb_idl_change change)
@@ -1109,7 +1135,7 @@ ovsdb_idl_row_update(struct ovsdb_idl_row *row, const struct json *row_json,
         const struct ovsdb_idl_column *column;
         struct ovsdb_datum datum;
         struct ovsdb_error *error;
-
+        /* 获取列的元数据 */
         column = shash_find_data(&table->columns, column_name);
         if (!column) {
             VLOG_WARN_RL(&syntax_rl, "unknown column %s updating row "UUID_FMT,
@@ -1194,7 +1220,8 @@ ovsdb_idl_row_exists(const struct ovsdb_idl_row *row)
     return row->new != NULL;
 }
 
-/* 进行数据的解析操作 */
+/* 将内部的数据转换成外部可见的形式
+ */
 static void
 ovsdb_idl_row_parse(struct ovsdb_idl_row *row)
 {
@@ -1207,6 +1234,10 @@ ovsdb_idl_row_parse(struct ovsdb_idl_row *row)
     }
 }
 
+/* 销毁外部数据
+ * 可以参考ovsdb_idl_row_clear_old的相关注释
+ * @param row 待操作的行
+ */
 static void
 ovsdb_idl_row_unparse(struct ovsdb_idl_row *row)
 {
@@ -1219,14 +1250,27 @@ ovsdb_idl_row_unparse(struct ovsdb_idl_row *row)
     }
 }
 
+/* 销毁内部数据
+ * @param row 待操作的行
+ */
 static void
 ovsdb_idl_row_clear_old(struct ovsdb_idl_row *row)
 {
     ovs_assert(row->old == row->new);
+    /* 行数据实际存在两份数据,一份是以datum形式存储的,属于内部使用的数据
+     * 另外一份供调用者使用,属于外部数据.
+     * 以一张简单表idltest_simple为例,这张表仅有一列,bool类型
+     * 生成的实际row结构如下:
+     * struct idltest_simple {
+	 *   struct ovsdb_idl_row header_;
+	 *   bool b;
+	 * }
+	 * idltest_simple是ovsdb_idl_row的子类,多出来的部分就是供调用者使用的数据.
+     */
     if (!ovsdb_idl_row_is_orphan(row)) {
         const struct ovsdb_idl_table_class *class = row->table->class;
         size_t i;
-
+        /* 删除内部的数据 */
         for (i = 0; i < class->n_columns; i++) {
             ovsdb_datum_destroy(&row->old[i], &class->columns[i].type);
         }
@@ -1235,6 +1279,9 @@ ovsdb_idl_row_clear_old(struct ovsdb_idl_row *row)
     }
 }
 
+/* 删除新数据
+ * @param row 待操作的行
+ */
 static void
 ovsdb_idl_row_clear_new(struct ovsdb_idl_row *row)
 {
@@ -1256,6 +1303,10 @@ ovsdb_idl_row_clear_new(struct ovsdb_idl_row *row)
     }
 }
 
+/* 清理引用关系
+ * @param row 待操作的行
+ * @param destroy_dsts 是否删除被引用的行
+ */
 static void
 ovsdb_idl_row_clear_arcs(struct ovsdb_idl_row *row, bool destroy_dsts)
 {
@@ -1266,14 +1317,14 @@ ovsdb_idl_row_clear_arcs(struct ovsdb_idl_row *row, bool destroy_dsts)
      * If tracking is enabled, orphaned nodes are removed from hmap but not
      * freed.
      * 删除所有的前向引用(forward arcs),如果destroy_dsts为真,删除孤立行(orphaned rows)
-     * 如果追踪机制(tracking)启用了,这将导致未引用 (找不到引用的行数据)
+     * 如果追踪机制(tracking)没被启用,这将导致未引用 (找不到引用的行数据)
      * 如果追踪机制(tracking)启用了,孤立节点(orphaned node)将会从hmap中移除,但是不会释放
      */
     LIST_FOR_EACH_SAFE (arc, next, src_node, &row->src_arcs) {
-        list_remove(&arc->dst_node);
+        list_remove(&arc->dst_node); /* 将引用从被引用行的dst_arcs链表中移除 */
         if (destroy_dsts /* 如果需要对目的进行清理操作 */
-            && ovsdb_idl_row_is_orphan(arc->dst) /* 对端实际不存在 */
-            && list_is_empty(&arc->dst->dst_arcs)) {
+            && ovsdb_idl_row_is_orphan(arc->dst) /* 被引用行实际不存在 */
+            && list_is_empty(&arc->dst->dst_arcs)) { /* 没有被其他行引用 */
             ovsdb_idl_row_destroy(arc->dst);
         }
         free(arc);
@@ -1282,7 +1333,9 @@ ovsdb_idl_row_clear_arcs(struct ovsdb_idl_row *row, bool destroy_dsts)
 }
 
 /* Force nodes that reference 'row' to reparse.
- * 解析反向引用
+ * 解析反向引用,也就是哪一行引用了自己
+ * 被引用的数据发生了更改,引用了此行的数据也要更新相应的值
+ * @param row 待操作的行数据
  */
 static void
 ovsdb_idl_row_reparse_backrefs(struct ovsdb_idl_row *row)
@@ -1300,14 +1353,17 @@ ovsdb_idl_row_reparse_backrefs(struct ovsdb_idl_row *row)
      * 'next' didn't also point into 'arc''s destination, but we forbid
      * duplicate arcs.) */
     LIST_FOR_EACH_SAFE (arc, next, dst_node, &row->dst_arcs) {
-        struct ovsdb_idl_row *ref = arc->src;
+        struct ovsdb_idl_row *ref = arc->src; /* 找到引用行 */
 
         ovsdb_idl_row_unparse(ref);
         ovsdb_idl_row_clear_arcs(ref, false);
-        ovsdb_idl_row_parse(ref);
+        ovsdb_idl_row_parse(ref); /* 重新解析一遍 */
     }
 }
 
+/* 根据元数据创建一行
+ * @param class 表的元数据
+ */
 static struct ovsdb_idl_row *
 ovsdb_idl_row_create__(const struct ovsdb_idl_table_class *class)
 {
@@ -1331,12 +1387,15 @@ ovsdb_idl_row_create(struct ovsdb_idl_table *table, const struct uuid *uuid)
     return row;
 }
 
+/* 删除一行数据
+ * @param row 待操作的行数据
+ */
 static void
 ovsdb_idl_row_destroy(struct ovsdb_idl_row *row)
 {
     if (row) {
         ovsdb_idl_row_clear_old(row);
-        hmap_remove(&row->table->rows, &row->hmap_node);
+        hmap_remove(&row->table->rows, &row->hmap_node); /* 从表中移除 */
         if (ovsdb_idl_track_is_set(row->table)) { /* 设定了追踪 */
             row->change_seqno[OVSDB_IDL_CHANGE_DELETE]
                 = row->table->change_seqno[OVSDB_IDL_CHANGE_DELETE]
@@ -1370,8 +1429,9 @@ ovsdb_idl_row_destroy_postprocess(struct ovsdb_idl *idl)
 }
 
 /*
- * 插入新的行数据
- *
+ * 解析row_json,将数据写入row中
+ * @param row 待操作的行数据
+ * @param row_json json格式的行数据
  */
 static void
 ovsdb_idl_insert_row(struct ovsdb_idl_row *row, const struct json *row_json)
@@ -1385,6 +1445,7 @@ ovsdb_idl_insert_row(struct ovsdb_idl_row *row, const struct json *row_json)
         /* 先初始化原始的值 */
         ovsdb_datum_init_default(&row->old[i], &class->columns[i].type);
     }
+    /* 从json串中解析出数据,放入row->old之中 */
     ovsdb_idl_row_update(row, row_json, OVSDB_IDL_CHANGE_INSERT);
     ovsdb_idl_row_parse(row);
 
@@ -1400,6 +1461,7 @@ ovsdb_idl_delete_row(struct ovsdb_idl_row *row)
     if (list_is_empty(&row->dst_arcs)) {
         ovsdb_idl_row_destroy(row);
     } else {
+        /* 如果有其他行引用了此行,那么引用的指针应该置空 */
         ovsdb_idl_row_reparse_backrefs(row);
     }
 }
@@ -1419,6 +1481,10 @@ ovsdb_idl_modify_row(struct ovsdb_idl_row *row, const struct json *row_json)
     return changed;
 }
 
+/* 判断是否可以添加引用数据
+ * @param src 引用行
+ * @param dst 被引用行
+ */
 static bool
 may_add_arc(const struct ovsdb_idl_row *src, const struct ovsdb_idl_row *dst)
 {
@@ -1435,21 +1501,36 @@ may_add_arc(const struct ovsdb_idl_row *src, const struct ovsdb_idl_row *dst)
      * at 'src', since we add all of the arcs from a given source in a clump
      * (in a single call to ovsdb_idl_row_parse()) and new arcs are always
      * added at the front of the dst_arcs list. */
+     /* 我们只需要测试dst->dst_arcs的第一个引用是否来自src,因为
+      * 因为我们在一个簇(clump)里面添加所有的引用(也就是ovsdb_idl_row_parse()里面)
+      * 最新的引用总是在dst_arcs列表的最前面
+      */
     if (list_is_empty(&dst->dst_arcs)) {
         return true;
     }
     arc = CONTAINER_OF(dst->dst_arcs.next, struct ovsdb_idl_arc, dst_node);
+    /* 避免重复引用 */
     return arc->src != src;
 }
 
+/* 根据表的元数据查找对应的表
+ * @param idl 全局句柄(记录了所有的表数据)
+ * @param table_class 表的元数据
+ */
 static struct ovsdb_idl_table *
 ovsdb_idl_table_from_class(const struct ovsdb_idl *idl,
                            const struct ovsdb_idl_table_class *table_class)
 {
+    /* table_class - idl->class->tables得到的是偏移量 */
     return &idl->tables[table_class - idl->class->tables];
 }
 
-/* Called by ovsdb-idlc generated code. */
+/* Called by ovsdb-idlc generated code.
+ * 查找被引用的行数据
+ * @param src 引用列(src引用别的行)
+ * @param dst_table_class 被引用表的元数据
+ * @param dst_uuid 被引用行的uuid(用于唯一标识一行数据)
+ */
 struct ovsdb_idl_row *
 ovsdb_idl_get_row_arc(struct ovsdb_idl_row *src,
                       struct ovsdb_idl_table_class *dst_table_class,
@@ -1459,23 +1540,30 @@ ovsdb_idl_get_row_arc(struct ovsdb_idl_row *src,
     struct ovsdb_idl_table *dst_table;
     struct ovsdb_idl_arc *arc;
     struct ovsdb_idl_row *dst;
-
+    /* 获取表数据 */
     dst_table = ovsdb_idl_table_from_class(idl, dst_table_class);
+    /* 根据uuid获取行数据 */
     dst = ovsdb_idl_get_row(dst_table, dst_uuid);
-    if (idl->txn) {
+    if (idl->txn) { /* 如果存在事务 */
         /* We're being called from ovsdb_idl_txn_write().  We must not update
          * any arcs, because the transaction will be backed out at commit or
          * abort time and we don't want our graph screwed up.
          *
          * Just return the destination row, if there is one and it has not been
          * deleted. */
+         /* 此函数可能被ovsdb_idl_txn_write()调用,我们不能更新任何的引用数据(arcs)
+          * 因为事务在提交或者终止时退出.
+          * 只要返回目标行就行了,如果目标行仅有一行,而且没有被移除的话
+          */
         if (dst && (hmap_node_is_null(&dst->txn_node) || dst->new)) {
             return dst;
         }
         return NULL;
     } else {
-        /* We're being called from some other context.  Update the graph. */
-        if (!dst) {
+        /* We're being called from some other context.  Update the graph.
+         * 不存在事务,直接更新图数据
+         */
+        if (!dst) { /* 如果行数据不存在,构建一行 */
             dst = ovsdb_idl_row_create(dst_table, dst_uuid);
         }
 
@@ -1524,10 +1612,15 @@ next_real_row(struct ovsdb_idl_table *table, struct hmap_node *node)
  * Database tables are internally maintained as hash tables, so adding or
  * removing rows while traversing the same table can cause some rows to be
  * visited twice or not at apply. */
+/* 获取表的第一行数据
+ * @param idl 全局句柄(类似于数据库)
+ * @param table_class 表的元数据
+ */
 const struct ovsdb_idl_row *
 ovsdb_idl_first_row(const struct ovsdb_idl *idl,
                     const struct ovsdb_idl_table_class *table_class)
 {
+    /* 获取表数据 */
     struct ovsdb_idl_table *table
         = ovsdb_idl_table_from_class(idl, table_class);
     return next_real_row(table, hmap_first(&table->rows));
@@ -1562,18 +1655,18 @@ ovsdb_idl_read(const struct ovsdb_idl_row *row,
     size_t column_idx;
 
     ovs_assert(!ovsdb_idl_row_is_synthetic(row));
-
+    /* 元数据 */
     class = row->table->class;
     column_idx = column - class->columns;
 
     ovs_assert(row->new != NULL);
     ovs_assert(column_idx < class->n_columns);
-
+    /* row发生了修改 */
     if (row->written && bitmap_is_set(row->written, column_idx)) {
         return &row->new[column_idx];
     } else if (row->old) {
         return &row->old[column_idx];
-    } else {
+    } else { /* 返回默认的数据 */
         return ovsdb_datum_default(&column->type);
     }
 }
@@ -1620,7 +1713,7 @@ ovsdb_idl_row_is_synthetic(const struct ovsdb_idl_row *row)
 {
     return row->table == NULL;
 }
-
+
 /* Transactions. */
 
 static void ovsdb_idl_txn_complete(struct ovsdb_idl_txn *txn,
@@ -1657,7 +1750,9 @@ ovsdb_idl_txn_status_to_string(enum ovsdb_idl_txn_status status)
 
 /* Starts a new transaction on 'idl'.  A given ovsdb_idl may only have a single
  * active transaction at a time.  See the large comment in ovsdb-idl.h for
- * general information on transactions. */
+ * general information on transactions.
+ * 在idl上创建一个事务,一个ovsdb_idl在同一时刻只能有一个活跃的事务
+ */
 struct ovsdb_idl_txn *
 ovsdb_idl_txn_create(struct ovsdb_idl *idl)
 {
@@ -1705,7 +1800,9 @@ ovsdb_idl_txn_add_comment(struct ovsdb_idl_txn *txn, const char *s, ...)
  * database server like other transactions, and so on.  The only difference is
  * that the operations sent to the database server will include, as the last
  * step, an "abort" operation, so that any changes made by the transaction will
- * not actually take effect. */
+ * not actually take effect.
+ * 将txn标记为实际不会修改数据库的事务
+ */
 void
 ovsdb_idl_txn_set_dry_run(struct ovsdb_idl_txn *txn)
 {
@@ -1865,10 +1962,11 @@ ovsdb_idl_txn_disassemble(struct ovsdb_idl_txn *txn)
     txn->idl->txn = NULL;
 
     HMAP_FOR_EACH_SAFE (row, next, txn_node, &txn->txn_rows) {
+        /* 这里实际是将老的数据还原回去 */
         if (row->old) {
             if (row->written) {
                 ovsdb_idl_row_unparse(row);
-                ovsdb_idl_row_clear_arcs(row, false);
+                ovsdb_idl_row_clear_arcs(row, false); /* 不删除被引用行 */
                 ovsdb_idl_row_parse(row);
             }
         } else {
@@ -1881,10 +1979,10 @@ ovsdb_idl_txn_disassemble(struct ovsdb_idl_txn *txn)
 
         free(row->written);
         row->written = NULL;
-
+        /* 将节点从事务中移除 */
         hmap_remove(&txn->txn_rows, &row->txn_node);
         hmap_node_nullify(&row->txn_node);
-        if (!row->old) {
+        if (!row->old) { /* 新插入的节点直接丢弃 */
             hmap_remove(&row->table->rows, &row->hmap_node);
             free(row);
         }
@@ -1895,27 +1993,33 @@ ovsdb_idl_txn_disassemble(struct ovsdb_idl_txn *txn)
 
 /* Attempts to commit 'txn'.  Returns the status of the commit operation, one
  * of the following TXN_* constants:
+ * 尝试提交事务,可能会返回下面的值:
  *
  *   TXN_INCOMPLETE:
  *
  *       The transaction is in progress, but not yet complete.  The caller
  *       should call again later, after calling ovsdb_idl_run() to let the IDL
  *       do OVSDB protocol processing.
+ *       事务仍然在进行中,还未完成,调用者应该先调用ovsdb_idl_run(),让IDL
+ *       继续OVSDB协议的处理,然后再次调用该函数
  *
  *   TXN_UNCHANGED:
  *
  *       The transaction is complete.  (It didn't actually change the database,
  *       so the IDL didn't send any request to the database server.)
+ *       事务完成,但是数据库没有什么变化
  *
  *   TXN_ABORTED:
  *
  *       The caller previously called ovsdb_idl_txn_abort().
+ *       调用者之前已经调用过ovsdb_idl_txn_abort()
  *
  *   TXN_SUCCESS:
  *
  *       The transaction was successful.  The update made by the transaction
  *       (and possibly other changes made by other database clients) should
  *       already be visible in the IDL.
+ *       事务成功,事务引起的更改已经在IDL中生效.
  *
  *   TXN_TRY_AGAIN:
  *
@@ -1924,6 +2028,9 @@ ovsdb_idl_txn_disassemble(struct ovsdb_idl_txn *txn)
  *       problem.  The caller should wait for a change to the database, then
  *       compose a new transaction, and commit the new transaction.
  *
+ *       事务因为某些原因失败了,比如说,因为verify操作报告的不一致,或者网络故障等.
+ *       调用者应该等待数据库的更改,然后构建一个新事务,提交到新事务中
+ *
  *       Use the return value of ovsdb_idl_get_seqno() to wait for a change in
  *       the database.  It is important to use its return value *before* the
  *       initial call to ovsdb_idl_txn_commit() as the baseline for this
@@ -1931,6 +2038,9 @@ ovsdb_idl_txn_disassemble(struct ovsdb_idl_txn *txn)
  *       the initial call but before the call that returns TXN_TRY_AGAIN, and
  *       using some other baseline value in that situation could cause an
  *       indefinite wait if the database rarely changes.
+ *       可以使用ovsdb_idl_get_seqno()的返回值来判断数据库是否发生了更改,在调用
+ *       ovsdb_idl_txn_commit()之前调用这个函数是很重要的,因为
+ *       可能会导致无限期的等待,如果数据库很少更改的话
  *
  *   TXN_NOT_LOCKED:
  *
@@ -1970,10 +2080,12 @@ ovsdb_idl_txn_commit(struct ovsdb_idl_txn *txn)
         json_object_put_string(op, "lock", txn->idl->lock_name);
     }
 
-    /* Add prerequisites and declarations of new rows. */
+    /* Add prerequisites and declarations of new rows.
+     * 添加新行的前置条件和声明
+     */
     HMAP_FOR_EACH (row, txn_node, &txn->txn_rows) {
         /* XXX check that deleted rows exist even if no prereqs? */
-        if (row->prereqs) {
+        if (row->prereqs) { /* 提交之前需要验证相关的值 */
             const struct ovsdb_idl_table_class *class = row->table->class;
             size_t n_columns = class->n_columns;
             struct json *op, *columns, *row_json;
@@ -1993,7 +2105,8 @@ ovsdb_idl_txn_commit(struct ovsdb_idl_txn *txn)
 
             BITMAP_FOR_EACH_1 (idx, n_columns, row->prereqs) {
                 const struct ovsdb_idl_column *column = &class->columns[idx];
-                json_array_add(columns, json_string_create(column->name));
+                json_array_add(columns, json_string_create(column->name)); /* 列名 */
+                /* 旧的行数据,只有当原来的数据和我存储的一致的时候,才能进行修改 */
                 json_object_put(row_json, column->name,
                                 ovsdb_datum_to_json(&row->old[idx],
                                                     &column->type));
@@ -2001,12 +2114,14 @@ ovsdb_idl_txn_commit(struct ovsdb_idl_txn *txn)
         }
     }
 
-    /* Add updates. */
+    /* Add updates.
+     * 添加更新
+     */
     any_updates = false;
     HMAP_FOR_EACH (row, txn_node, &txn->txn_rows) {
         const struct ovsdb_idl_table_class *class = row->table->class;
 
-        if (!row->new) {
+        if (!row->new) { /* 发生删除 */
             if (class->is_root) {
                 struct json *op = json_object_create();
                 json_object_put_string(op, "op", "delete");
@@ -2017,7 +2132,7 @@ ovsdb_idl_txn_commit(struct ovsdb_idl_txn *txn)
             } else {
                 /* Let ovsdb-server decide whether to really delete it. */
             }
-        } else if (row->old != row->new) {
+        } else if (row->old != row->new) { /* 发生更新或者插入 */
             struct json *row_json;
             struct json *op;
             size_t idx;
@@ -2282,6 +2397,10 @@ ovsdb_idl_txn_complete(struct ovsdb_idl_txn *txn,
  * Takes ownership of what 'datum' points to (and in some cases destroys that
  * data before returning) but makes a copy of 'datum' itself.  (Commonly
  * 'datum' is on the caller's stack.) */
+ /* @param row_ 待操作的行
+  * @param column 列的元数据
+  * @param datum 数据
+  */
 static void
 ovsdb_idl_txn_write__(const struct ovsdb_idl_row *row_,
                       const struct ovsdb_idl_column *column,
@@ -2315,19 +2434,25 @@ ovsdb_idl_txn_write__(const struct ovsdb_idl_row *row_,
      * as the one already there, just skip the update entirely.  This is worth
      * optimizing because we have a lot of columns that get periodically
      * refreshed into the database but don't actually change that often.
+     * 如果这是一个只能写的列,如果数据和之前的一致,不用更新.
      *
      * We don't do this for read/write columns because that would break
      * atomicity of transactions--some other client might have written a
      * different value in that column since we read it.  (But if a whole
      * transaction only does writes of existing values, without making any real
      * changes, we will drop the whole transaction later in
-     * ovsdb_idl_txn_commit().) */
+     * ovsdb_idl_txn_commit().)
+     * 我们并不在可读可写的列上做这种操作,因为它可能会打破事务的原子性,一些客户可能会写
+     * 一些不同的值,在我们读取该列之后(但是如果整个事务事实上没有做任何更改,我们在调用
+     * ovsdb_idl_txn_commit()之后,丢弃掉整个事务{没必要提交的意思吗?})
+     */
     if (write_only && ovsdb_datum_equals(ovsdb_idl_read(row, column),
                                          datum, &column->type)) {
-        goto discard_datum;
+        goto discard_datum; /* 事实上没有发生任何更改 */
     }
 
-    if (hmap_node_is_null(&row->txn_node)) {
+    if (hmap_node_is_null(&row->txn_node)) { /* row不在事务中 */
+        /* 将row添加到事务中 */
         hmap_insert(&row->table->idl->txn->txn_rows, &row->txn_node,
                     uuid_hash(&row->uuid));
     }
@@ -2337,7 +2462,7 @@ ovsdb_idl_txn_write__(const struct ovsdb_idl_row *row_,
     if (!row->written) {
         row->written = bitmap_allocate(class->n_columns);
     }
-    if (bitmap_is_set(row->written, column_idx)) {
+    if (bitmap_is_set(row->written, column_idx)) { /* 用于记录某一行的某一列发生了更改 */
         ovsdb_datum_destroy(&row->new[column_idx], &column->type);
     } else {
         bitmap_set1(row->written, column_idx);
@@ -2348,6 +2473,7 @@ ovsdb_idl_txn_write__(const struct ovsdb_idl_row *row_,
         ovsdb_datum_clone(&row->new[column_idx], datum, &column->type);
     }
     (column->unparse)(row);
+    /* 解析数据 */
     (column->parse)(row, &row->new[column_idx]);
     return;
 
@@ -2381,10 +2507,16 @@ ovsdb_idl_txn_write_clone(const struct ovsdb_idl_row *row,
  * transaction aborts and ovsdb_idl_txn_commit() returns TXN_AGAIN_WAIT or
  * TXN_AGAIN_NOW (depending on whether the database change has already been
  * received).
+ * 在正式提交之前,验证row_中列的原本的值,是完成事务的先决条件,也就是说,在我们读取
+ * 该row_的时间点到提交事务的时间点,如果(ovsdb中)此row_已经发生了更改(或者删除),
+ * 提交之后,可能会导致事务终止,或者返回TXN_AGAIN_WAIT以及TXN_AGAIN_NOW
  *
  * The intention is that, to ensure that no transaction commits based on dirty
  * reads, an application should call ovsdb_idl_txn_verify() on each data item
  * read as part of a read-modify-write operation.
+ * 这样做的目的是,保证任何的事务提交都不会基于脏读,我们建议,任何事务都需要调用
+ * ovsdb_idl_txn_verify(),将其作为 读-修改-写 操作的一部分
+ *
  *
  * In some cases ovsdb_idl_txn_verify() reduces to a no-op, because the current
  * value of 'column' is already known:
@@ -2394,14 +2526,23 @@ ovsdb_idl_txn_write_clone(const struct ovsdb_idl_row *row,
  *
  *   - If 'column' has already been modified (with ovsdb_idl_txn_write())
  *     within the current transaction.
+ * 在某些情况下,ovsdb_idl_txn_verify是无操作的,因为当前列的值已知:
+ *   - 如果row_由当前事务生成
+ *   - 如果列已经发生了修改(在当前事务的ovsdb_idl_txn_write()中被修改)
  *
  * Because of the latter property, always call ovsdb_idl_txn_verify() *before*
  * ovsdb_idl_txn_write() for a given read-modify-write.
+ * 请务必调用ovsdb_idl_txn_verify()在ovsdb_idl_txn_write()之前,对于一个给定的read-modify-write操作
  *
  * A transaction must be in progress.
+ * 在事务之中才能调用此函数
  *
  * Usually this function is used indirectly through one of the "verify"
  * functions generated by ovsdb-idlc. */
+/*
+ * @param row_ 行数据
+ * @param column 列的元数据
+ */
 void
 ovsdb_idl_txn_verify(const struct ovsdb_idl_row *row_,
                      const struct ovsdb_idl_column *column)
@@ -2420,28 +2561,34 @@ ovsdb_idl_txn_verify(const struct ovsdb_idl_row *row_,
     ovs_assert(row->new != NULL);
     ovs_assert(row->old == NULL ||
                row->table->modes[column_idx] & OVSDB_IDL_MONITOR);
+    /* old不存在,那么此行就是新插入的数据 */
     if (!row->old
-        || (row->written && bitmap_is_set(row->written, column_idx))) {
+        || (row->written && bitmap_is_set(row->written, column_idx))) { /* 此列发生了更改 */
         return;
     }
 
     if (hmap_node_is_null(&row->txn_node)) {
         hmap_insert(&row->table->idl->txn->txn_rows, &row->txn_node,
-                    uuid_hash(&row->uuid));
+                    uuid_hash(&row->uuid)); /* 插入事务中 */
     }
     if (!row->prereqs) {
         row->prereqs = bitmap_allocate(class->n_columns);
     }
+    /* 前置条件 */
     bitmap_set1(row->prereqs, column_idx);
 }
 
 /* Deletes 'row_' from its table.  May free 'row_', so it must not be
  * accessed afterward.
- *
+ * 将row_从表中移除,row_可能会被释放,因此移除后不能再被访问
  * A transaction must be in progress.
+ * 事务中才能调用
  *
  * Usually this function is used indirectly through one of the "delete"
  * functions generated by ovsdb-idlc. */
+/* 删除一行数据
+ * @param row_ 待删除的行数据
+ */
 void
 ovsdb_idl_txn_delete(const struct ovsdb_idl_row *row_)
 {
@@ -2452,11 +2599,13 @@ ovsdb_idl_txn_delete(const struct ovsdb_idl_row *row_)
     }
 
     ovs_assert(row->new != NULL);
-    if (!row->old) {
+    if (!row->old) { /* 新插入的行 */
         ovsdb_idl_row_unparse(row);
         ovsdb_idl_row_clear_new(row);
         ovs_assert(!row->prereqs);
+        /* 从表中移除 */
         hmap_remove(&row->table->rows, &row->hmap_node);
+        /* 从事务中移除 */
         hmap_remove(&row->table->idl->txn->txn_rows, &row->txn_node);
         free(row);
         return;
@@ -2497,7 +2646,9 @@ ovsdb_idl_txn_insert(struct ovsdb_idl_txn *txn,
 
     row->table = ovsdb_idl_table_from_class(txn->idl, class);
     row->new = xmalloc(class->n_columns * sizeof *row->new);
+    /* 将行放入表中 */
     hmap_insert(&row->table->rows, &row->hmap_node, uuid_hash(&row->uuid));
+    /* 将行放入事务中 */
     hmap_insert(&txn->txn_rows, &row->txn_node, uuid_hash(&row->uuid));
     return row;
 }

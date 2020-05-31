@@ -315,6 +315,9 @@ free_poll_nodes(struct poll_loop *loop)
 /* Blocks until one or more of the events registered with poll_fd_wait()
  * occurs, or until the minimum duration registered with poll_timer_wait()
  * elapses, or not at all if poll_immediate_wake() has been called. */
+/* 阻塞,一直到有事件发生,或者超时
+ *
+ */
 void
 poll_block(void)
 {

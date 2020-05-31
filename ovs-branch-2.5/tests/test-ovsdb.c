@@ -1755,6 +1755,9 @@ print_idl(struct ovsdb_idl *idl, int step)
     }
 }
 
+/* 用于打印追踪的信息
+ *
+ */
 static void
 print_idl_track(struct ovsdb_idl *idl, int step, unsigned int seqno)
 {
@@ -1764,7 +1767,7 @@ print_idl_track(struct ovsdb_idl *idl, int step, unsigned int seqno)
     int n = 0;
 
     IDLTEST_SIMPLE_FOR_EACH_TRACKED (s, idl) {
-        if (idltest_simple_row_get_seqno(s, OVSDB_IDL_CHANGE_DELETE) >= seqno) {
+        if (idltest_simple_row_get_seqno(s, OVSDB_IDL_CHANGE_DELETE) >= seqno) { /* 此列被删除 */
             printf("%03d: ##deleted## uuid="UUID_FMT"\n", step, UUID_ARGS(&s->header_.uuid));
         } else {
             print_idl_row_simple(s, step);
@@ -1858,6 +1861,7 @@ idltest_find_simple(struct ovsdb_idl *idl, int i)
     return NULL;
 }
 
+/* 执行相应的操作 */
 static void
 idl_set(struct ovsdb_idl *idl, char *commands, int step)
 {
@@ -1865,8 +1869,10 @@ idl_set(struct ovsdb_idl *idl, char *commands, int step)
     struct ovsdb_idl_txn *txn;
     enum ovsdb_idl_txn_status status;
     bool increment = false;
-
+    /* 创建一个事务 */
     txn = ovsdb_idl_txn_create(idl);
+    /* commands是类似于下面的命令串:
+     * verify 0 b, verify 1 r, set 0 b 1, set 1 r 3.5, insert 2, verify 2 i, verify 1 b, delete 1 */
     for (cmd = strtok_r(commands, ",", &save_ptr1); cmd;
          cmd = strtok_r(NULL, ",", &save_ptr1)) {
         char *save_ptr2 = NULL;
@@ -1877,19 +1883,21 @@ idl_set(struct ovsdb_idl *idl, char *commands, int step)
         arg2 = strtok_r(NULL, " ", &save_ptr2);
         arg3 = strtok_r(NULL, " ", &save_ptr2);
 
-        if (!strcmp(name, "set")) {
+        if (!strcmp(name, "set")) { /* 命令是set */
             const struct idltest_simple *s;
 
             if (!arg3) {
                 ovs_fatal(0, "\"set\" command requires 3 arguments");
             }
-
+            /* 根据参数在simple表中查找对应的行
+             * 也就是i=atoi(arg1)的行
+             */
             s = idltest_find_simple(idl, atoi(arg1));
             if (!s) {
                 ovs_fatal(0, "\"set\" command asks for nonexistent "
                           "i=%d", atoi(arg1));
             }
-
+            /* 参数2是列名 */
             if (!strcmp(arg2, "b")) {
                 idltest_simple_set_b(s, atoi(arg3));
             } else if (!strcmp(arg2, "s")) {
@@ -1906,7 +1914,8 @@ idl_set(struct ovsdb_idl *idl, char *commands, int step)
                 ovs_fatal(0, "\"set\" command asks for unknown column %s",
                           arg2);
             }
-        } else if (!strcmp(name, "insert")) {
+        } else if (!strcmp(name, "insert")) { /* 命令是插入 */
+            /* 命令格式为 insert num,num是i的值 */
             struct idltest_simple *s;
 
             if (!arg1 || arg2) {
@@ -1915,7 +1924,8 @@ idl_set(struct ovsdb_idl *idl, char *commands, int step)
 
             s = idltest_simple_insert(txn);
             idltest_simple_set_i(s, atoi(arg1));
-        } else if (!strcmp(name, "delete")) {
+        } else if (!strcmp(name, "delete")) { /* 命令是delete */
+            /* delete num, num是i的值 */
             const struct idltest_simple *s;
 
             if (!arg1 || arg2) {
@@ -1928,7 +1938,7 @@ idl_set(struct ovsdb_idl *idl, char *commands, int step)
                           "i=%d", atoi(arg1));
             }
             idltest_simple_delete(s);
-        } else if (!strcmp(name, "verify")) {
+        } else if (!strcmp(name, "verify")) { /* 命令为verify */
             const struct idltest_simple *s;
 
             if (!arg2 || arg3) {
@@ -1981,7 +1991,7 @@ idl_set(struct ovsdb_idl *idl, char *commands, int step)
             ovs_fatal(0, "unknown command %s", name);
         }
     }
-
+    /* 进行提交操作 */
     status = ovsdb_idl_txn_commit_block(txn);
     printf("%03d: commit, status=%s",
            step, ovsdb_idl_txn_status_to_string(status));
@@ -1997,7 +2007,7 @@ static void
 do_idl(struct ovs_cmdl_context *ctx)
 {
     struct jsonrpc *rpc;
-    struct ovsdb_idl *idl;
+    struct ovsdb_idl *idl; /* 全局句柄 */
     unsigned int seqno = 0;
     struct ovsdb_symbol_table *symtab;
     size_t n_uuids = 0;
@@ -2006,14 +2016,14 @@ do_idl(struct ovs_cmdl_context *ctx)
     int i;
     bool track;
 
-    idltest_init();
-
+    idltest_init(); /* 初始化相关数据 */
+    /* 是否追踪 */
     track = ((struct test_ovsdb_pvt_context *)(ctx->pvt))->track;
 
     idl = ovsdb_idl_create(ctx->argv[1], &idltest_idl_class, true, true);
     if (ctx->argc > 2) {
         struct stream *stream;
-
+        /* 连接ovsdb */
         error = stream_open_block(jsonrpc_stream_open(ctx->argv[1], &stream,
                                   DSCP_DEFAULT), &stream);
         if (error) {

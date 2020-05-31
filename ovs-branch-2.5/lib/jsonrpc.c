@@ -34,7 +34,7 @@
 #include "openvswitch/vlog.h"
 
 VLOG_DEFINE_THIS_MODULE(jsonrpc);
-
+
 struct jsonrpc {
     struct stream *stream;
     char *name;
@@ -114,10 +114,10 @@ jsonrpc_run(struct jsonrpc *rpc)
 
     stream_run(rpc->stream);
     while (!list_is_empty(&rpc->output)) {
-        struct ofpbuf *buf = ofpbuf_from_list(rpc->output.next);
+        struct ofpbuf *buf = ofpbuf_from_list(rpc->output.next); /* 获取数据 */
         int retval;
 
-        retval = stream_send(rpc->stream, buf->data, buf->size);
+        retval = stream_send(rpc->stream, buf->data, buf->size); /* 发送数据 */
         if (retval >= 0) {
             rpc->backlog -= retval;
             ofpbuf_pull(buf, retval);
@@ -272,10 +272,12 @@ jsonrpc_send(struct jsonrpc *rpc, struct jsonrpc_msg *msg)
 }
 
 /* Attempts to receive a message from 'rpc'.
+ * 接收数据
  *
  * If successful, stores the received message in '*msgp' and returns 0.  The
  * caller takes ownership of '*msgp' and must eventually destroy it with
  * jsonrpc_msg_destroy().
+ * 如果成功,将数据存储到msgp中,返回0
  *
  * Otherwise, stores NULL in '*msgp' and returns one of the following:
  *
@@ -286,6 +288,7 @@ jsonrpc_send(struct jsonrpc *rpc, struct jsonrpc_msg *msg)
  *   - Otherwise an errno value that represents a JSON-RPC protocol violation
  *     or another error fatal to the connection.  'rpc' will not send or
  *     receive any more messages.
+ * 解析完的数据会放入msgp中
  */
 int
 jsonrpc_recv(struct jsonrpc *rpc, struct jsonrpc_msg **msgp)
@@ -976,6 +979,9 @@ jsonrpc_session_run(struct jsonrpc_session *s)
     }
 }
 
+/* 等待会话
+ *
+ */
 void
 jsonrpc_session_wait(struct jsonrpc_session *s)
 {

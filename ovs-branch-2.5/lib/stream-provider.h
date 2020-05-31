@@ -48,6 +48,7 @@ struct stream_class {
     /* True if this stream needs periodic probes to verify connectivity.  For
      * streams which need probes, it can take a long time to notice the
      * connection was dropped. */
+     /* 如果流(stream)需要周期性的探测用于验证连接仍然存在,将其设定为true */
     bool needs_probes;
 
     /* Attempts to connect to a peer.  'name' is the full connection name

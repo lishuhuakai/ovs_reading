@@ -68,7 +68,7 @@ void ovsdb_idl_verify_write_only(struct ovsdb_idl *);
 
 bool ovsdb_idl_is_alive(const struct ovsdb_idl *);
 int ovsdb_idl_get_last_error(const struct ovsdb_idl *);
-
+
 /* Choosing columns and tables to replicate. */
 
 /* Modes with which the IDL can monitor a column.
@@ -76,28 +76,38 @@ int ovsdb_idl_get_last_error(const struct ovsdb_idl *);
  * If no bits are set, the column is not monitored at all.  Its value will
  * always appear to the client to be the default value for its type.
  *
- * If OVSDB_IDL_MONITOR is set, then the column is replicated(����).  Its value will
+ * If OVSDB_IDL_MONITOR is set, then the column is replicated().  Its value will
  * reflect the value in the database.  If OVSDB_IDL_ALERT is also set, then the
  * value returned by ovsdb_idl_get_seqno() will change when the column's value
  * changes.
+ * 如果OVSDB_IDL_MONITOR标志位被设定,column将会被镜像,也就是说,它的值反映了数据库中的值
+ * 如果OVSDB_IDL_ALERT标志位被设定,ovsdb_idl_get_seqno()返回的序列值将会更改,如果此列的值
+ * 发生了更改的话,也就是说,我们可以察觉到此列发生了更改.
  *
  * The possible mode combinations are:
  *
  *   - 0, for a column that a client doesn't care about.
+ *   - 0,表示客户端并不关心此列
  *
  *   - (OVSDB_IDL_MONITOR | OVSDB_IDL_ALERT), for a column that a client wants
  *     to track and possibly update.
+ *   - (OVSDB_IDL_MONITOR | OVSDB_IDL_ALERT), 如果客户端希望追踪和更新此列的话
  *
  *   - OVSDB_IDL_MONITOR, for columns that a client treats as "write-only",
  *     that is, it updates them but doesn't want to get alerted about its own
  *     updates.  It also won't be alerted about other clients' updates, so this
  *     is suitable only for use by a client that "owns" a particular column.
+ *   - OVSDB_IDL_MONITOR,如果客户端认为此列是只写的,也就是说,我们并不想获得此列的通知
+ *     我们也不会告知其他客户端对它的更新,因此它只适用于特定的客户端(它拥有特定的列??
+ *     是别的客户端不会操作这些列的意思吗?)
  *
  *   - OVDSB_IDL_ALERT without OVSDB_IDL_MONITOR is not valid.
+ *   - OVSDB_IDL_ALERT 如果没有OVSDB_IDL_MONITOR是无效的
  *
  *   - (OVSDB_IDL_MONITOR | OVSDB_IDL_ALERT | OVSDB_IDL_TRACK), for a column
  *     that a client wants to track using the change tracking
  *     ovsdb_idl_track_get_*() functions.
+ *   - (OVSDB_IDL_MONITOR | OVSDB_IDL_ALERT | OVSDB_IDL_TRACK),如果客户端想追踪此列的更改的话
  */
 #define OVSDB_IDL_MONITOR (1 << 0) /* Monitor this column? */
 #define OVSDB_IDL_ALERT   (1 << 1) /* Alert client when column updated? */
@@ -134,7 +144,7 @@ const struct ovsdb_idl_row *ovsdb_idl_track_get_first(
 const struct ovsdb_idl_row *ovsdb_idl_track_get_next(const struct ovsdb_idl_row *);
 void ovsdb_idl_track_clear(const struct ovsdb_idl *);
 
-
+
 /* Reading the database replica. */
 
 const struct ovsdb_idl_row *ovsdb_idl_get_row_for_uuid(
@@ -154,7 +164,7 @@ bool ovsdb_idl_is_mutable(const struct ovsdb_idl_row *,
                           const struct ovsdb_idl_column *);
 
 bool ovsdb_idl_row_is_synthetic(const struct ovsdb_idl_row *);
-
+
 /* Transactions.
  *
  * A transaction may modify the contents of a database by modifying the values
@@ -188,8 +198,11 @@ bool ovsdb_idl_row_is_synthetic(const struct ovsdb_idl_row *);
  *     seqno = ovsdb_idl_get_seqno(idl);
  *     txn = ovsdb_idl_txn_create(idl);
  *
+ * 1. 创建一个事务,记录下初始的序列值
+ *
  * 2. Modify the database with ovsdb_idl_txn_*() functions directly or
  *    indirectly.
+ * 2. 通过ovsdb_idl_txn_*()函数对数据库进行直接或者间接的修改
  *
  * 3. Commit the transaction by calling ovsdb_idl_txn_commit().  The first call
  *    to this function probably returns TXN_INCOMPLETE.  The client must keep
@@ -197,6 +210,8 @@ bool ovsdb_idl_row_is_synthetic(const struct ovsdb_idl_row *);
  *    between to let the IDL do protocol processing.  (If the client doesn't
  *    have anything else to do in the meantime, it can use
  *    ovsdb_idl_txn_commit_block() to avoid having to loop itself.)
+ * 3. 通过调用ovsdb_idl_txn_commit()来提交事务,第一次调用这个函数可能会返回
+ *    TXN_INCOMPLETE,用户应该一直调用ovsdb_idl_run().
  *
  * 4. If the final status is TXN_TRY_AGAIN, wait for ovsdb_idl_get_seqno() to
  *    change from the saved 'seqno' (it's possible that it's already changed,
@@ -204,6 +219,7 @@ bool ovsdb_idl_row_is_synthetic(const struct ovsdb_idl_row *);
  *    step 1.  Only a call to ovsdb_idl_run() will change the return value of
  *    ovsdb_idl_get_seqno().  (ovsdb_idl_txn_commit_block() calls
  *    ovsdb_idl_run().)
+ * 4. 如果最终的状态是TXN_TRY_AGAIN,等待ovsdb_idl_get_seqno()
  */
 
 enum ovsdb_idl_txn_status {
@@ -254,7 +270,7 @@ const struct ovsdb_idl_row *ovsdb_idl_txn_insert(
 
 struct ovsdb_idl *ovsdb_idl_txn_get_idl (struct ovsdb_idl_txn *);
 void ovsdb_idl_get_initial_snapshot(struct ovsdb_idl *);
-
+
 
 /* ovsdb_idl_loop provides an easy way to manage the transactions related
  * to 'idl' and to cope with different status during transaction. */

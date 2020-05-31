@@ -35,7 +35,9 @@ struct ovsdb_idl_row {
 
     /* Transactional data. */
     struct ovsdb_datum *new;    /* Modified data (null to delete row). */
+    /* 前置条件 */
     unsigned long int *prereqs; /* Bitmap of columns to verify in "old". */
+    /* 用于记录哪一列发生了修改 */
     unsigned long int *written; /* Bitmap of columns from "new" to write. */
     struct hmap_node txn_node;  /* Node in ovsdb_idl_txn's list. */
 
@@ -63,11 +65,12 @@ struct ovsdb_idl_table_class {
 
 /* 用于镜像关注的表数据 */
 struct ovsdb_idl_table {
-    const struct ovsdb_idl_table_class *class; /* 表的相关信息 */
+    const struct ovsdb_idl_table_class *class; /* 引用表的元数据 */
     unsigned char *modes;    /* OVSDB_IDL_* bitmasks, indexed by column. */
     bool need_table;         /* Monitor table even if no columns are selected
                               * for replication. */
     struct shash columns;    /* Contains "const struct ovsdb_idl_column *"s. */
+    /* rows用于记录所有的行 */
     struct hmap rows;        /* Contains "struct ovsdb_idl_row"s. */
     struct ovsdb_idl *idl;   /* Containing idl. */
     unsigned int change_seqno[OVSDB_IDL_CHANGE_MAX]; /* 序列值,如果发生更改,序列值会变化 */
@@ -75,6 +78,7 @@ struct ovsdb_idl_table {
     struct ovs_list track_list; /* Tracked rows (ovsdb_idl_row.track_node). */
 };
 
+/* 数据库的元数据 */
 struct ovsdb_idl_class {
     const char *database;       /* <db-name> for this database. */
     const struct ovsdb_idl_table_class *tables;

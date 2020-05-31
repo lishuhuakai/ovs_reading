@@ -44,17 +44,20 @@ VLOG_DEFINE_THIS_MODULE(stream);
 COVERAGE_DEFINE(pstream_open);
 COVERAGE_DEFINE(stream_open);
 
-/* State of an active stream.*/
+/* State of an active stream.
+ * 流的状态
+ */
 enum stream_state {
     SCS_CONNECTING,             /* Underlying stream is not connected. */
     SCS_CONNECTED,              /* Connection established. */
     SCS_DISCONNECTED            /* Connection failed or connection closed. */
 };
 
+/* 客户端相关的操作类 */
 static const struct stream_class *stream_classes[] = {
-    &tcp_stream_class,
+    &tcp_stream_class, /* tcp流 */
 #ifndef _WIN32
-    &unix_stream_class,
+    &unix_stream_class, /* unix域流 */
 #else
     &windows_stream_class,
 #endif
@@ -63,6 +66,7 @@ static const struct stream_class *stream_classes[] = {
 #endif
 };
 
+/* 服务器相关的操作类 */
 static const struct pstream_class *pstream_classes[] = {
     &ptcp_pstream_class,
 #ifndef _WIN32
@@ -134,7 +138,7 @@ stream_usage(const char *name, bool active, bool passive,
         printf("  unix:FILE               "
                "Unix domain socket named FILE\n");
     }
-
+    /* passive表示被动监听,也就是服务端 */
     if (passive) {
         printf("Passive %s connection methods:\n", name);
         printf("  ptcp:PORT[:IP]          "
@@ -163,6 +167,9 @@ stream_usage(const char *name, bool active, bool passive,
  * named "TYPE" into '*classp' and returns 0.  Returns EAFNOSUPPORT and stores
  * a null pointer into '*classp' if 'name' is in the wrong form or if no such
  * class exists. */
+/* 给定流的一个名称,格式为"TYPE:ARGS",举个例子(tcp:127.0.0.1:8080, unix:/xx/xx)
+ * 获取对应的操作类,将结果存储到classp中
+ */
 static int
 stream_lookup_class(const char *name, const struct stream_class **classp)
 {
@@ -203,6 +210,9 @@ stream_verify_name(const char *name)
  * Returns 0 if successful, otherwise a positive errno value.  If successful,
  * stores a pointer to the new connection in '*streamp', otherwise a null
  * pointer.  */
+ /* 作为客户端,通过流(stream)连接到对端, name是连接的名称,格式为'TYPE:ARGS'
+  * 成功返回0,否则返回正的errno,如果成功,将值存储到streamp中
+  */
 int
 stream_open(const char *name, struct stream **streamp, uint8_t dscp)
 {
@@ -221,6 +231,7 @@ stream_open(const char *name, struct stream **streamp, uint8_t dscp)
 
     /* Call class's "open" function. */
     suffix_copy = xstrdup(strchr(name, ':') + 1);
+    /* 调用相应的类打开stream */
     error = class->open(name, suffix_copy, &stream, dscp);
     free(suffix_copy);
     if (error) {
@@ -263,7 +274,7 @@ stream_open_block(int error, struct stream **streamp)
         ovs_assert(error != EINPROGRESS);
     }
 
-    if (error) {
+    if (error) { /* 连接断开 */
         stream_close(stream);
         *streamp = NULL;
     } else {
@@ -308,6 +319,7 @@ scs_connecting(struct stream *stream)
  * complete, returns 0 if the connection was successful or a positive errno
  * value if it failed.  If the connection is still in progress, returns
  * EAGAIN. */
+ /* 试图通过流(stream)连接到对端,如果连接成功,返回0 */
 int
 stream_connect(struct stream *stream)
 {
@@ -337,7 +349,7 @@ stream_connect(struct stream *stream)
 /* Tries to receive up to 'n' bytes from 'stream' into 'buffer', and returns:
  *
  *     - If successful, the number of bytes received (between 1 and 'n').
- *
+ *     - 如果成功,返回读取的字节数目
  *     - On error, a negative errno value.
  *
  *     - 0, if the connection has been closed in the normal fashion, or if 'n'
@@ -355,14 +367,17 @@ stream_recv(struct stream *stream, void *buffer, size_t n)
 }
 
 /* Tries to send up to 'n' bytes of 'buffer' on 'stream', and returns:
+ * 尝试通过stream给对端发送n字节的数据
  *
  *     - If successful, the number of bytes sent (between 1 and 'n').  0 is
  *       only a valid return value if 'n' is 0.
- *
+ *     - 成功,返回发送的字节数目
  *     - On error, a negative errno value.
  *
  * The send function will not block.  If no bytes can be immediately accepted
- * for transmission, it returns -EAGAIN immediately. */
+ * for transmission, it returns -EAGAIN immediately.
+ * 发送函数不会阻塞,如果不能立即发送,会返回-EAGAIN
+ */
 int
 stream_send(struct stream *stream, const void *buffer, size_t n)
 {
@@ -383,7 +398,9 @@ stream_run(struct stream *stream)
 }
 
 /* Arranges for the poll loop to wake up when 'stream' needs to perform
- * maintenance activities. */
+ * maintenance activities.
+ * 重新安排poll loop,当流需要执行维护性的操作的时候
+ */
 void
 stream_run_wait(struct stream *stream)
 {
@@ -393,7 +410,9 @@ stream_run_wait(struct stream *stream)
 }
 
 /* Arranges for the poll loop to wake up when 'stream' is ready to take an
- * action of the given 'type'. */
+ * action of the given 'type'.
+ *
+ */
 void
 stream_wait(struct stream *stream, enum stream_wait_type wait)
 {
@@ -489,7 +508,7 @@ stream_or_pstream_needs_probes(const char *name)
 /* Attempts to start listening for remote stream connections.  'name' is a
  * connection name in the form "TYPE:ARGS", where TYPE is an passive stream
  * class's name and ARGS are stream class-specific.
- * 
+ *
  * Returns 0 if successful, otherwise a positive errno value.  If successful,
  * stores a pointer to the new connection in '*pstreamp', otherwise a null
  * pointer.  */
@@ -599,16 +618,18 @@ pstream_get_bound_port(const struct pstream *pstream)
 {
     return pstream->bound_port;
 }
-
+
 /* Initializes 'stream' as a new stream named 'name', implemented via 'class'.
  * The initial connection status, supplied as 'connect_status', is interpreted
  * as follows:
- *
+ * 此流的操作都在calss中定义
  *      - 0: 'stream' is connected.  Its 'send' and 'recv' functions may be
  *        called in the normal fashion.
+ *      - 0: 流已经建立成功,可以正常调用send和recv函数
  *
  *      - EAGAIN: 'stream' is trying to complete a connection.  Its 'connect'
  *        function should be called to complete the connection.
+ *      - EAGAIN: 正在尝试建立连接
  *
  *      - Other positive errno values indicate that the connection failed with
  *        the specified error.
@@ -645,7 +666,7 @@ pstream_set_bound_port(struct pstream *pstream, ovs_be16 port)
 {
     pstream->bound_port = port;
 }
-
+
 static int
 count_fields(const char *s_)
 {

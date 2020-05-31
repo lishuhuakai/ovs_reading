@@ -68,7 +68,7 @@ int pstream_accept_block(struct pstream *, struct stream **);
 void pstream_wait(struct pstream *);
 
 ovs_be16 pstream_get_bound_port(const struct pstream *);
-
+
 /* Convenience functions. */
 
 int stream_open_with_default_port(const char *name,

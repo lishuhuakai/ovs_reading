@@ -29,7 +29,7 @@ struct jsonrpc_msg;
 struct pstream;
 struct reconnect_stats;
 struct stream;
-
+
 /* API for a JSON-RPC stream. */
 
 /* Default port numbers.
@@ -95,7 +95,7 @@ void jsonrpc_msg_destroy(struct jsonrpc_msg *);
 
 char *jsonrpc_msg_from_json(struct json *, struct jsonrpc_msg **);
 struct json *jsonrpc_msg_to_json(struct jsonrpc_msg *);
-
+
 /* A JSON-RPC session with reconnection. */
 
 struct jsonrpc_session *jsonrpc_session_open(const char *name, bool retry);
