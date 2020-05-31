@@ -53,7 +53,7 @@ static void maybe_unlink_and_free(char *path);
  * 'connect_status' is interpreted as described for stream_init(). 'fd_type'
  * tells whether the socket is TCP or Unix domain socket.
  *
- * ¹¹½¨Ò»¸öĞÂµÄÁ÷Á¬½Ó
+ * æ„å»ºä¸€ä¸ªæ–°çš„æµè¿æ¥
  *
  * Returns 0 if successful, otherwise a positive errno value.  (The current
  * implementation never fails.) 
@@ -62,7 +62,7 @@ int
 new_fd_stream(const char *name, int fd, int connect_status, int fd_type,
               struct stream **streamp)
 {
-    /* ÕâÀïÊµ¼Ê´´½¨µÄÊÇstream_fd½á¹¹,·µ»ØµÄÆäÊµÊÇËüµÄ×Ó½á¹¹²¿·Ö */
+    /* è¿™é‡Œå®é™…åˆ›å»ºçš„æ˜¯stream_fdç»“æ„,è¿”å›çš„å…¶å®æ˜¯å®ƒçš„å­ç»“æ„éƒ¨åˆ† */
     struct stream_fd *s;
 
     s = xmalloc(sizeof *s);

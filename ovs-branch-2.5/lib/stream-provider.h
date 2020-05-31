@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/* provideræ–‡ä»¶ä¸»è¦ç”¨äºå®šä¹‰æ¥å£ */
 #ifndef STREAM_PROVIDER_H
 #define STREAM_PROVIDER_H 1
 
@@ -23,14 +23,14 @@
 /* Active stream connection. */
 
 /* Active stream connection.
- * ·¢ÆğÁ¬½ÓµÄstream
- * ¿Í»§¶Ë
+ * å‘èµ·è¿æ¥çš„stream
+ * å®¢æˆ·ç«¯
  * This structure should be treated as opaque by implementation. */
 struct stream {
-    const struct stream_class *class; /* Êµ¼Ê Á÷¶ÔÏó */
-    int state; /* Á¬½Ó×´Ì¬,È¡ÖµÎªSCS_CONNECTINGµÈÃ¶¾Ù */
-    int error; /* ´íÎóÂë */
-    char *name; /* ĞÎÊ½hostIP:port Èçname = "127.0.0.1:6635" */
+    const struct stream_class *class;/* å®é™… æµå¯¹è±¡ */
+    int state; /* æµçš„çŠ¶æ€ */
+    int error; /* é”™è¯¯ç  */
+    char *name;  /* å½¢å¼hostIP:port å¦‚name = "127.0.0.1:6635" */
 };
 
 void stream_init(struct stream *, const struct stream_class *,
@@ -128,7 +128,7 @@ struct stream_class {
 };
 
 /* Passive listener for incoming stream connections.
- * ±»¶¯¼àÌıÕß -- server¶Ë
+ * è¢«åŠ¨ç›‘å¬è€… -- serverç«¯
  * This structure should be treated as opaque by stream implementations. */
 struct pstream {
     const struct pstream_class *class;
