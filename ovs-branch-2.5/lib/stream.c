@@ -253,6 +253,7 @@ error:
  * successful, otherwise a positive errno value other than EAGAIN or
  * EINPROGRESS.  If successful, leaves '*streamp' untouched; on error, closes
  * '*streamp' and sets '*streamp' to null.
+ * 阻塞,一直到之前的连接成功或者失败
  *
  * Typical usage:
  *   error = stream_open_block(stream_open("tcp:1.2.3.4:5", &stream), &stream);
@@ -265,6 +266,7 @@ stream_open_block(int error, struct stream **streamp)
     fatal_signal_run();
 
     if (!error) {
+        /* EAGIAN表示连接未成功,需要再次连接 */
         while ((error = stream_connect(stream)) == EAGAIN) {
             stream_run(stream);
             stream_run_wait(stream);

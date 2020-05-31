@@ -59,7 +59,9 @@ static void jsonrpc_cleanup(struct jsonrpc *);
 static void jsonrpc_error(struct jsonrpc *, int error);
 
 /* This is just the same as stream_open() except that it uses the default
- * JSONRPC port if none is specified. */
+ * JSONRPC port if none is specified.
+ * 这个函数和stream_open一致,除了它使用了默认的jsonrpc端口
+ */
 int
 jsonrpc_stream_open(const char *name, struct stream **streamp, uint8_t dscp)
 {
@@ -75,7 +77,9 @@ jsonrpc_pstream_open(const char *name, struct pstream **pstreamp, uint8_t dscp)
 }
 
 /* Returns a new JSON-RPC stream that uses 'stream' for input and output.  The
- * new jsonrpc object takes ownership of 'stream'. */
+ * new jsonrpc object takes ownership of 'stream'.
+ * JSON-RPC将对流(stream)的操作再次封装,再次构建了一层抽象
+ */
 struct jsonrpc *
 jsonrpc_open(struct stream *stream)
 {
@@ -86,6 +90,7 @@ jsonrpc_open(struct stream *stream)
     rpc = xzalloc(sizeof *rpc);
     rpc->name = xstrdup(stream_get_name(stream));
     rpc->stream = stream;
+    /* 缓冲区初始化 */
     byteq_init(&rpc->input, rpc->input_buffer, sizeof rpc->input_buffer);
     list_init(&rpc->output);
 
@@ -846,10 +851,13 @@ jsonrpc_session_close(struct jsonrpc_session *s)
     }
 }
 
+/* 关闭jsonrpc
+ *
+ */
 static void
 jsonrpc_session_disconnect(struct jsonrpc_session *s)
 {
-    if (s->rpc) {
+    if (s->rpc) { /* 清空rpc */
         jsonrpc_error(s->rpc, EOF);
         jsonrpc_close(s->rpc);
         s->rpc = NULL;
@@ -892,11 +900,11 @@ jsonrpc_session_connect(struct jsonrpc_session *s)
 void
 jsonrpc_session_run(struct jsonrpc_session *s)
 {
-    if (s->pstream) {
+    if (s->pstream) { /* 服务端 */
         struct stream *stream;
         int error;
 
-        error = pstream_accept(s->pstream, &stream);
+        error = pstream_accept(s->pstream, &stream); /* 接受连接 */
         if (!error) {
             if (s->rpc || s->stream) {
                 VLOG_INFO_RL(&rl,
@@ -913,7 +921,7 @@ jsonrpc_session_run(struct jsonrpc_session *s)
         }
     }
 
-    if (s->rpc) {
+    if (s->rpc) { /* rpc存在,表示连接建立成功 */
         size_t backlog;
         int error;
 
@@ -937,16 +945,16 @@ jsonrpc_session_run(struct jsonrpc_session *s)
             jsonrpc_session_disconnect(s);
             s->last_error = error;
         }
-    } else if (s->stream) {
+    } else if (s->stream) { /* 连接 */
         int error;
 
         stream_run(s->stream);
-        error = stream_connect(s->stream);
-        if (!error) {
+        error = stream_connect(s->stream); /* 判断是否连接成功 */
+        if (!error) { /* 连接成功 */
             reconnect_connected(s->reconnect, time_msec());
             s->rpc = jsonrpc_open(s->stream);
             s->stream = NULL;
-        } else if (error != EAGAIN) {
+        } else if (error != EAGAIN) { /* 连接失败 */
             reconnect_connect_failed(s->reconnect, time_msec(), error);
             stream_close(s->stream);
             s->stream = NULL;
@@ -964,7 +972,7 @@ jsonrpc_session_run(struct jsonrpc_session *s)
         jsonrpc_session_disconnect(s);
         break;
 
-    case RECONNECT_PROBE:
+    case RECONNECT_PROBE: /* 发送探测消息 */
         if (s->rpc) {
             struct json *params;
             struct jsonrpc_msg *request;
