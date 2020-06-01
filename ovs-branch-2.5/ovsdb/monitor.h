@@ -17,6 +17,7 @@
 #ifndef OVSDB_MONITOR_H
 #define OVSDB_MONITOR_H
 
+/* monitor的相关实现 */
 struct ovsdb_monitor;
 
 enum ovsdb_monitor_selection {

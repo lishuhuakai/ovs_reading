@@ -515,6 +515,9 @@ ovsdb_idl_get_last_error(const struct ovsdb_idl *idl)
     return jsonrpc_session_get_last_error(idl->session);
 }
 
+/* @param column 列的元数据
+ *
+ */
 static unsigned char *
 ovsdb_idl_get_mode(struct ovsdb_idl *idl,
                    const struct ovsdb_idl_column *column)
@@ -574,7 +577,9 @@ void
 ovsdb_idl_add_column(struct ovsdb_idl *idl,
                      const struct ovsdb_idl_column *column)
 {
+    /* ALERT表示需要知晓变化 */
     *ovsdb_idl_get_mode(idl, column) = OVSDB_IDL_MONITOR | OVSDB_IDL_ALERT;
+    /* 如果类型是引用,即使被引用的表没有被关注,一些数据也要被镜像,防止空指针 */
     add_ref_table(idl, &column->type.key);
     add_ref_table(idl, &column->type.value);
 }
@@ -583,15 +588,23 @@ ovsdb_idl_add_column(struct ovsdb_idl *idl,
  * no columns are selected for replication. Just the necessary data for table
  * references will be replicated (the UUID of the rows, for instance), any
  * columns not selected for replication will remain unreplicated.
+ * 确保tc对应的表会被镜像,即使我们没有选择要镜像的列,只会镜像一些必要的数据,
+ * 比如说行的uuid, 其他没有被选择要镜像的列不会被镜像
  * This can be useful because it allows 'idl' to keep track of what rows in the
  * table actually exist, which in turn allows columns that reference the table
  * to have accurate contents. (The IDL presents the database with references to
  * rows that do not exist removed.)
+ * 这其实是非常有用的,因为它允许idl追踪表中的行那些是确实存在的,这可以保证引用这个表
+ * 的列拥有实际的内容.
  *
  * This function is only useful if 'monitor_everything_by_default' was false in
  * the call to ovsdb_idl_create().  This function should be called between
  * ovsdb_idl_create() and the first call to ovsdb_idl_run().
+ *
  */
+ /* @param idl 数据库句柄
+  * @param tc 表的元数据
+  */
 void
 ovsdb_idl_add_table(struct ovsdb_idl *idl,
                     const struct ovsdb_idl_table_class *tc)
@@ -602,7 +615,7 @@ ovsdb_idl_add_table(struct ovsdb_idl *idl,
         struct ovsdb_idl_table *table = &idl->tables[i];
 
         if (table->class == tc) {
-            table->need_table = true;
+            table->need_table = true; /* need_table表示要复制表 */
             return;
         }
     }
@@ -882,7 +895,16 @@ parse_schema(const struct json *schema_json)
 }
 
 /* 向ovsdb发送请求monitor数据库表的请求
- *
+ * "method" : "monitor"
+ * "params" : [<db-name>, <json-value>, <monitor-request>]
+ * <monitor-request>:
+ *   "columns" : [<column>*]  optional
+ *   "select" : <monitor-select> optional
+ * <monitor-select>:
+ *   "initial": <boolean> optional
+ *   "insert": <boolean> optional
+ *   "delete": <boolean> optional
+ *   "modify": <boolean> optional
  */
 static void
 ovsdb_idl_send_monitor_request(struct ovsdb_idl *idl,
@@ -908,7 +930,7 @@ ovsdb_idl_send_monitor_request(struct ovsdb_idl *idl,
         columns = table->need_table ? json_array_create_empty() : NULL;
         for (j = 0; j < tc->n_columns; j++) { /* 遍历列 */
             const struct ovsdb_idl_column *column = &tc->columns[j];
-            if (table->modes[j] & OVSDB_IDL_MONITOR) { /* 如果需要监视表 */
+            if (table->modes[j] & OVSDB_IDL_MONITOR) { /* 如果需要监视表的这一列 */
                 if (table_schema
                     && !sset_contains(table_schema, column->name)) {
                     VLOG_WARN("%s table in %s database lacks %s column "
@@ -920,6 +942,7 @@ ovsdb_idl_send_monitor_request(struct ovsdb_idl *idl,
                 if (!columns) {
                     columns = json_array_create_empty();
                 }
+                /* 添加列名,放入columns这个json串汇总 */
                 json_array_add(columns, json_string_create(column->name));
             }
         }
@@ -935,6 +958,9 @@ ovsdb_idl_send_monitor_request(struct ovsdb_idl *idl,
 
             monitor_request = json_object_create();
             json_object_put(monitor_request, "columns", columns);
+            /* monitor请求
+             * table_name : [c1, c2]
+             */
             json_object_put(monitor_requests, tc->name, monitor_request);
         }
     }
@@ -1152,16 +1178,24 @@ ovsdb_idl_row_update(struct ovsdb_idl_row *row, const struct json *row_json,
                 ovsdb_datum_swap(old, &datum);
                 if (table->modes[column_idx] & OVSDB_IDL_ALERT) { /* 而且用户配置了==>需要得到通知 */
                     changed = true;
+                    /* 对应的操作的序列值会发生更改
+                     * 这里需要说明一下如何判断一行是否发生了更改(增删改)? 很简单
+                     * 比较序列值即可,举个例子,如果row A发生了修改,而且我们关注了rowA的相关列(即OVSDB_IDL_ALERT)
+                     * 那么从下面的代码可以知道,row->change_seqno[OVSDB_IDL_CHANGE_MODIFY] >= idl->change_seqno
+                     * 否则肯定会小于,因为idl->change_seqno每接收到服务器的更新,这个值就会+1
+                     * 其他操作类似.
+                     */
                     row->change_seqno[change]
                         = row->table->change_seqno[change]
                         = row->table->idl->change_seqno + 1; /* 序列值发生了更改 */
                     if (table->modes[column_idx] & OVSDB_IDL_TRACK) { /* 这一列需要被追踪 */
-                        if (list_is_empty(&row->track_node)) {
+                        if (list_is_empty(&row->track_node)) { /* 保证不会重复被加入 */
                             list_push_front(&row->table->track_list,
                                             &row->track_node); /* 放入追踪列表之中 */
                         }
                     }
                 }
+                /* 如果某一行的某些列没有ALERT标记,那么即使这些列更改了,用户其实也无法知晓 */
             } else {
                 /* Didn't really change but the OVSDB monitor protocol always
                  * includes every value in a row. */
@@ -1467,7 +1501,9 @@ ovsdb_idl_delete_row(struct ovsdb_idl_row *row)
 }
 
 /* Returns true if a column with mode OVSDB_IDL_MODE_RW changed, false
- * otherwise. */
+ * otherwise.
+ * 如果一个带有OVSDB_IDL_MODE_RW标志的行发生了更改,返回true
+ */
 static bool
 ovsdb_idl_modify_row(struct ovsdb_idl_row *row, const struct json *row_json)
 {
@@ -1475,6 +1511,7 @@ ovsdb_idl_modify_row(struct ovsdb_idl_row *row, const struct json *row_json)
 
     ovsdb_idl_row_unparse(row);
     ovsdb_idl_row_clear_arcs(row, true);
+    /* 表示是否发生了修改 */
     changed = ovsdb_idl_row_update(row, row_json, OVSDB_IDL_CHANGE_MODIFY);
     ovsdb_idl_row_parse(row);
 

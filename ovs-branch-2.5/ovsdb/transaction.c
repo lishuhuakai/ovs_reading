@@ -173,7 +173,7 @@ ovsdb_row_from_index_node(struct hmap_node *index_node,
     return (void *) ((char *) index_node - ovsdb_row_index_offset__(table, i));
 }
 /* 取消事务
- * 
+ *
  */
 void
 ovsdb_txn_abort(struct ovsdb_txn *txn)
@@ -556,7 +556,7 @@ assess_weak_refs(struct ovsdb_txn *txn, struct ovsdb_txn_row *txn_row)
                 }
             }
         }
-		
+
         if (datum->n != orig_n) { /* 值的个数发生了更改 */
             bitmap_set1(txn_row->changed, column->index);
             ovsdb_datum_sort_assert(datum, column->type.key.type);
@@ -764,7 +764,7 @@ check_index_uniqueness(struct ovsdb_txn *txn OVS_UNUSED,
         if (irow) {
             return duplicate_index_row(index, irow, row);
         }
-	
+
         irow = ovsdb_index_search(&table->indexes[i], row, i, hash);
         if (irow && !irow->txn_row) {
             return duplicate_index_row(index, irow, row);
@@ -853,8 +853,11 @@ ovsdb_txn_commit_(struct ovsdb_txn *txn, bool durable)
         return OVSDB_WRAP_BUG("can't happen", error);
     }
 
-    /* Send the commit to each replica. */
+    /* Send the commit to each replica.
+     * 每次提交都要将更新传递给监视器
+     */
     LIST_FOR_EACH (replica, node, &txn->db->replicas) {
+        /* 每一个监视器都执行commit函数 */
         error = (replica->class->commit)(replica, txn, durable);
         if (error) {
             /* We don't support two-phase commit so only the first replica is
@@ -968,7 +971,7 @@ ovsdb_txn_row_create(struct ovsdb_txn *txn, struct ovsdb_table *table,
 }
 
 /* 修改txn_row
- *  
+ *
  */
 struct ovsdb_row *
 ovsdb_txn_row_modify(struct ovsdb_txn *txn, const struct ovsdb_row *ro_row_)

@@ -47,12 +47,15 @@ static struct hmap ovsdb_monitors = HMAP_INITIALIZER(&ovsdb_monitors);
  */
 
 /* A collection of tables being monitored. */
-/* 用于记录被关注的表 */
+/* 用于记录被关注的表
+ * 一个ovsdb_monitor实例一般记录了一个客户端需要关注监视的相关信息
+ */
 struct ovsdb_monitor {
     struct ovsdb_replica replica;
+    /* 客户关注的表信息 */
     struct shash tables;     /* Holds "struct ovsdb_monitor_table"s. */
     struct ovs_list jsonrpc_monitors;  /* Contains "jsonrpc_monitor_node"s. */
-    struct ovsdb *db;
+    struct ovsdb *db; /* 指向真实的数据库 */
     uint64_t n_transactions;      /* Count number of committed transactions. */
     struct hmap_node hmap_node;   /* Elements within ovsdb_monitors.  */
     struct hmap json_cache;       /* Contains "ovsdb_monitor_json_cache_node"s.*/
@@ -72,6 +75,7 @@ struct jsonrpc_monitor_node {
 };
 
 /* A particular column being monitored. */
+/* 用于记录被关注的列 */
 struct ovsdb_monitor_column {
     const struct ovsdb_column *column;
     enum ovsdb_monitor_selection select;
@@ -88,6 +92,7 @@ struct ovsdb_monitor_row {
 
 /* Contains 'struct ovsdb_monitor_row's for rows that have been
  * updated but not yet flushed to all the jsonrpc connection.
+ * 包含struct ovsdb_monitor_row
  *
  * 'n_refs' represent the number of jsonrpc connections that have
  * not received updates. Generate the update for the last jsonprc
@@ -99,8 +104,8 @@ struct ovsdb_monitor_row {
 struct ovsdb_monitor_changes {
     struct ovsdb_monitor_table *mt;
     struct hmap rows;
-    int n_refs;
-    uint64_t transaction;
+    int n_refs; /* 还有多少连接没有接收到更新 */
+    uint64_t transaction; /* 第一次更新的事务id */
     struct hmap_node hmap_node;  /* Element in ovsdb_monitor_tables' changes
                                     hmap.  */
 };
@@ -193,7 +198,9 @@ ovsdb_monitor_cast(struct ovsdb_replica *replica)
 }
 
 /* Finds and returns the ovsdb_monitor_row in 'mt->changes->rows' for the
- * given 'uuid', or NULL if there is no such row. */
+ * given 'uuid', or NULL if there is no such row.
+ * 根据uuid来查找ovsdb_monitor_row
+ */
 static struct ovsdb_monitor_row *
 ovsdb_monitor_changes_row_find(const struct ovsdb_monitor_changes *changes,
                                const struct uuid *uuid)
@@ -299,7 +306,9 @@ ovsdb_monitor_add_jsonrpc_monitor(struct ovsdb_monitor *dbmon,
     jm->jsonrpc_monitor = jsonrpc_monitor;
     list_push_back(&dbmon->jsonrpc_monitors, &jm->node);
 }
-
+/* 构建一个监视器
+ *
+ */
 struct ovsdb_monitor *
 ovsdb_monitor_create(struct ovsdb *db,
                      struct ovsdb_jsonrpc_monitor *jsonrpc_monitor)
@@ -322,7 +331,7 @@ ovsdb_monitor_create(struct ovsdb *db,
 }
 
 /* 在monitor中添加某张表
- *
+ * @param table 待监视的表
  */
 void
 ovsdb_monitor_add_table(struct ovsdb_monitor *m,
@@ -337,7 +346,9 @@ ovsdb_monitor_add_table(struct ovsdb_monitor *m,
 }
 
 /* 添加关注的列
- *
+ * @param table 待关注的表
+ * @param column 待关注的列
+ * @param select 需要关注那种行为
  */
 void
 ovsdb_monitor_add_column(struct ovsdb_monitor *dbmon,
@@ -441,6 +452,7 @@ ovsdb_monitor_table_untrack_changes(struct ovsdb_monitor_table *mt,
 }
 
 /* Start tracking changes to table 'mt' begins from 'transaction' inclusive.
+ * 从transaction开始,追踪表的变化
  */
 static void
 ovsdb_monitor_table_track_changes(struct ovsdb_monitor_table *mt,
@@ -450,7 +462,7 @@ ovsdb_monitor_table_track_changes(struct ovsdb_monitor_table *mt,
 
     changes = ovsdb_monitor_table_find_changes(mt, transaction);
     if (changes) {
-        changes->n_refs++;
+        changes->n_refs++; /* 引用计数+1 */
     } else {
         ovsdb_monitor_table_add_changes(mt, transaction);
     }
@@ -480,7 +492,7 @@ ovsdb_monitor_row_update_type(bool initial, const bool old, const bool new)
 
 /* Returns JSON for a <row-update> (as described in RFC 7047) for 'row' within
  * 'mt', or NULL if no row update should be sent.
- *
+ * 返回<row-update>的json串
  * The caller should specify 'initial' as true if the returned JSON is going to
  * be used as part of the initial reply to a "monitor" request, false if it is
  * going to be used as part of an "update" notification.
@@ -497,13 +509,13 @@ ovsdb_monitor_compose_row_update(
     struct json *old_json, *new_json;
     struct json *row_json;
     size_t i;
-
+    /* 更新的类型 */
     type = ovsdb_monitor_row_update_type(initial, row->old, row->new);
     if (!(mt->select & type)) {
         return NULL;
     }
 
-    if (type == OJMS_MODIFY) {
+    if (type == OJMS_MODIFY) { /* 发生了修改 */
         size_t n_changes;
 
         n_changes = 0;
@@ -544,6 +556,7 @@ ovsdb_monitor_compose_row_update(
 
         if ((type == OJMS_MODIFY && bitmap_is_set(changed, i))
             || type == OJMS_DELETE) {
+            /* 填充数据 */
             json_object_put(old_json, c->column->name,
                             ovsdb_datum_to_json(&row->old[i],
                                                 &c->column->type));
@@ -572,6 +585,7 @@ ovsdb_monitor_compose_update(struct ovsdb_monitor *dbmon,
 
     max_columns = 0;
     SHASH_FOR_EACH (node, &dbmon->tables) {
+        /* 关注的表 */
         struct ovsdb_monitor_table *mt = node->data;
 
         max_columns = MAX(max_columns, mt->n_columns);
@@ -623,10 +637,13 @@ ovsdb_monitor_compose_update(struct ovsdb_monitor *dbmon,
 /* Returns JSON for a <table-updates> object (as described in RFC 7047)
  * for all the outstanding changes within 'monitor' that starts from
  * '*unflushed' transaction id.
+ * 返回<table-updates>的json串,包含从前一个未输入的时刻到现在的变化
  *
  * The caller should specify 'initial' as true if the returned JSON is going to
  * be used as part of the initial reply to a "monitor" request, false if it is
- * going to be used as part of an "update" notification. */
+ * going to be used as part of an "update" notification.
+ * 如果返回的JSON将被作为monitor请求的初始回复,initial应该置为true,否则应该置为false
+ */
 struct json *
 ovsdb_monitor_get_update(struct ovsdb_monitor *dbmon,
                          bool initial, uint64_t *unflushed_)
@@ -634,6 +651,7 @@ ovsdb_monitor_get_update(struct ovsdb_monitor *dbmon,
     struct ovsdb_monitor_json_cache_node *cache_node;
     struct shash_node *node;
     struct json *json;
+    /* unflushed是id,表示某个时刻?? */
     const uint64_t unflushed = *unflushed_;
     const uint64_t next_unflushed = dbmon->n_transactions + 1;
 
@@ -748,7 +766,7 @@ ovsdb_monitor_changes_update(const struct ovsdb_row *old,
             free_monitor_row_data(mt, change->new);
             change->new = NULL;
 
-            if (!change->old) {
+            if (!change->old) { /* 一行数据被添加,然后被删除 */
                 /* This row was added then deleted.  Forget about it. */
                 hmap_remove(&changes->rows, &change->hmap_node);
                 free(change);
@@ -793,6 +811,11 @@ ovsdb_monitor_changes_classify(enum ovsdb_monitor_selection type,
                 :  OVSDB_CHANGES_REQUIRE_INTERNAL_UPDATE;
 }
 
+/*
+ * @param old 旧数据
+ * @param new 新数据
+ * @param changed 记录是否发生了更改
+ */
 static bool
 ovsdb_monitor_change_cb(const struct ovsdb_row *old,
                         const struct ovsdb_row *new,
@@ -819,7 +842,7 @@ ovsdb_monitor_change_cb(const struct ovsdb_row *old,
         enum ovsdb_monitor_changes_efficacy efficacy;
         enum ovsdb_monitor_selection type;
 
-        type = ovsdb_monitor_row_update_type(false, old, new);
+        type = ovsdb_monitor_row_update_type(false, old, new); /* 变化的类型 */
         efficacy = ovsdb_monitor_changes_classify(type, mt, changed);
         if (efficacy > OVSDB_CHANGES_NO_EFFECT) {
             ovsdb_monitor_changes_update(old, new, mt, changes);
@@ -850,6 +873,7 @@ ovsdb_monitor_get_initial(const struct ovsdb_monitor *dbmon)
             changes = ovsdb_monitor_table_find_changes(mt, 0);
             if (!changes) {
                 changes = ovsdb_monitor_table_add_changes(mt, 0);
+                /* 这里直接将每一行的数据加进去了 */
                 HMAP_FOR_EACH (row, hmap_node, &mt->table->rows) { /* 遍历每一行 */
                     ovsdb_monitor_changes_update(NULL, row, mt, changes);
                 }
@@ -971,6 +995,9 @@ ovsdb_monitor_hash(const struct ovsdb_monitor *dbmon, size_t basis)
     return basis;
 }
 
+/* 将new_dbmon加入全局的monitor表中
+ * @param new_dbmon 数据库监视器
+ */
 struct ovsdb_monitor *
 ovsdb_monitor_add(struct ovsdb_monitor *new_dbmon)
 {

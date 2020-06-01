@@ -1340,6 +1340,9 @@ ovsdb_jsonrpc_monitor_destroy(struct ovsdb_jsonrpc_monitor *m)
     free(m);
 }
 
+/*
+ * 将更新发送给客户端
+ */
 static void
 ovsdb_jsonrpc_monitor_flush_all(struct ovsdb_jsonrpc_session *s)
 {
