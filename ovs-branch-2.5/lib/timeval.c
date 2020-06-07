@@ -246,16 +246,20 @@ time_alarm(unsigned int secs)
     deadline = now < LLONG_MAX - msecs ? now + msecs : LLONG_MAX;
 }
 
-/* Like poll(), except:
+/* 此函数是对poll的简单封装
+ * Like poll(), except:
+ * 和poll()类似,除了:
  *
  *      - The timeout is specified as an absolute time, as defined by
  *        time_msec(), instead of a duration.
+ *      - 超时使用的是绝对时间
  *
  *      - On error, returns a negative error code (instead of setting errno).
  *
  *      - If interrupted by a signal, retries automatically until the original
  *        timeout is reached.  (Because of this property, this function will
  *        never return -EINTR.)
+ *      - 如果被信号打断,会自动重试(函数不会返回-EINTR)
  *
  * Stores the number of milliseconds elapsed during poll in '*elapsed'. */
 int
@@ -274,7 +278,7 @@ time_poll(struct pollfd *pollfds, int n_pollfds, HANDLE *handles OVS_UNUSED,
         log_poll_interval(*last_wakeup);
     }
     start = time_msec();
-
+    /* 计算超时时间 */
     timeout_when = MIN(timeout_when, deadline);
     quiescent = ovsrcu_is_quiescent();
 
@@ -297,38 +301,19 @@ time_poll(struct pollfd *pollfds, int n_pollfds, HANDLE *handles OVS_UNUSED,
                 ovsrcu_quiesce_start();
             }
         }
-
-#ifndef _WIN32
+        /* 调用poll函数 */
         retval = poll(pollfds, n_pollfds, time_left);
         if (retval < 0) {
             retval = -errno;
         }
-#else
-        if (n_pollfds > MAXIMUM_WAIT_OBJECTS) {
-            VLOG_ERR("Cannot handle more than maximum wait objects\n");
-        } else if (n_pollfds != 0) {
-            retval = WaitForMultipleObjects(n_pollfds, handles, FALSE,
-                                            time_left);
-        }
-        if (retval < 0) {
-            /* XXX This will be replace by a win error to errno
-               conversion function */
-            retval = -WSAGetLastError();
-            retval = -EINVAL;
-        }
-#endif
 
         if (!quiescent && time_left) {
             ovsrcu_quiesce_end();
         }
 
         if (deadline <= time_msec()) {
-#ifndef _WIN32
             fatal_signal_handler(SIGALRM);
-#else
-            VLOG_ERR("wake up from WaitForMultipleObjects after deadline");
-            fatal_signal_handler(SIGTERM);
-#endif
+
             if (retval < 0) {
                 retval = 0;
             }
@@ -366,71 +351,13 @@ time_boot_msec(void)
     return boot_time;
 }
 
-#ifdef _WIN32
-static ULARGE_INTEGER
-xgetfiletime(void)
-{
-    ULARGE_INTEGER current_time;
-    FILETIME current_time_ft;
-
-    /* Returns current time in UTC as a 64-bit value representing the number
-     * of 100-nanosecond intervals since January 1, 1601 . */
-    GetSystemTimePreciseAsFileTime(&current_time_ft);
-    current_time.LowPart = current_time_ft.dwLowDateTime;
-    current_time.HighPart = current_time_ft.dwHighDateTime;
-
-    return current_time;
-}
-
-static int
-clock_gettime(clock_t id, struct timespec *ts)
-{
-    if (id == CLOCK_MONOTONIC) {
-        static LARGE_INTEGER freq;
-        LARGE_INTEGER count;
-        long long int ns;
-
-        if (!freq.QuadPart) {
-            /* Number of counts per second. */
-            QueryPerformanceFrequency(&freq);
-        }
-        /* Total number of counts from a starting point. */
-        QueryPerformanceCounter(&count);
-
-        /* Total nano seconds from a starting point. */
-        ns = (double) count.QuadPart / freq.QuadPart * 1000000000;
-
-        ts->tv_sec = count.QuadPart / freq.QuadPart;
-        ts->tv_nsec = ns % 1000000000;
-    } else if (id == CLOCK_REALTIME) {
-        ULARGE_INTEGER current_time = xgetfiletime();
-
-        /* Time from Epoch to now. */
-        ts->tv_sec = (current_time.QuadPart - unix_epoch) / 10000000;
-        ts->tv_nsec = ((current_time.QuadPart - unix_epoch) %
-                       10000000) * 100;
-    } else {
-        return -1;
-    }
-
-    return 0;
-}
-#endif /* _WIN32 */
 
 void
 xgettimeofday(struct timeval *tv)
 {
-#ifndef _WIN32
     if (gettimeofday(tv, NULL) == -1) {
         VLOG_FATAL("gettimeofday failed (%s)", ovs_strerror(errno));
     }
-#else
-    ULARGE_INTEGER current_time = xgetfiletime();
-
-    tv->tv_sec = (current_time.QuadPart - unix_epoch) / 10000000;
-    tv->tv_usec = ((current_time.QuadPart - unix_epoch) %
-                   10000000) / 10;
-#endif
 }
 
 void
@@ -485,11 +412,8 @@ timewarp_work(void)
     seq_change(timewarp_seq);
 
     /* give threads (eg. monitor) some chances to run */
-#ifndef _WIN32
     poll(NULL, 0, 10);
-#else
-    Sleep(10);
-#endif
+
 }
 
 /* Perform work needed for "timewarp_seq"'s producer and consumers. */

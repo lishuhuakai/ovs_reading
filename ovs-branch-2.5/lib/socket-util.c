@@ -88,6 +88,9 @@ xset_nonblocking(int fd)
     }
 }
 
+/* 将连接设置为非阻塞
+ *
+ */
 void
 setsockopt_tcp_nodelay(int fd)
 {
@@ -435,12 +438,16 @@ inet_parse_active(const char *target_, uint16_t default_port,
  * <port> is optional and defaults to 'default_port'.
  *
  * 'style' should be SOCK_STREAM (for TCP) or SOCK_DGRAM (for UDP).
+ * 打开一个非阻塞的IPv4或者IPv6 socket, style有两种SOCK_STREAM(TCP)或者SOCK_DGRAM(UDP).
+ * target用于描述连接,格式为<host>[:port], host字段必须,可以是一个ipv4地址,或者ipv6地址
+ * port非必须
  *
  * On success, returns 0 (indicating connection complete) or EAGAIN (indicating
  * connection in progress), in which case the new file descriptor is stored
  * into '*fdp'.  On failure, returns a positive errno value other than EAGAIN
  * and stores -1 into '*fdp'.
  *
+ * 一旦成功,返回0(连接完成),或者EAGAIN(连接正在进行),新的文件描述符将放入*fdp中,失败的话,返回一个正的错误码
  * If 'ss' is non-null, then on success stores the target address into '*ss'.
  *
  * 'dscp' becomes the DSCP bits in the IP headers for the new connection.  It

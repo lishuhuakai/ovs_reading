@@ -154,6 +154,7 @@ main_loop(struct ovsdb_jsonrpc_server *jsonrpc, struct shash *all_dbs,
             reconfigure_remotes(jsonrpc, all_dbs, remotes),
             &remotes_error);
         report_error_if_changed(reconfigure_ssl(all_dbs), &ssl_error);
+        /* 服务器进行run操作,也就是读取数据,发送数据,新建立连接 */
         ovsdb_jsonrpc_server_run(jsonrpc);
 
         SHASH_FOR_EACH(node, all_dbs) {
@@ -174,6 +175,7 @@ main_loop(struct ovsdb_jsonrpc_server *jsonrpc, struct shash *all_dbs,
         }
 
         memory_wait();
+        /* 执行wait函数,所谓的wait函数,指的是将文件描述符加入poll的描述符之中 */
         ovsdb_jsonrpc_server_wait(jsonrpc);
         unixctl_server_wait(unixctl);
         SHASH_FOR_EACH(node, all_dbs) {
@@ -187,6 +189,7 @@ main_loop(struct ovsdb_jsonrpc_server *jsonrpc, struct shash *all_dbs,
             poll_immediate_wake();
         }
         poll_timer_wait_until(status_timer);
+        /* 这里是所谓的poll函数 */
         poll_block();
         if (should_service_stop()) {
             *exiting = true;
@@ -393,6 +396,7 @@ close_db(struct db *db)
     free(db);
 }
 
+/* 打开数据库 */
 static char *
 open_db(struct server_config *config, const char *filename)
 {

@@ -49,9 +49,9 @@ void stream_run(struct stream *);
 void stream_run_wait(struct stream *);
 
 enum stream_wait_type {
-    STREAM_CONNECT,
-    STREAM_RECV,
-    STREAM_SEND
+    STREAM_CONNECT, /* 连接建立成功 */
+    STREAM_RECV, /* 收到了消息 */
+    STREAM_SEND /* 消息发送成功 */
 };
 void stream_wait(struct stream *, enum stream_wait_type);
 void stream_connect_wait(struct stream *);

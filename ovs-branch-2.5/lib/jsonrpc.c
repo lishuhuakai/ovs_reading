@@ -36,17 +36,24 @@
 VLOG_DEFINE_THIS_MODULE(jsonrpc);
 
 struct jsonrpc {
-    struct stream *stream;
+    struct stream *stream; /* 文件描述符的封装,用于读取以及写入数据 */
     char *name;
+    /* 关于status,取值说明如下:
+     * - 0: no error yet
+     * - >0: errno value
+     * - EOF: end of file (remote end closed connection; not necessarily an error).
+     */
     int status;
 
     /* Input. */
-    struct byteq input;
+    struct byteq input; /* 用于缓存读入的数据 */
     uint8_t input_buffer[512];
     struct json_parser *parser;
 
     /* Output. */
+    /* 用于缓存待写入的数据 */
     struct ovs_list output;     /* Contains "struct ofpbuf"s. */
+    /* 输出链表中元素的个数 */
     size_t output_count;        /* Number of elements in "output". */
     size_t backlog;
 };
@@ -89,7 +96,7 @@ jsonrpc_open(struct stream *stream)
 
     rpc = xzalloc(sizeof *rpc);
     rpc->name = xstrdup(stream_get_name(stream));
-    rpc->stream = stream;
+    rpc->stream = stream; /* 记录下流(stream) */
     /* 缓冲区初始化 */
     byteq_init(&rpc->input, rpc->input_buffer, sizeof rpc->input_buffer);
     list_init(&rpc->output);
@@ -98,7 +105,9 @@ jsonrpc_open(struct stream *stream)
 }
 
 /* Destroys 'rpc', closing the stream on which it is based, and frees its
- * memory. */
+ * memory.
+ * 关闭rpc.
+ */
 void
 jsonrpc_close(struct jsonrpc *rpc)
 {
@@ -109,7 +118,9 @@ jsonrpc_close(struct jsonrpc *rpc)
     }
 }
 
-/* Performs periodic maintenance on 'rpc', such as flushing output buffers. */
+/* Performs periodic maintenance on 'rpc', such as flushing output buffers.
+ * jsonrpc_run主要用于发送数据
+ */
 void
 jsonrpc_run(struct jsonrpc *rpc)
 {
@@ -123,10 +134,10 @@ jsonrpc_run(struct jsonrpc *rpc)
         int retval;
 
         retval = stream_send(rpc->stream, buf->data, buf->size); /* 发送数据 */
-        if (retval >= 0) {
+        if (retval >= 0) { /* 发送数据成功,retval是发送的字节数目 */
             rpc->backlog -= retval;
             ofpbuf_pull(buf, retval);
-            if (!buf->size) {
+            if (!buf->size) { /* buf中数据已经发送完毕 */
                 list_remove(&buf->list_node);
                 rpc->output_count--;
                 ofpbuf_delete(buf);
@@ -143,14 +154,16 @@ jsonrpc_run(struct jsonrpc *rpc)
 }
 
 /* Arranges for the poll loop to wake up when 'rpc' needs to perform
- * maintenance activities. */
+ * maintenance activities.
+ * 将文件描述符加入poll,等待写入数据
+ */
 void
 jsonrpc_wait(struct jsonrpc *rpc)
 {
     if (!rpc->status) {
         stream_run_wait(rpc->stream);
         if (!list_is_empty(&rpc->output)) {
-            stream_send_wait(rpc->stream);
+            stream_send_wait(rpc->stream); /*   将fd加入poll,等待可写 */
         }
     }
 }
@@ -231,13 +244,19 @@ jsonrpc_log_msg(const struct jsonrpc *rpc, const char *title,
 
 /* Schedules 'msg' to be sent on 'rpc' and returns 'rpc''s status (as with
  * jsonrpc_get_status()).
+ * 将消息发到rpc上,返回rpc的状态.
  *
  * If 'msg' cannot be sent immediately, it is appended to a buffer.  The caller
  * is responsible for ensuring that the amount of buffered data is somehow
  * limited.  (jsonrpc_get_backlog() returns the amount of data currently
  * buffered in 'rpc'.)
+ * 如果消息不能立即被发送,它将被加入到缓存中,调用者有必要保证,缓存的数据是有限制的.
  *
  * Always takes ownership of 'msg', regardless of success. */
+ /*
+  * @param rpc rpc实例
+  * @param msg 待发送的消息
+  */
 int
 jsonrpc_send(struct jsonrpc *rpc, struct jsonrpc_msg *msg)
 {
@@ -301,7 +320,7 @@ jsonrpc_recv(struct jsonrpc *rpc, struct jsonrpc_msg **msgp)
     int i;
 
     *msgp = NULL;
-    if (rpc->status) {
+    if (rpc->status) { /* 状态不对,立即退出 */
         return rpc->status;
     }
 
@@ -313,7 +332,7 @@ jsonrpc_recv(struct jsonrpc *rpc, struct jsonrpc_msg **msgp)
             size_t chunk;
             int retval;
 
-            chunk = byteq_headroom(&rpc->input);
+            chunk = byteq_headroom(&rpc->input); /* 剩余的空间数目 */
             retval = stream_recv(rpc->stream, byteq_head(&rpc->input), chunk);
             if (retval < 0) {
                 if (retval == -EAGAIN) {
@@ -341,7 +360,7 @@ jsonrpc_recv(struct jsonrpc *rpc, struct jsonrpc_msg **msgp)
         byteq_advance_tail(&rpc->input, used);
 
         /* If we have complete JSON, attempt to parse it as JSON-RPC. */
-        if (json_parser_is_done(rpc->parser)) {
+        if (json_parser_is_done(rpc->parser)) { /* 看能不能解析出一个完整的消息 */
             *msgp = jsonrpc_parse_received_message(rpc);
             if (*msgp) {
                 return 0;
@@ -362,7 +381,9 @@ jsonrpc_recv(struct jsonrpc *rpc, struct jsonrpc_msg **msgp)
 }
 
 /* Causes the poll loop to wake up when jsonrpc_recv() may return a value other
- * than EAGAIN. */
+ * than EAGAIN.
+ * 使得poll一直阻塞到jsonrpc_recv()获取到了消息,而不是EAGAIN
+ */
 void
 jsonrpc_recv_wait(struct jsonrpc *rpc)
 {
@@ -377,7 +398,9 @@ jsonrpc_recv_wait(struct jsonrpc *rpc)
  * underlying stream.  Returns 0 if 'msg' was sent successfully, otherwise a
  * status value (see jsonrpc_get_status()).
  *
- * Always takes ownership of 'msg', regardless of success. */
+ * Always takes ownership of 'msg', regardless of success.
+ * 将msg通过rpc进行发送,而且等待发送成功,返回0,如果msg被发送成功,否则返回一个状态码
+ */
 int
 jsonrpc_send_block(struct jsonrpc *rpc, struct jsonrpc_msg *msg)
 {
@@ -391,7 +414,9 @@ jsonrpc_send_block(struct jsonrpc *rpc, struct jsonrpc_msg *msg)
     }
 
     for (;;) {
+        /* jsonrpc_run实际是发送数据 */
         jsonrpc_run(rpc);
+        /* 等到所有数据都发送成功 */
         if (list_is_empty(&rpc->output) || rpc->status) {
             return rpc->status;
         }
@@ -401,7 +426,9 @@ jsonrpc_send_block(struct jsonrpc *rpc, struct jsonrpc_msg *msg)
 }
 
 /* Waits for a message to be received on 'rpc'.  Same semantics as
- * jsonrpc_recv() except that EAGAIN will never be returned. */
+ * jsonrpc_recv() except that EAGAIN will never be returned.
+ * 等待,直到在rpc上接收到了一个消息,和jsonrpc_recv一致,处理EAGIN将会被返回
+ */
 int
 jsonrpc_recv_block(struct jsonrpc *rpc, struct jsonrpc_msg **msgp)
 {
@@ -411,10 +438,12 @@ jsonrpc_recv_block(struct jsonrpc *rpc, struct jsonrpc_msg **msgp)
             fatal_signal_run();
             return error;
         }
-
+        /* 先写一次数据 */
         jsonrpc_run(rpc);
         jsonrpc_wait(rpc);
+        /* 等待,一直到有事件可读 */
         jsonrpc_recv_wait(rpc);
+        /* 类似于执行poll */
         poll_block();
     }
 }
@@ -427,7 +456,11 @@ jsonrpc_recv_block(struct jsonrpc *rpc, struct jsonrpc_msg **msgp)
  * Discards any message received on 'rpc' that is not a reply to 'request'
  * (based on message id).
  *
- * Always takes ownership of 'request', regardless of success. */
+ * Always takes ownership of 'request', regardless of success.
+ * 在rpc上发送request,等待回复,返回0,表示成功, replyp会填充上返回的消息,调用者需要
+ * 自行释放填充的值,否则返回状态码(status value)
+ * 丢弃在rpc上收到的其他消息(非reply)
+ */
 int
 jsonrpc_transact_block(struct jsonrpc *rpc, struct jsonrpc_msg *request,
                        struct jsonrpc_msg **replyp)
@@ -458,7 +491,10 @@ jsonrpc_transact_block(struct jsonrpc *rpc, struct jsonrpc_msg *request,
 
 /* Attempts to parse the content of 'rpc->parser' (which is complete JSON) as a
  * JSON-RPC message.  If successful, returns the JSON-RPC message.  On failure,
- * signals an error on 'rpc' with jsonrpc_error() and returns NULL. */
+ * signals an error on 'rpc' with jsonrpc_error() and returns NULL.
+ * 解析rpc->parser中的内容,作为一个JSON-RPC,如果成功,返回解析后的JSON-RPC消息,失败的话
+ * 返回NULL
+ */
 static struct jsonrpc_msg *
 jsonrpc_parse_received_message(struct jsonrpc *rpc)
 {
@@ -512,7 +548,12 @@ jsonrpc_cleanup(struct jsonrpc *rpc)
     rpc->backlog = 0;
     rpc->output_count = 0;
 }
-
+
+/* 创建一个jsonrpc消息
+ * @param type 消息类型
+ * @param method 方法
+ * @param params 参数
+ */
 static struct jsonrpc_msg *
 jsonrpc_create(enum jsonrpc_msg_type type, const char *method,
                 struct json *params, struct json *result, struct json *error,
@@ -671,6 +712,9 @@ null_from_json_null(struct json *json)
     return json;
 }
 
+/* 根据json串,创建一个jsonrpc_msg
+ *
+ */
 char *
 jsonrpc_msg_from_json(struct json *json, struct jsonrpc_msg **msgp)
 {
@@ -722,6 +766,9 @@ exit:
     return error;
 }
 
+/* 将jsonrpc_msg转换为json串
+ *
+ */
 struct json *
 jsonrpc_msg_to_json(struct jsonrpc_msg *m)
 {
@@ -757,14 +804,16 @@ jsonrpc_msg_to_json(struct jsonrpc_msg *m)
 
     return json;
 }
-
-/* A JSON-RPC session with reconnection. */
 
+/* A JSON-RPC session with reconnection.
+ * 带有重连机制的JSON-RPC会话(session)
+ * 加了一个session层,主要是为了重连??
+ */
 struct jsonrpc_session {
-    struct reconnect *reconnect;
+    struct reconnect *reconnect; /* 重连状态机 */
     struct jsonrpc *rpc;
-    struct stream *stream;
-    struct pstream *pstream;
+    struct stream *stream; /* 作为客户端 */
+    struct pstream *pstream; /* 作为服务端 */
     int last_error;
     unsigned int seqno;
     uint8_t dscp;
@@ -783,7 +832,12 @@ struct jsonrpc_session {
  * If 'name' is a passive connection method, e.g. "ptcp:", the new
  * jsonrpc_session listens for connections to 'name'.  It maintains at most one
  * connection at any given time.  Any new connection causes the previous one
- * (if any) to be dropped. */
+ * (if any) to be dropped.
+ * 创建并返回一个jsonrpc_session,根据传入的name(连接参数信息)
+ * name中描述了一个主动连接,比如说tcp:127.1.2.3,新的jsonrpc_session将会连接上对应的xx
+ * 如果retry为真,新的会话连接失败了,将会重连
+ * 如果retry为假,新的会话将会仅仅尝试连接一次
+ */
 struct jsonrpc_session *
 jsonrpc_session_open(const char *name, bool retry)
 {
@@ -800,7 +854,7 @@ jsonrpc_session_open(const char *name, bool retry)
     s->dscp = 0;
     s->last_error = 0;
 
-    if (!pstream_verify_name(name)) {
+    if (!pstream_verify_name(name)) { /* 作为服务器 */
         reconnect_set_passive(s->reconnect, true, time_msec());
     } else if (!retry) {
         reconnect_set_max_tries(s->reconnect, 1);
@@ -851,7 +905,7 @@ jsonrpc_session_close(struct jsonrpc_session *s)
     }
 }
 
-/* 关闭jsonrpc
+/* 断开jsonrpc
  *
  */
 static void
@@ -869,6 +923,9 @@ jsonrpc_session_disconnect(struct jsonrpc_session *s)
     }
 }
 
+/*
+ * 进行会话的连接操作
+ */
 static void
 jsonrpc_session_connect(struct jsonrpc_session *s)
 {
@@ -900,13 +957,14 @@ jsonrpc_session_connect(struct jsonrpc_session *s)
 void
 jsonrpc_session_run(struct jsonrpc_session *s)
 {
+    /* 服务端主要处理连接事宜 */
     if (s->pstream) { /* 服务端 */
         struct stream *stream;
         int error;
 
         error = pstream_accept(s->pstream, &stream); /* 接受连接 */
         if (!error) {
-            if (s->rpc || s->stream) {
+            if (s->rpc || s->stream) { /* 新的连接取代旧的连接?? */
                 VLOG_INFO_RL(&rl,
                              "%s: new connection replacing active connection",
                              reconnect_get_name(s->reconnect));
@@ -921,16 +979,17 @@ jsonrpc_session_run(struct jsonrpc_session *s)
         }
     }
 
-    if (s->rpc) { /* rpc存在,表示连接建立成功 */
+    if (s->rpc) { /* rpc存在,表示连接早已建立成功 */
         size_t backlog;
         int error;
 
         backlog = jsonrpc_get_backlog(s->rpc);
+        /* jsonrpc_run一般用来发包 */
         jsonrpc_run(s->rpc);
         if (jsonrpc_get_backlog(s->rpc) < backlog) {
             /* Data previously caught in a queue was successfully sent (or
              * there's an error, which we'll catch below.)
-             *
+             * 之前放入队列中的数据已经成功发送
              * We don't count data that is successfully sent immediately as
              * activity, because there's a lot of queuing downstream from us,
              * which means that we can push a lot of data into a connection
@@ -940,19 +999,20 @@ jsonrpc_session_run(struct jsonrpc_session *s)
         }
 
         error = jsonrpc_get_status(s->rpc);
-        if (error) {
+        if (error) { /* 连接断开 */
             reconnect_disconnected(s->reconnect, time_msec(), error);
             jsonrpc_session_disconnect(s);
             s->last_error = error;
         }
-    } else if (s->stream) { /* 连接 */
+    } else if (s->stream) { /* 成功连接上了服务器 */
         int error;
 
         stream_run(s->stream);
         error = stream_connect(s->stream); /* 判断是否连接成功 */
         if (!error) { /* 连接成功 */
+            /* 连接成功后会创建一个rpc,接下来就上走上面的逻辑 */
             reconnect_connected(s->reconnect, time_msec());
-            s->rpc = jsonrpc_open(s->stream);
+            s->rpc = jsonrpc_open(s->stream); /* 创建一个rpc */
             s->stream = NULL;
         } else if (error != EAGAIN) { /* 连接失败 */
             reconnect_connect_failed(s->reconnect, time_msec(), error);
@@ -961,13 +1021,14 @@ jsonrpc_session_run(struct jsonrpc_session *s)
             s->last_error = error;
         }
     }
-
+    /* step3 : 处理重连 */
+    /* reconnect主要用于指导session应当如何处理连接断开的事情 */
     switch (reconnect_run(s->reconnect, time_msec())) {
-    case RECONNECT_CONNECT:
+    case RECONNECT_CONNECT:  /* 需要进行连接操作 */
         jsonrpc_session_connect(s);
         break;
 
-    case RECONNECT_DISCONNECT:
+    case RECONNECT_DISCONNECT:  /* 需要断开连接 */
         reconnect_disconnected(s->reconnect, time_msec(), 0);
         jsonrpc_session_disconnect(s);
         break;
@@ -993,9 +1054,9 @@ jsonrpc_session_run(struct jsonrpc_session *s)
 void
 jsonrpc_session_wait(struct jsonrpc_session *s)
 {
-    if (s->rpc) {
+    if (s->rpc) { /* 连接早已建立 */
         jsonrpc_wait(s->rpc);
-    } else if (s->stream) {
+    } else if (s->stream) { /*  */
         stream_run_wait(s->stream);
         stream_connect_wait(s->stream);
     }

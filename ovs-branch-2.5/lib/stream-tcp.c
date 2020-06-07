@@ -36,7 +36,7 @@
 VLOG_DEFINE_THIS_MODULE(stream_tcp);
 
 /* Active TCP. */
-
+/* 活跃的tcp,也就是说作为客户端,连接服务器 */
 static int
 new_tcp_stream(const char *name, int fd, int connect_status,
                struct stream **streamp)
@@ -48,13 +48,16 @@ new_tcp_stream(const char *name, int fd, int connect_status,
     return new_fd_stream(name, fd, connect_status, AF_INET, streamp);
 }
 
+/* 打开tcp连接
+ *
+ */
 static int
 tcp_open(const char *name, char *suffix, struct stream **streamp, uint8_t dscp)
 {
     int fd, error;
 
     error = inet_open_active(SOCK_STREAM, suffix, 0, NULL, &fd, dscp);
-    if (fd >= 0) {
+    if (fd >= 0) { /* 连接建立成功 */
         return new_tcp_stream(name, fd, error, streamp);
     } else {
         VLOG_ERR("%s: connect: %s", name, ovs_strerror(error));
@@ -75,69 +78,17 @@ const struct stream_class tcp_stream_class = {
     NULL,                       /* wait */
 };
 
-#ifdef _WIN32
-#include "dirs.h"
 
-static int
-windows_open(const char *name, char *suffix, struct stream **streamp,
-             uint8_t dscp)
-{
-    int error, port;
-    FILE *file;
-    char *suffix_new, *path;
-
-    /* If the path does not contain a ':', assume it is relative to
-     * OVS_RUNDIR. */
-    if (!strchr(suffix, ':')) {
-        path = xasprintf("%s/%s", ovs_rundir(), suffix);
-    } else {
-        path = xstrdup(suffix);
-    }
-
-    file = fopen(path, "r");
-    if (!file) {
-        error = errno;
-        VLOG_DBG("%s: could not open %s (%s)", name, suffix,
-                 ovs_strerror(error));
-        return error;
-    }
-
-    error = fscanf(file, "%d", &port);
-    if (error != 1) {
-        VLOG_ERR("failed to read port from %s", suffix);
-        fclose(file);
-        return EINVAL;
-    }
-    fclose(file);
-
-    suffix_new = xasprintf("127.0.0.1:%d", port);
-
-    error = tcp_open(name, suffix_new, streamp, dscp);
-
-    free(suffix_new);
-    free(path);
-    return error;
-}
-
-const struct stream_class windows_stream_class = {
-    "unix",                     /* name */
-    false,                      /* needs_probes */
-    windows_open,                  /* open */
-    NULL,                       /* close */
-    NULL,                       /* connect */
-    NULL,                       /* recv */
-    NULL,                       /* send */
-    NULL,                       /* run */
-    NULL,                       /* run_wait */
-    NULL,                       /* wait */
-};
-#endif
-
-/* Passive TCP. */
+/* Passive TCP.
+ * 大致是服务端的操作
+ */
 
 static int ptcp_accept(int fd, const struct sockaddr_storage *,
                        size_t, struct stream **streamp);
 
+/* 构建一个tcp服务器的流
+ *
+ */
 static int
 new_pstream(char *suffix, const char *name, struct pstream **pstreamp,
             int dscp, char *unlink_path, bool kernel_print_port)
@@ -177,6 +128,9 @@ ptcp_open(const char *name OVS_UNUSED, char *suffix, struct pstream **pstreamp,
     return new_pstream(suffix, NULL, pstreamp, dscp, NULL, true);
 }
 
+/* 执行accept操作
+ * @param fd 服务器的文件描述符
+ */
 static int
 ptcp_accept(int fd, const struct sockaddr_storage *ss,
             size_t ss_len OVS_UNUSED, struct stream **streamp)
@@ -199,59 +153,3 @@ const struct pstream_class ptcp_pstream_class = {
     NULL,
 };
 
-#ifdef _WIN32
-static int
-pwindows_open(const char *name, char *suffix, struct pstream **pstreamp,
-              uint8_t dscp)
-{
-    int error;
-    char *suffix_new, *path;
-    FILE *file;
-    struct pstream *listener;
-
-    suffix_new = xstrdup("0:127.0.0.1");
-
-    /* If the path does not contain a ':', assume it is relative to
-     * OVS_RUNDIR. */
-    if (!strchr(suffix, ':')) {
-        path = xasprintf("%s/%s", ovs_rundir(), suffix);
-    } else {
-        path = xstrdup(suffix);
-    }
-
-    error = new_pstream(suffix_new, name, pstreamp, dscp, path, false);
-    if (error) {
-        goto exit;
-    }
-    listener = *pstreamp;
-
-    file = fopen(path, "w");
-    if (!file) {
-        error = errno;
-        VLOG_DBG("could not open %s (%s)", path, ovs_strerror(error));
-        goto exit;
-    }
-
-    fprintf(file, "%d\n", ntohs(listener->bound_port));
-    if (fflush(file) == EOF) {
-        error = EIO;
-        VLOG_ERR("write failed for %s", path);
-        fclose(file);
-        goto exit;
-    }
-    fclose(file);
-
-exit:
-    free(suffix_new);
-    return error;
-}
-
-const struct pstream_class pwindows_pstream_class = {
-    "punix",
-    false,
-    pwindows_open,
-    NULL,
-    NULL,
-    NULL,
-};
-#endif

@@ -56,7 +56,7 @@ struct reconnect {
     /* State. */
     enum state state;
     long long int state_entered;
-    int backoff;
+    int backoff;  /* 退避时间,等待backoff时间再重连 */
     long long int last_activity;
     long long int last_connected;
     long long int last_disconnected;
@@ -322,13 +322,17 @@ reconnect_force_reconnect(struct reconnect *fsm, long long int now)
  * EOF indicates that the connection was closed by the peer (e.g. read()
  * returned 0), and 0 indicates no specific error.
  *
- * The FSM will back off, then reconnect. */
+ * The FSM will back off, then reconnect.
+ * 告诉fsm,连接断开,或者尝试连接失败,error指定了失败原因,正值表示errno,EOF表示
+ * 连接被对方关闭,0代表没有特定的原因
+ * fsm将会进行退避操作,然后重连
+ */
 void
 reconnect_disconnected(struct reconnect *fsm, long long int now, int error)
 {
     if (!(fsm->state & (S_BACKOFF | S_VOID))) {
         /* Report what happened. */
-        if (fsm->state & (S_ACTIVE | S_IDLE)) {
+        if (fsm->state & (S_ACTIVE | S_IDLE)) { /* 处于活跃或者空闲状态 */
             if (error > 0) {
                 VLOG_WARN("%s: connection dropped (%s)",
                           fsm->name, ovs_strerror(error));
@@ -337,7 +341,7 @@ reconnect_disconnected(struct reconnect *fsm, long long int now, int error)
             } else {
                 VLOG(fsm->info, "%s: connection dropped", fsm->name);
             }
-        } else if (fsm->state == S_LISTENING) {
+        } else if (fsm->state == S_LISTENING) {  /* 处理监听状态 */
             if (error > 0) {
                 VLOG_WARN("%s: error listening for connections (%s)",
                           fsm->name, ovs_strerror(error));
@@ -356,10 +360,10 @@ reconnect_disconnected(struct reconnect *fsm, long long int now, int error)
         }
 
         if (fsm->state & (S_ACTIVE | S_IDLE)) {
-            fsm->last_disconnected = now;
+            fsm->last_disconnected = now; /* 记录下连接断开的时间 */
         }
         /* Back off. */
-        if (fsm->state & (S_ACTIVE | S_IDLE)
+        if (fsm->state & (S_ACTIVE | S_IDLE) /* 连接失败,退避时间将会延长 */
              && (fsm->last_activity - fsm->last_connected >= fsm->backoff
                  || fsm->passive)) {
             fsm->backoff = fsm->passive ? 0 : fsm->min_backoff;
@@ -379,7 +383,7 @@ reconnect_disconnected(struct reconnect *fsm, long long int now, int error)
                           fsm->name, fsm->backoff / 1000.0);
             }
         }
-
+        /* 重连?? */
         reconnect_transition__(fsm, now,
                                reconnect_may_retry(fsm) ? S_BACKOFF : S_VOID);
     }
@@ -444,7 +448,11 @@ reconnect_listen_error(struct reconnect *fsm, long long int now, int error)
  * reconnect_activity().  If the timer expires, a probe will be sent (by
  * returning RECONNECT_PROBE from reconnect_run()).  If the timer expires
  * again without being reset, the connection will be aborted (by returning
- * RECONNECT_DISCONNECT from reconnect_run()). */
+ * RECONNECT_DISCONNECT from reconnect_run()).
+ * 告诉fsm,连接建立成功
+ * fsm将会开启probe定时器,reconnect_activity()将会重置此定时器,探测消息将会被发送
+ * 如果定时器超时,连接将会终止
+ */
 void
 reconnect_connected(struct reconnect *fsm, long long int now)
 {
@@ -459,7 +467,9 @@ reconnect_connected(struct reconnect *fsm, long long int now)
 
 /* Tell 'fsm' that the connection attempt failed.
  *
- * The FSM will back off and attempt to reconnect. */
+ * The FSM will back off and attempt to reconnect.
+ * 告诉fsm,尝试连接失败,fsm将会退避,然后尝试重连
+ */
 void
 reconnect_connect_failed(struct reconnect *fsm, long long int now, int error)
 {
@@ -468,16 +478,23 @@ reconnect_connect_failed(struct reconnect *fsm, long long int now, int error)
 }
 
 /* Tell 'fsm' that some activity has occurred on the connection.  This resets
- * the probe interval timer, so that the connection is known not to be idle. */
+ * the probe interval timer, so that the connection is known not to be idle.
+ * 告诉fsm,连接上面发生了活动,说明连接是存活的
+ */
 void
 reconnect_activity(struct reconnect *fsm, long long int now)
 {
-    if (fsm->state != S_ACTIVE) {
+    if (fsm->state != S_ACTIVE) { /* 状态为非活跃,那就进入活跃状态 */
         reconnect_transition__(fsm, now, S_ACTIVE);
     }
     fsm->last_activity = now;
 }
 
+/*
+ * @param fsm 重连状态机
+ * @param state 下一个要进入的状态
+ * @param now 时间戳
+ */
 static void
 reconnect_transition__(struct reconnect *fsm, long long int now,
                        enum state state)
@@ -497,9 +514,10 @@ reconnect_transition__(struct reconnect *fsm, long long int now,
 
     VLOG_DBG("%s: entering %s", fsm->name, reconnect_state_name__(state));
     fsm->state = state;
-    fsm->state_entered = now;
+    fsm->state_entered = now; /* 记录下进入此状态的时间 */
 }
 
+/* 获取重连的超时时间 */
 static long long int
 reconnect_deadline__(const struct reconnect *fsm)
 {
@@ -509,20 +527,20 @@ reconnect_deadline__(const struct reconnect *fsm)
     case S_LISTENING:
         return LLONG_MAX;
 
-    case S_BACKOFF:
+    case S_BACKOFF: /* 退避的终止时间 */
         return fsm->state_entered + fsm->backoff;
 
-    case S_CONNECTING:
+    case S_CONNECTING: /* 正在连接 */
         return fsm->state_entered + MAX(1000, fsm->backoff);
 
-    case S_ACTIVE:
+    case S_ACTIVE: /* 处于活跃状态,即连接已经建立 */
         if (fsm->probe_interval) {
             long long int base = MAX(fsm->last_activity, fsm->state_entered);
             return base + fsm->probe_interval;
         }
         return LLONG_MAX;
 
-    case S_IDLE:
+    case S_IDLE: /* 空闲状态 */
         if (fsm->probe_interval) {
             return fsm->state_entered + fsm->probe_interval;
         }
@@ -551,54 +569,66 @@ reconnect_deadline__(const struct reconnect *fsm)
  *       reconnect_connected() after a low-level successful connection
  *       (e.g. connect()) even if the connection might soon abort due to a
  *       failure at a high-level (e.g. SSL negotiation failure).
+ *     - 活跃的客户端(active client), RECONNECT_CONNECT: 客户端应当发起一次连接尝试,可以调用reconnect_conneting()
+ *       如果连接尝试成功,应当调用reconnect_connected(),如果连接失败,应当调用reconnect_connect_failed()
+ *       FSM是足够聪明的,在连接成功之后,可以快速终止,并进行正确的退避操作,在底层成功连接之后,调用reconnect_connected()
+ *       ,即使上层应用因为某种原因,会立即终止连接,这样也是完全OK的.
  *
  *     - Passive client, RECONNECT_CONNECT: The client should try to listen for
  *       a connection, if it is not already listening.  It should call
  *       reconnect_listening() if successful, otherwise reconnect_connecting()
  *       or reconnected_connect_failed() if the attempt is in progress or
  *       definitely failed, respectively.
+ *      - 不活跃的客户端(服务端), RECONNECT_CONNECT: 客户端应当尝试监听一个连接,如果它没有在监听,那么应当调用reconnect_listening
+ *        否则的话,应当调用reconnect_connecting(正在尝试),或者reconnected_connect_failed() (失败了)
  *
  *       A listening passive client should constantly attempt to accept a new
  *       connection and report an accepted connection with
  *       reconnect_connected().
+ *       一个正在监听的服务端(passive client)会进行监听操作,并且建立新连接,建立的新连接应当调用reconnect_connected()
  *
  *     - RECONNECT_DISCONNECT: The client should abort the current connection
  *       or connection attempt or listen attempt and call
  *       reconnect_disconnected() or reconnect_connect_failed() to indicate it.
+ *     - RECONNECT_DISCONNECT : 客户端应当终止当前的连接/连接尝试/监听尝试
+ *       并且调用reconnect_disconnected()或者reconnect_connect_failed
  *
  *     - RECONNECT_PROBE: The client should send some kind of request to the
  *       peer that will elicit a response, to ensure that the connection is
  *       indeed in working order.  (This will only be returned if the "probe
  *       interval" is nonzero--see reconnect_set_probe_interval()).
+ *     - RECONNECT_PROBE: 客户端应当发送某种请求给对端,以确保连接确实没有断开.
  */
+/* 返回应当执行的状态 */
 enum reconnect_action
 reconnect_run(struct reconnect *fsm, long long int now)
 {
     if (now >= reconnect_deadline__(fsm)) {
         switch (fsm->state) {
         case S_VOID:
-            return 0;
+            return 0; /* 啥都不干 */
 
         case S_BACKOFF:
-            return RECONNECT_CONNECT;
+            return RECONNECT_CONNECT; /* 退避超时,就重连 */
 
-        case S_CONNECTING:
-            return RECONNECT_DISCONNECT;
+        case S_CONNECTING:  /* 连接超时 */
+            return RECONNECT_DISCONNECT; /* 断开连接 */
 
-        case S_ACTIVE:
+        case S_ACTIVE: /* 处于活跃状态 */
             VLOG_DBG("%s: idle %lld ms, sending inactivity probe", fsm->name,
                      now - MAX(fsm->last_activity, fsm->state_entered));
+            /* 如果连接上很久都没有什么活动发生,进入空闲状态 */
             reconnect_transition__(fsm, now, S_IDLE);
-            return RECONNECT_PROBE;
+            return RECONNECT_PROBE; /* 发送probe消息给对端 */
 
-        case S_IDLE:
+        case S_IDLE: /* 空闲状态超时 */
             VLOG_ERR("%s: no response to inactivity probe after %.3g "
                      "seconds, disconnecting",
                      fsm->name, (now - fsm->state_entered) / 1000.0);
-            return RECONNECT_DISCONNECT;
+            return RECONNECT_DISCONNECT; /* 需要断开连接 */
 
-        case S_RECONNECT:
-            return RECONNECT_DISCONNECT;
+        case S_RECONNECT: /* 重连超时 */
+            return RECONNECT_DISCONNECT; /* 执行连接断开操作 */
 
         case S_LISTENING:
             return 0;
@@ -606,7 +636,7 @@ reconnect_run(struct reconnect *fsm, long long int now)
 
         OVS_NOT_REACHED();
     } else {
-        return 0;
+        return 0; /* 没有达到超时时间的话,默认是什么也不做的 */
     }
 }
 

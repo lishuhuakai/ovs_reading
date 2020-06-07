@@ -92,21 +92,23 @@ static bool ovsdb_jsonrpc_monitor_needs_flush(struct ovsdb_jsonrpc_session *);
 static struct json *ovsdb_jsonrpc_monitor_compose_update(
     struct ovsdb_jsonrpc_monitor *monitor, bool initial);
 
-
-/* JSON-RPC database server. */
 
+/* JSON-RPC database server. */
 struct ovsdb_jsonrpc_server {
-    struct ovsdb_server up;
+    struct ovsdb_server up; /*  */
     unsigned int n_sessions, max_sessions;
     struct shash remotes;      /* Contains "struct ovsdb_jsonrpc_remote *"s. */
 };
 
 /* A configured remote.  This is either a passive stream listener plus a list
  * of the currently connected sessions, or a list of exactly one active
- * session. */
+ * session.
+ * 配置好了的remote
+ */
 struct ovsdb_jsonrpc_remote {
     struct ovsdb_jsonrpc_server *server;
     struct pstream *listener;   /* Listener, if passive. */
+    /* 记录和客户端之间的连接 */
     struct ovs_list sessions;   /* List of "struct ovsdb_jsonrpc_session"s. */
     uint8_t dscp;
 };
@@ -120,7 +122,10 @@ static void ovsdb_jsonrpc_server_del_remote(struct shash_node *);
 /* Creates and returns a new server to provide JSON-RPC access to an OVSDB.
  *
  * The caller must call ovsdb_jsonrpc_server_add_db() for each database to
- * which 'server' should provide access. */
+ * which 'server' should provide access.
+ * 创建并返回一个新的server,提供JSON-RPC服务,通过该服务,可以访问ovsdb
+ * 调用者必须调用ovsdb_jsonrpc_server_add_db()将需要提供服务的数据库加入server
+ */
 struct ovsdb_jsonrpc_server *
 ovsdb_jsonrpc_server_create(void)
 {
@@ -298,7 +303,9 @@ ovsdb_jsonrpc_server_free_remote_status(
 }
 
 /* Forces all of the JSON-RPC sessions managed by 'svr' to disconnect and
- * reconnect. */
+ * reconnect.
+ * 强制进行重连操作
+ */
 void
 ovsdb_jsonrpc_server_reconnect(struct ovsdb_jsonrpc_server *svr)
 {
@@ -311,24 +318,30 @@ ovsdb_jsonrpc_server_reconnect(struct ovsdb_jsonrpc_server *svr)
     }
 }
 
+/* ovsdb执行日常的run操作
+ * ovsdb_jsonrpc_server高度抽象,类似于一个金字塔一样的结构,基本每一层都实现了run函数,
+ * ovsdb_jsonrpc_server的run,实际是其子结构的run,子结构又会调用子子结构的run,有点递归的味道
+ */
 void
 ovsdb_jsonrpc_server_run(struct ovsdb_jsonrpc_server *svr)
 {
     struct shash_node *node;
-
-    SHASH_FOR_EACH (node, &svr->remotes) {
+    /* 首先处理客户端的连接 */
+    SHASH_FOR_EACH (node, &svr->remotes) { /* 遍历每一个连接 */
         struct ovsdb_jsonrpc_remote *remote = node->data;
 
-        if (remote->listener) {
-            if (svr->n_sessions < svr->max_sessions) {
+        if (remote->listener) { /* 作为服务器,接收来自客户端的连接 */
+            if (svr->n_sessions < svr->max_sessions) { /* 限制会话数 */
                 struct stream *stream;
                 int error;
-
+                /* 接受连接 */
                 error = pstream_accept(remote->listener, &stream);
                 if (!error) {
                     struct jsonrpc_session *js;
+                    /* 连接成功就构建一个session,用于处理 */
                     js = jsonrpc_session_open_unreliably(jsonrpc_open(stream),
                                                          remote->dscp);
+                    /* 所有的会话都包裹在jsonrpc_session中,并由其管理,可以减少管理的难度 */
                     ovsdb_jsonrpc_session_create(remote, js);
                 } else if (error != EAGAIN) {
                     VLOG_WARN_RL(&rl, "%s: accept failed: %s",
@@ -341,11 +354,14 @@ ovsdb_jsonrpc_server_run(struct ovsdb_jsonrpc_server *svr)
                              svr->max_sessions);
             }
         }
-
+        /* 接下来处理收发包事宜 */
         ovsdb_jsonrpc_session_run_all(remote);
     }
 }
 
+/* 递归向下调用wait函数
+ *
+ */
 void
 ovsdb_jsonrpc_server_wait(struct ovsdb_jsonrpc_server *svr)
 {
@@ -377,10 +393,11 @@ ovsdb_jsonrpc_server_get_memory_usage(const struct ovsdb_jsonrpc_server *svr,
         ovsdb_jsonrpc_session_get_memory_usage_all(remote, usage);
     }
 }
-
-/* JSON-RPC database server session. */
 
+/* JSON-RPC database server session. */
+/* ovsdb_jsonrpc_session代表了ovsdb-server和客户端的一个连接 */
 struct ovsdb_jsonrpc_session {
+    /* ovsdb会维持非常多的会话 */
     struct ovs_list node;       /* Element in remote's sessions list. */
     struct ovsdb_session up;
     struct ovsdb_jsonrpc_remote *remote;
@@ -392,6 +409,7 @@ struct ovsdb_jsonrpc_session {
     struct hmap monitors;       /* Hmap of "struct ovsdb_jsonrpc_monitor"s. */
 
     /* Network connectivity. */
+    /* js主要用于处理网络的连接 */
     struct jsonrpc_session *js;  /* JSON-RPC session. */
     unsigned int js_seqno;       /* Last jsonrpc_session_get_seqno() value. */
 };
@@ -443,11 +461,16 @@ ovsdb_jsonrpc_session_close(struct ovsdb_jsonrpc_session *s)
     free(s);
 }
 
+/* run函数做两件事情,第一是发送更新,第二是接收客户端的请求
+ *
+ */
 static int
 ovsdb_jsonrpc_session_run(struct ovsdb_jsonrpc_session *s)
 {
+    /* 这个东西像是剥洋葱一样,一层套一层,这里无非就是,更加底层的jsonrpc_session调用自己的run函数 */
+
     jsonrpc_session_run(s->js);
-    if (s->js_seqno != jsonrpc_session_get_seqno(s->js)) {
+    if (s->js_seqno != jsonrpc_session_get_seqno(s->js)) { /* 连接成功或者连接断开 */
         s->js_seqno = jsonrpc_session_get_seqno(s->js);
         ovsdb_jsonrpc_trigger_complete_all(s);
         ovsdb_jsonrpc_monitor_remove_all(s);
@@ -460,7 +483,7 @@ ovsdb_jsonrpc_session_run(struct ovsdb_jsonrpc_session *s)
         struct jsonrpc_msg *msg;
 
         ovsdb_jsonrpc_monitor_flush_all(s);
-
+        /* 尝试接收消息,非阻塞 */
         msg = jsonrpc_session_recv(s->js);
         if (msg) {
             if (msg->type == JSONRPC_REQUEST) {
@@ -488,11 +511,14 @@ ovsdb_jsonrpc_session_set_options(struct ovsdb_jsonrpc_session *session,
     jsonrpc_session_set_dscp(session->js, options->dscp);
 }
 
+/* 每一个ovsdb_jsonrpc_session都执行自己的run函数
+ *
+ */
 static void
 ovsdb_jsonrpc_session_run_all(struct ovsdb_jsonrpc_remote *remote)
 {
     struct ovsdb_jsonrpc_session *s, *next;
-
+    /* 一个s代表一个连接 */
     LIST_FOR_EACH_SAFE (s, next, node, &remote->sessions) {
         int error = ovsdb_jsonrpc_session_run(s);
         if (error) {
@@ -509,11 +535,14 @@ ovsdb_jsonrpc_session_wait(struct ovsdb_jsonrpc_session *s)
         if (ovsdb_jsonrpc_monitor_needs_flush(s)) {
             poll_immediate_wake();
         } else {
-            jsonrpc_session_recv_wait(s->js);
+            jsonrpc_session_recv_wait(s->js); /* 等到收到回复poll才返回 */
         }
     }
 }
 
+/* 递归调用每个session的wait函数
+ *
+ */
 static void
 ovsdb_jsonrpc_session_wait_all(struct ovsdb_jsonrpc_remote *remote)
 {
@@ -1342,6 +1371,7 @@ ovsdb_jsonrpc_monitor_destroy(struct ovsdb_jsonrpc_monitor *m)
 
 /*
  * 将更新发送给客户端
+ * @param s 代表ovsdb-server和客户端的一个连接(session)
  */
 static void
 ovsdb_jsonrpc_monitor_flush_all(struct ovsdb_jsonrpc_session *s)

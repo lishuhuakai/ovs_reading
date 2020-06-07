@@ -84,14 +84,6 @@ find_poll_node(struct poll_loop *loop, int fd, HANDLE wevent)
  *     poll_block() will wake up when 'fd' becomes ready for one or more of the
  *     requested events. The 'fd's are given to poll() function later.
  *
- * On Windows system:
- *
- *     If 'fd' is specified, create a new 'wevent'. Association of 'fd' and
- *     'wevent' for 'events' happens in poll_block(). If 'wevent' is specified,
- *     it is assumed that it is unrelated to any sockets and poll_block()
- *     will wake up on any event on that 'wevent'. It is an error to pass
- *     both 'wevent' and 'fd'.
- *
  * The event registration is one-shot: only the following call to
  * poll_block() is affected.  The event will need to be re-registered after
  * poll_block() is called if it is to persist.
@@ -113,18 +105,13 @@ poll_create_node(int fd, HANDLE wevent, short int events, const char *where)
     /* Check for duplicate.  If found, "or" the events. */
     node = find_poll_node(loop, fd, wevent);
     if (node) {
-        node->pollfd.events |= events;
+        node->pollfd.events |= events; /* 需要关注的事情 */
     } else {
         node = xzalloc(sizeof *node);
         hmap_insert(&loop->poll_nodes, &node->hmap_node,
                     hash_2words(fd, (uint32_t)wevent));
         node->pollfd.fd = fd;
         node->pollfd.events = events;
-#ifdef _WIN32
-        if (!wevent) {
-            wevent = CreateEvent(NULL, FALSE, FALSE, NULL);
-        }
-#endif
         node->wevent = wevent;
         node->where = where;
     }
@@ -133,7 +120,7 @@ poll_create_node(int fd, HANDLE wevent, short int events, const char *where)
 /* Registers 'fd' as waiting for the specified 'events' (which should be POLLIN
  * or POLLOUT or POLLIN | POLLOUT).  The following call to poll_block() will
  * wake up when 'fd' becomes ready for one or more of the requested events.
- *
+ * 注册一个fd,它将会等待特定的event(POLLIN,POLLOUT,POLLIN | POLLOUT)发生
  * On Windows, 'fd' must be a socket.
  *
  * The event registration is one-shot: only the following call to poll_block()
@@ -149,32 +136,18 @@ poll_fd_wait_at(int fd, short int events, const char *where)
     poll_create_node(fd, 0, events, where);
 }
 
-#ifdef _WIN32
-/* Registers for the next call to poll_block() to wake up when 'wevent' is
- * signaled.
- *
- * The event registration is one-shot: only the following call to poll_block()
- * is affected.  The event will need to be re-registered after poll_block() is
- * called if it is to persist.
- *
- * ('where' is used in debug logging.  Commonly one would use
- * poll_wevent_wait() to automatically provide the caller's source file and
- * line number for 'where'.) */
-void
-poll_wevent_wait_at(HANDLE wevent, const char *where)
-{
-    poll_create_node(0, wevent, 0, where);
-}
-#endif /* _WIN32 */
+
 
 /* Causes the following call to poll_block() to block for no more than 'msec'
  * milliseconds.  If 'msec' is nonpositive, the following call to poll_block()
  * will not block at all.
- *
+ * 使得接下来调用的poll_block()阻塞时间不超过msec毫秒,如果msec是负数,接下俩调用的poll_block()将不会阻塞
  * The timer registration is one-shot: only the following call to poll_block()
  * is affected.  The timer will need to be re-registered after poll_block() is
  * called if it is to persist.
  *
+ * 注册的定时器是一次性的,也就是说,仅有下一次调用poll_block()会受到影响,定时器需要再次注射,在调用poll_block()之后
+ * 如果要使得定时器多次生效的话.
  * ('where' is used in debug logging.  Commonly one would use poll_timer_wait()
  * to automatically provide the caller's source file and line number for
  * 'where'.) */
@@ -203,6 +176,8 @@ poll_timer_wait_at(long long int msec, const char *where)
  * than the current time, the following call to poll_block() will not block at
  * all.
  *
+ * 使得接下来调用的poll_block()的唤醒时间,达到when或者更迟,如果when比当前时间早,
+ * 接下来调用的poll_block()将会立刻返回,完全不会阻塞.
  * The timer registration is one-shot: only the following call to poll_block()
  * is affected.  The timer will need to be re-registered after poll_block() is
  * called if it is to persist.
@@ -215,7 +190,7 @@ poll_timer_wait_until_at(long long int when, const char *where)
 {
     struct poll_loop *loop = poll_loop();
     if (when < loop->timeout_when) {
-        loop->timeout_when = when;
+        loop->timeout_when = when; /* 超时时间 */
         loop->timeout_where = where;
     }
 }
@@ -302,12 +277,6 @@ free_poll_nodes(struct poll_loop *loop)
 
     HMAP_FOR_EACH_SAFE (node, next, hmap_node, &loop->poll_nodes) {
         hmap_remove(&loop->poll_nodes, &node->hmap_node);
-#ifdef _WIN32
-        if (node->wevent && node->pollfd.fd) {
-            WSAEventSelect(node->pollfd.fd, NULL, 0);
-            CloseHandle(node->wevent);
-        }
-#endif
         free(node);
     }
 }
@@ -340,30 +309,13 @@ poll_block(void)
     timewarp_run();
     pollfds = xmalloc(hmap_count(&loop->poll_nodes) * sizeof *pollfds);
 
-#ifdef _WIN32
-    wevents = xmalloc(hmap_count(&loop->poll_nodes) * sizeof *wevents);
-#endif
-
     /* Populate with all the fds and events. */
     i = 0;
     HMAP_FOR_EACH (node, hmap_node, &loop->poll_nodes) {
         pollfds[i] = node->pollfd;
-#ifdef _WIN32
-        wevents[i] = node->wevent;
-        if (node->pollfd.fd && node->wevent) {
-            short int wsa_events = 0;
-            if (node->pollfd.events & POLLIN) {
-                wsa_events |= FD_READ | FD_ACCEPT | FD_CLOSE;
-            }
-            if (node->pollfd.events & POLLOUT) {
-                wsa_events |= FD_WRITE | FD_CONNECT | FD_CLOSE;
-            }
-            WSAEventSelect(node->pollfd.fd, node->wevent, wsa_events);
-        }
-#endif
         i++;
     }
-
+    /* 调用poll函数 */
     retval = time_poll(pollfds, hmap_count(&loop->poll_nodes), wevents,
                        loop->timeout_when, &elapsed);
     if (retval < 0) {
@@ -392,7 +344,7 @@ poll_block(void)
 
     seq_woke();
 }
-
+
 static void
 free_poll_loop(void *loop_)
 {
@@ -403,6 +355,9 @@ free_poll_loop(void *loop_)
     free(loop);
 }
 
+/* 获取poll_loop
+ *
+ */
 static struct poll_loop *
 poll_loop(void)
 {
@@ -414,7 +369,7 @@ poll_loop(void)
         xpthread_key_create(&key, free_poll_loop);
         ovsthread_once_done(&once);
     }
-
+    /* 这个东西是线程安全的 */
     loop = pthread_getspecific(key);
     if (!loop) {
         loop = xzalloc(sizeof *loop);

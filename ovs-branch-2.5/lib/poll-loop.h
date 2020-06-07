@@ -15,7 +15,7 @@
  */
 
 /* High-level wrapper around the "poll" system call.
- *
+ * 对POLL系统调用的高层次封装
  * The intended usage is for each thread's main loop to go about its business
  * servicing whatever events it needs to.  Then, when it runs out of immediate
  * tasks, it calls each subordinate module's "wait" function, which in turn
@@ -23,7 +23,8 @@
  * and poll_timer_wait() to register to be awakened when the appropriate event
  * occurs.  Then the main loop calls poll_block(), which blocks until one of
  * the registered events happens.
- *
+ * 预期的用途是,为每个线程的主loop
+ * 然后调用
  *
  * Thread-safety
  * =============
@@ -49,13 +50,12 @@ extern "C" {
  * the source code location of the caller.  The function version allows the
  * caller to supply a location explicitly, which is useful if the caller's own
  * caller would be more useful in log output.  See timer_wait_at() for an
- * example. */
+ * example.
+ * poll_loop日志带着where参数
+ */
 void poll_fd_wait_at(int fd, short int events, const char *where);
 #define poll_fd_wait(fd, events) poll_fd_wait_at(fd, events, OVS_SOURCE_LOCATOR)
 
-#ifdef _WIN32
-#define poll_wevent_wait(wevent) poll_wevent_wait_at(wevent, OVS_SOURCE_LOCATOR)
-#endif /* _WIN32 */
 
 void poll_timer_wait_at(long long int msec, const char *where);
 #define poll_timer_wait(msec) poll_timer_wait_at(msec, OVS_SOURCE_LOCATOR)
@@ -64,6 +64,7 @@ void poll_timer_wait_until_at(long long int msec, const char *where);
 #define poll_timer_wait_until(msec)             \
     poll_timer_wait_until_at(msec, OVS_SOURCE_LOCATOR)
 
+/* immediate_wake_at表示完全不阻塞 */
 void poll_immediate_wake_at(const char *where);
 #define poll_immediate_wake() poll_immediate_wake_at(OVS_SOURCE_LOCATOR)
 

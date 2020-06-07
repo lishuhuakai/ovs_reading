@@ -48,8 +48,11 @@ COVERAGE_DEFINE(stream_open);
  * 流的状态
  */
 enum stream_state {
+    /* stream尚未建立成功 */
     SCS_CONNECTING,             /* Underlying stream is not connected. */
+    /* 连接建立成功 */
     SCS_CONNECTED,              /* Connection established. */
+    /* 连接被关闭,或者连接失败 */
     SCS_DISCONNECTED            /* Connection failed or connection closed. */
 };
 
@@ -304,14 +307,17 @@ stream_get_name(const struct stream *stream)
     return stream ? stream->name : "(null)";
 }
 
+/*
+ * 尝试连接
+ */
 static void
 scs_connecting(struct stream *stream)
 {
     int retval = (stream->class->connect)(stream);
     ovs_assert(retval != EINPROGRESS);
     if (!retval) {
-        stream->state = SCS_CONNECTED;
-    } else if (retval != EAGAIN) {
+        stream->state = SCS_CONNECTED; /* 连接成功 */
+    } else if (retval != EAGAIN) {  /* 连接失败,再次尝试 */
         stream->state = SCS_DISCONNECTED;
         stream->error = retval;
     }
@@ -362,6 +368,7 @@ stream_connect(struct stream *stream)
 int
 stream_recv(struct stream *stream, void *buffer, size_t n)
 {
+    /* retval如果不为0,表示连接建立是失败的 */
     int retval = stream_connect(stream);
     return (retval ? -retval
             : n == 0 ? 0
@@ -383,6 +390,7 @@ stream_recv(struct stream *stream, void *buffer, size_t n)
 int
 stream_send(struct stream *stream, const void *buffer, size_t n)
 {
+    /* 对于stream-fd,send函数为fd_send */
     int retval = stream_connect(stream);
     return (retval ? -retval
             : n == 0 ? 0
@@ -394,6 +402,7 @@ stream_send(struct stream *stream, const void *buffer, size_t n)
 void
 stream_run(struct stream *stream)
 {
+    /* 对于stream-fd, run函数为空,实际什么也不干 */
     if (stream->class->run) {
         (stream->class->run)(stream);
     }
@@ -406,6 +415,7 @@ stream_run(struct stream *stream)
 void
 stream_run_wait(struct stream *stream)
 {
+    /* 对于stream-fd,run_wait为空 */
     if (stream->class->run_wait) {
         (stream->class->run_wait)(stream);
     }
@@ -413,7 +423,7 @@ stream_run_wait(struct stream *stream)
 
 /* Arranges for the poll loop to wake up when 'stream' is ready to take an
  * action of the given 'type'.
- *
+ * 安排poll机制,使得stream已经准备好执行相应动作的时候再唤醒
  */
 void
 stream_wait(struct stream *stream, enum stream_wait_type wait)
@@ -422,14 +432,15 @@ stream_wait(struct stream *stream, enum stream_wait_type wait)
                || wait == STREAM_SEND);
 
     switch (stream->state) {
-    case SCS_CONNECTING:
+    case SCS_CONNECTING: /* 如果还没有建立成功,要等到连接建立成功 */
         wait = STREAM_CONNECT;
         break;
 
-    case SCS_DISCONNECTED:
-        poll_immediate_wake();
+    case SCS_DISCONNECTED: /* 连接断开,立刻唤醒 */
+        poll_immediate_wake(); /* 设置唤醒时机 */
         return;
     }
+    /* 一般这里的wait是fd_wait,将stream对应的文件描述符加入poll描述符之中    */
     (stream->class->wait)(stream, wait);
 }
 
@@ -439,12 +450,14 @@ stream_connect_wait(struct stream *stream)
     stream_wait(stream, STREAM_CONNECT);
 }
 
+/* 等待收到消息 */
 void
 stream_recv_wait(struct stream *stream)
 {
     stream_wait(stream, STREAM_RECV);
 }
 
+/* 等待消息发送成功 */
 void
 stream_send_wait(struct stream *stream)
 {
@@ -610,6 +623,10 @@ pstream_accept_block(struct pstream *pstream, struct stream **new_stream)
 void
 pstream_wait(struct pstream *pstream)
 {
+    /* tcp-pstream-wait ==> NULL
+     * unix-psteram-wait ==> NULL
+     * 目前,此函数什么也不干
+     */
     (pstream->class->wait)(pstream);
 }
 

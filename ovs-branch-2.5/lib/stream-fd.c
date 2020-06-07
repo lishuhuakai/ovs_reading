@@ -56,7 +56,7 @@ static void maybe_unlink_and_free(char *path);
  * 构建一个新的流连接
  *
  * Returns 0 if successful, otherwise a positive errno value.  (The current
- * implementation never fails.) 
+ * implementation never fails.)
  */
 int
 new_fd_stream(const char *name, int fd, int connect_status, int fd_type,
@@ -68,11 +68,12 @@ new_fd_stream(const char *name, int fd, int connect_status, int fd_type,
     s = xmalloc(sizeof *s);
     stream_init(&s->stream, &stream_fd_class, connect_status, name);
     s->fd = fd;
-    s->fd_type = fd_type;
+    s->fd_type = fd_type; /* 文件描述符类型AF_INET等 */
     *streamp = &s->stream;
     return 0;
 }
 
+/* 强制转换为文件描述符 */
 static struct stream_fd *
 stream_fd_cast(struct stream *stream)
 {
@@ -99,6 +100,9 @@ fd_connect(struct stream *stream)
     return retval;
 }
 
+/*
+ * 接收消息
+ */
 static ssize_t
 fd_recv(struct stream *stream, void *buffer, size_t n)
 {
@@ -122,6 +126,9 @@ fd_recv(struct stream *stream, void *buffer, size_t n)
     return retval;
 }
 
+/*
+ * 发送消息
+ */
 static ssize_t
 fd_send(struct stream *stream, const void *buffer, size_t n)
 {
@@ -145,6 +152,9 @@ fd_send(struct stream *stream, const void *buffer, size_t n)
     return (retval > 0 ? retval : -EAGAIN);
 }
 
+/* 等待,其实也就是阻塞
+ *
+ */
 static void
 fd_wait(struct stream *stream, enum stream_wait_type wait)
 {
@@ -176,7 +186,7 @@ static const struct stream_class stream_fd_class = {
     NULL,                       /* run_wait */
     fd_wait,                    /* wait */
 };
-
+
 /* Passive file descriptor stream. */
 
 struct fd_pstream

@@ -23,7 +23,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-
+/*
+ * stream fd是对文件描述符的一个简单封装
+ */
 struct stream;
 struct pstream;
 struct sockaddr_storage;

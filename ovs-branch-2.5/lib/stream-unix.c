@@ -37,7 +37,9 @@
 
 VLOG_DEFINE_THIS_MODULE(stream_unix);
 
-/* Active UNIX socket. */
+/* Active UNIX socket.
+ * 活跃的UNIX套接字,也就是作为客户端
+ */
 
 static int
 unix_open(const char *name, char *suffix, struct stream **streamp,
@@ -47,6 +49,7 @@ unix_open(const char *name, char *suffix, struct stream **streamp,
     int fd;
 
     connect_path = abs_file_name(ovs_rundir(), suffix);
+    /* 创建一个socket套接字 */
     fd = make_unix_socket(SOCK_STREAM, true, NULL, connect_path);
 
     if (fd < 0) {
@@ -57,6 +60,7 @@ unix_open(const char *name, char *suffix, struct stream **streamp,
     }
 
     free(connect_path);
+    /* 将fd以stream的形式包裹起来 */
     return new_fd_stream(name, fd, check_connection_completion(fd),
                          AF_UNIX, streamp);
 }
