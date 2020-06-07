@@ -625,7 +625,7 @@ pstream_wait(struct pstream *pstream)
 {
     /* tcp-pstream-wait ==> NULL
      * unix-psteram-wait ==> NULL
-     * 目前,此函数什么也不干
+     * fd-pstram-wait ==> pfd_wait 将pstram的文件描述符加入poll之中
      */
     (pstream->class->wait)(pstream);
 }
