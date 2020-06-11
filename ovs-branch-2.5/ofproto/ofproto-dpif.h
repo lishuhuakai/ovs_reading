@@ -60,6 +60,9 @@ BUILD_ASSERT_DECL(N_TABLES >= 2 && N_TABLES <= 255);
  *   provider interface, installing and removing datapath flows, maintaining
  *   packet statistics, running protocols (BFD, LACP, STP, etc), and
  *   configuring relevant submodules.
+ * - ofproto-dpif.c
+ *   主要的ofproto-dpif模块,主要用于负责实现抽象层,安装以及移除datapath flow,维护包统计,
+ *   跑协议(BFD, LACP, STP等),以及配置相关的子模块.
  *
  * - ofproto-dpif-upcall.c
  *   Ofproto-dpif-upcall is responsible for retrieving upcalls from the kernel,
@@ -68,12 +71,19 @@ BUILD_ASSERT_DECL(N_TABLES >= 2 && N_TABLES <= 255);
  *   what each packet's actions are, executing them (i.e. asking the kernel to
  *   forward it), and handing it up to ofproto-dpif to decided whether or not
  *   to install a kernel flow.
+ * - ofproto-dpif-upcall.c
+ *   Ofproto-dpif-upcall负责获取从内核过来的upcall,处理未匹配上的upcall,
  *
  * - ofproto-dpif-xlate.c
  *   Ofproto-dpif-xlate is responsible for translating OpenFlow actions into
- *   datapath actions. */
+ *   datapath actions. 
+ * - ofproto-dpif-xlate.c
+ *   Ofproto-dpif-xlate负责将OpenFlow行为转换为datapath行为(action).
+ */
 
-/* Stores the various features which the corresponding backer supports. */
+/* Stores the various features which the corresponding backer supports. 
+ * 存储各种feature,backer所支持的.
+ */
 struct dpif_backer_support {
     /* True if the datapath supports variable-length
      * OVS_USERSPACE_ATTR_USERDATA in OVS_ACTION_ATTR_USERSPACE actions.

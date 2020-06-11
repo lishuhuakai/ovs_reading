@@ -614,7 +614,7 @@ bridge_reconfigure(const struct ovsrec_open_vswitch *ovs_cfg)
     ofproto_set_n_dpdk_rxqs(smap_get_int(&ovs_cfg->other_config,
                                          "n-dpdk-rxqs", 0));
     ofproto_set_cpu_mask(smap_get(&ovs_cfg->other_config, "pmd-cpu-mask"));
-
+	/* 设置线程的个数 */
     ofproto_set_threads(
         smap_get_int(&ovs_cfg->other_config, "n-handler-threads", 0),
         smap_get_int(&ovs_cfg->other_config, "n-revalidator-threads", 0));

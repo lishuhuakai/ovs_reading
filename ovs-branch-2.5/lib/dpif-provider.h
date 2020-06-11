@@ -20,7 +20,10 @@
 /* Provider interface to dpifs, which provide an interface to an Open vSwitch
  * datapath.  A datapath is a collection of physical or virtual ports that are
  * exposed over OpenFlow as a single switch.  Datapaths and the collections of
- * ports that they contain may be fixed or dynamic. */
+ * ports that they contain may be fixed or dynamic. 
+ * dpifs的接口,提供接口给Open vSwitch datapath, 一个datapath是一系列物理或者虚拟接口的集合
+ * 这些接口由OpenFlow负责.
+ */
 
 #include "openflow/openflow.h"
 #include "dpif.h"

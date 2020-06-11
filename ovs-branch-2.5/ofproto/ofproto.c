@@ -1632,7 +1632,9 @@ ofproto_destroy(struct ofproto *p, bool del)
  * with the netdev-based datapath, it tears down the data structures that
  * represent the datapath.
  *
- * The datapath should not be currently open as an ofproto. */
+ * The datapath should not be currently open as an ofproto. 
+ * 根据指定的name以及type来销毁datapath
+ */
 int
 ofproto_delete(const char *name, const char *type)
 {
