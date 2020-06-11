@@ -233,7 +233,7 @@ static struct vport_ops *ovs_vport_lookup(const struct vport_parms *parms)
 
 /**
  *	ovs_vport_add - add vport device (for kernel callers)
- *  Ìí¼ÓvportÉè±¸
+ *  æ·»åŠ vportè®¾å¤‡
  *
  * @parms: Information about new vport.
  *
@@ -252,7 +252,7 @@ struct vport *ovs_vport_add(const struct vport_parms *parms)
 		if (!try_module_get(ops->owner))
 			return ERR_PTR(-EAFNOSUPPORT);
 
-		vport = ops->create(parms); /* µ÷ÓÃcreateº¯Êı */
+		vport = ops->create(parms); /* è°ƒç”¨createå‡½æ•° */
 		if (IS_ERR(vport)) {
 			module_put(ops->owner);
 			return vport;
@@ -479,7 +479,7 @@ u32 ovs_vport_find_upcall_portid(const struct vport *vport, struct sk_buff *skb)
 
 /**
  *	ovs_vport_receive - pass up received packet to the datapath for processing
- *              ½«½ÓÊÕµ½µÄ°ü´«µİ¸ødatapathÀ´´¦Àí
+ *              å°†æ¥æ”¶åˆ°çš„åŒ…ä¼ é€’ç»™datapathæ¥å¤„ç†
  * @vport: vport that received the packet
  * @skb: skb that was received
  * @tun_key: tunnel (if any) that carried packet
@@ -493,7 +493,7 @@ int ovs_vport_receive(struct vport *vport, struct sk_buff *skb,
 	struct sw_flow_key key;
 	int error;
 
-	OVS_CB(skb)->input_vport = vport; /* ¼ÇÂ¼ÏÂ¶Ë¿Ú */
+	OVS_CB(skb)->input_vport = vport; /* è®°å½•ä¸‹ç«¯å£ */
 	OVS_CB(skb)->mru = 0;
 	if (unlikely(dev_net(skb->dev) != ovs_dp_get_net(vport->dp))) {
 		u32 mark;
@@ -512,7 +512,7 @@ int ovs_vport_receive(struct vport *vport, struct sk_buff *skb,
 		kfree_skb(skb);
 		return error;
 	}
-    /* ½ÓÏÂÀ´Í¨¹ıdatabaseÀ´´¦Àí½ÓÊÕµ½µÄ°ü */
+    /* æ¥ä¸‹æ¥é€šè¿‡databaseæ¥å¤„ç†æ¥æ”¶åˆ°çš„åŒ… */
 	ovs_dp_process_packet(skb, &key);
 	return 0;
 }

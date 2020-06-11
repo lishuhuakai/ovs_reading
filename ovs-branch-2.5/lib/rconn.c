@@ -337,10 +337,10 @@ rconn_connect(struct rconn *rc, const char *target, const char *name)
     OVS_EXCLUDED(rc->mutex)
 {
     ovs_mutex_lock(&rc->mutex);
-    rconn_disconnect__(rc); /* ¶Ï¿ªÁ¬½Ó */
+    rconn_disconnect__(rc); /* æ–­å¼€è¿žæŽ¥ */
     rconn_set_target__(rc, target, name);
     rc->reliable = true;
-    reconnect(rc); /* ¿ªÆôÁ¬½Ó */
+    reconnect(rc); /* å¼€å¯è¿žæŽ¥ */
     ovs_mutex_unlock(&rc->mutex);
 }
 

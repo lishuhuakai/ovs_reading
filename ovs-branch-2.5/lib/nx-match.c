@@ -56,9 +56,9 @@ VLOG_DEFINE_THIS_MODULE(nx_match);
  * payload.  When oxm_hasmask is 0, the payload is the value of the field
  * identified by the header; when oxm_hasmask is 1, the payload is a value for
  * the field followed by a mask of equal length.
- * hm´ú±í×Åoxm_hasmask,½ÓÏÂÀ´ÊÇoxm_legth×Ö¶Î£¬´ú±íºóÃæÓĞoxm_length×Ö½Ú³¤¶ÈµÄpayload
- * Èç¹ûoxm_hasmaskÎª0,ÄÇÃ´±íÊ¾Ã»ÓĞmask,¼´payload¾ÍÊÇÒªÆ¥ÅäµÄÖµ
- * Èç¹ûoxm_hasmaskÎª1£¬ÄÇÃ´payload±íÊ¾ÒªÆ¥ÅäµÄÖµÒÔ¼°µÈ³¤µÄÑÚÂë
+ * hmä»£è¡¨ç€oxm_hasmask,æ¥ä¸‹æ¥æ˜¯oxm_legthå­—æ®µï¼Œä»£è¡¨åé¢æœ‰oxm_lengthå­—èŠ‚é•¿åº¦çš„payload
+ * å¦‚æœoxm_hasmaskä¸º0,é‚£ä¹ˆè¡¨ç¤ºæ²¡æœ‰mask,å³payloadå°±æ˜¯è¦åŒ¹é…çš„å€¼
+ * å¦‚æœoxm_hasmaskä¸º1ï¼Œé‚£ä¹ˆpayloadè¡¨ç¤ºè¦åŒ¹é…çš„å€¼ä»¥åŠç­‰é•¿çš„æ©ç 
  *
  * Internally, we represent a standard OXM header as a 64-bit integer with the
  * above information in the most-significant bits.
@@ -88,7 +88,7 @@ VLOG_DEFINE_THIS_MODULE(nx_match);
  * Classes 0x0000 to 0x7FFF are member classes, allocated by ONF.
  * Classes 0x8000 to 0xFFFE are reserved classes, reserved for standardisation.
  */
-enum ofp12_oxm_class { /* ¶ÔÓ¦µÄoxm_classµÄÖµ */
+enum ofp12_oxm_class { /* å¯¹åº”çš„oxm_classçš„å€¼ */
     OFPXMC12_NXM_0          = 0x0000, /* Backward compatibility with NXM */
     OFPXMC12_NXM_1          = 0x0001, /* Backward compatibility with NXM */
     OFPXMC12_OPENFLOW_BASIC = 0x8000, /* Basic class for OpenFlow */
@@ -115,18 +115,18 @@ is_experimenter_oxm(uint64_t header)
  *     - For a standard OXM header, the length is the number of bytes of the
  *       payload, and the payload consists of just the value (and mask, if
  *       present).
- *     - ¶ÔÓÚ±ê×¼µÄOXMÍ·²¿£¬³¤¶È¾ÍÊÇpayloadËùÕ¼ÓÃµÄ×Ö½ÚÊı
+ *     - å¯¹äºæ ‡å‡†çš„OXMå¤´éƒ¨ï¼Œé•¿åº¦å°±æ˜¯payloadæ‰€å ç”¨çš„å­—èŠ‚æ•°
  *
  *     - For an experimenter OXM header, the length is the number of bytes in
  *       the payload plus 4 (the length of the experimenter ID).  That is, the
  *       experimenter ID is included in oxm_length.
- *     - ¶ÔÓÚÊµÑéĞÔµÄOXMÍ·²¿,³¤¶È¾ÍÊÇpayloadËùÕ¼ÓÃµÄ×Ö½ÚÊıÄ¿¼ÓÉÏ4(experimenter IDËùÕ¼ÓÃµÄ×Ö½ÚÊı)
+ *     - å¯¹äºå®éªŒæ€§çš„OXMå¤´éƒ¨,é•¿åº¦å°±æ˜¯payloadæ‰€å ç”¨çš„å­—èŠ‚æ•°ç›®åŠ ä¸Š4(experimenter IDæ‰€å ç”¨çš„å­—èŠ‚æ•°)
  *
  * This function returns the length of the experimenter ID field in 'header'.
  * That is, for an experimenter OXM (when an experimenter ID is present), it
  * returns 4, and for a standard OXM (when no experimenter ID is present), it
  * returns 0. 
- * Õâ¸öº¯ÊıÊµ¼ÊÉÏ·µ»ØµÄÊÇexperimenter IDËùÕ¼ÓÃµÄ×Ö½ÚÊıÄ¿
+ * è¿™ä¸ªå‡½æ•°å®é™…ä¸Šè¿”å›çš„æ˜¯experimenter IDæ‰€å ç”¨çš„å­—èŠ‚æ•°ç›®
  */
 static int
 nxm_experimenter_len(uint64_t header)
@@ -136,7 +136,7 @@ nxm_experimenter_len(uint64_t header)
 
 /* Returns the number of bytes that follow the header for an NXM/OXM entry
  * with the given 'header'.
- * ·µ»ØÍ·²¿Ö®ºóNXM/OXM entryËùÕ¼ÓÃµÄ×Ö½ÚÊı
+ * è¿”å›å¤´éƒ¨ä¹‹åNXM/OXM entryæ‰€å ç”¨çš„å­—èŠ‚æ•°
  */
 static int
 nxm_payload_len(uint64_t header)
@@ -199,7 +199,7 @@ struct nxm_field {
     enum ofp_version version;
     const char *name;           /* e.g. "NXM_OF_IN_PORT". */
 
-    enum mf_field_id id; /* Æ¥Åä×Ö¶Îid */
+    enum mf_field_id id; /* åŒ¹é…å­—æ®µid */
 };
 
 static const struct nxm_field *nxm_field_by_header(uint64_t header);
@@ -298,7 +298,7 @@ is_cookie_pseudoheader(uint64_t header)
 }
 
 /*
- * ½âÎöfield×Ö¶Î
+ * è§£æfieldå­—æ®µ
  */
 static enum ofperr
 nx_pull_header__(struct ofpbuf *b, bool allow_cookie, uint64_t *header,
@@ -307,7 +307,7 @@ nx_pull_header__(struct ofpbuf *b, bool allow_cookie, uint64_t *header,
     if (b->size < 4) {
         goto bad_len;
     }
-    /* ¹ØÓÚÕâÀïµÄÍ·²¿,Ó¦¸ÃÖ¸µÄÊÇÕû¸ö±¨ÎÄµÄÍ·²¿£¬Ò²¾ÍÊÇOpenFlowÍ·²¿ */
+    /* å…³äºè¿™é‡Œçš„å¤´éƒ¨,åº”è¯¥æŒ‡çš„æ˜¯æ•´ä¸ªæŠ¥æ–‡çš„å¤´éƒ¨ï¼Œä¹Ÿå°±æ˜¯OpenFlowå¤´éƒ¨ */
     *header = ((uint64_t) ntohl(get_unaligned_be32(b->data))) << 32;
     if (is_experimenter_oxm(*header)) {
         if (b->size < 8) {
@@ -315,7 +315,7 @@ nx_pull_header__(struct ofpbuf *b, bool allow_cookie, uint64_t *header,
         }
         *header = ntohll(get_unaligned_be64(b->data));
     }
-    /* ³¤¶ÈÅĞ¶Ï */
+    /* é•¿åº¦åˆ¤æ–­ */
     if (nxm_length(*header) < nxm_experimenter_len(*header)) {
         VLOG_WARN_RL(&rl, "OXM header "NXM_HEADER_FMT" has invalid length %d "
                      "(minimum is %d)",
@@ -323,11 +323,11 @@ nx_pull_header__(struct ofpbuf *b, bool allow_cookie, uint64_t *header,
                      nxm_header_len(*header));
         goto error;
     }
-    /* È¥µôÍ·²¿,Ê£ÏÂµÄ¾ÍÊÇ */
+    /* å»æ‰å¤´éƒ¨,å‰©ä¸‹çš„å°±æ˜¯ */
     ofpbuf_pull(b, nxm_header_len(*header));
 
     if (field) {
-        /* ½âÎöÍ·²¿×Ö¶Î */
+        /* è§£æå¤´éƒ¨å­—æ®µ */
         *field = mf_from_oxm_header(*header);
         if (!*field && !(allow_cookie && is_cookie_pseudoheader(*header))) {
             VLOG_DBG_RL(&rl, "OXM header "NXM_HEADER_FMT" is unknown",
@@ -368,7 +368,7 @@ copy_entry_value(const struct mf_field *field, union mf_value *value,
 }
 
 /*
- * ½âÎöÒ»¸önx_entry
+ * è§£æä¸€ä¸ªnx_entry
  */
 static enum ofperr
 nx_pull_entry__(struct ofpbuf *b, bool allow_cookie, uint64_t *header,
@@ -385,30 +385,30 @@ nx_pull_entry__(struct ofpbuf *b, bool allow_cookie, uint64_t *header,
     if (header_error && header_error != OFPERR_OFPBMC_BAD_FIELD) {
         return header_error;
     }
-    /* ´ÓheadÖĞ»ñÈ¡payloadµÄ³¤¶È */
+    /* ä»headä¸­è·å–payloadçš„é•¿åº¦ */
     payload_len = nxm_payload_len(*header);
-    payload = ofpbuf_try_pull(b, payload_len); /* ÌáÈ¡³öÒ»¸öpayload */
+    payload = ofpbuf_try_pull(b, payload_len); /* æå–å‡ºä¸€ä¸ªpayload */
     if (!payload) {
         VLOG_DBG_RL(&rl, "OXM header "NXM_HEADER_FMT" calls for %u-byte "
                     "payload but only %"PRIu32" bytes follow OXM header",
                     NXM_HEADER_ARGS(*header), payload_len, b->size);
         return OFPERR_OFPBMC_BAD_LEN;
     }
-    /* »ñÈ¡valËùÕ¼µÄ×Ö½ÚÊıÄ¿ */
+    /* è·å–valæ‰€å çš„å­—èŠ‚æ•°ç›® */
     width = nxm_field_bytes(*header);
-    if (nxm_hasmask(*header) /* ÅĞ¶ÏÊÇ·ñ´æÔÚmask */
+    if (nxm_hasmask(*header) /* åˆ¤æ–­æ˜¯å¦å­˜åœ¨mask */
         && !is_mask_consistent(*header, payload, payload + width)) {
         return OFPERR_OFPBMC_BAD_WILDCARDS;
     }
-    /* Ö±½Ó½«payload¿½±´µ½valueÖĞ */
+    /* ç›´æ¥å°†payloadæ‹·è´åˆ°valueä¸­ */
     copy_entry_value(field, value, payload, width);
 
     if (mask) {
         if (nxm_hasmask(*header)) {
-            /* ÓĞmask¾Í¿½±´mask */
+            /* æœ‰maskå°±æ‹·è´mask */
             copy_entry_value(field, mask, payload + width, width);
         } else {
-            /* ·ñÔòµÄ»°£¬maskÎª0xff */
+            /* å¦åˆ™çš„è¯ï¼Œmaskä¸º0xff */
             memset(mask, 0xff, sizeof *mask);
         }
     } else if (nxm_hasmask(*header)) {
@@ -496,8 +496,8 @@ nx_pull_match_entry(struct ofpbuf *b, bool allow_cookie,
 }
 
 /*
- * p Ö¸ÏòµÚÒ»¸öoxm×Ö¶ÎÆğÊ¼ÄÚ´æÎ»ÖÃ
- * match_len Õû¸ömatch×Ö¶Î
+ * p æŒ‡å‘ç¬¬ä¸€ä¸ªoxmå­—æ®µèµ·å§‹å†…å­˜ä½ç½®
+ * match_len æ•´ä¸ªmatchå­—æ®µ
  */
 static enum ofperr
 nx_pull_raw(const uint8_t *p, unsigned int match_len, bool strict,
@@ -511,26 +511,26 @@ nx_pull_raw(const uint8_t *p, unsigned int match_len, bool strict,
     if (cookie) {
         *cookie = *cookie_mask = htonll(0);
     }
-    /* ÎÒÃÇ·ÖÎöÒ»ÏÂforµÄÌõ¼ş
-     * 1¡¢¿ÉÄÜÓĞ¶à¸öoxm×Ö¶ÎÒò´ËĞèÒªÒ»¸öÒ»¸ö±éÀú
-     * ±ê×¼ÀïÃæoxmÍ·²¿Ö»ÄÜËµÀàtlv¸ñÊ½£¬ÎªÊ²Ã´ËµÊÇÀàtlvÄØ?
-     * ±ê×¼tlv¸ñÊ½ tºÍlÊÇÁ½¸ö×Ö½Ú(ÓĞµÄÊÇ4¸ö×Ö½Ú)£¬¶øoxmÖĞtlv
-     * t = 3¸ö×Ö½Ú£¬l = 1¸ö×Ö½ÚÆäÖĞtÖĞÇ°Á½¸ö×Ö½ÚÊÇ±íÊ¾ÀàĞÍ£¬
-     * ×îºóÒ»¸ö×Ö½ÚÊÇÓÖ±»·Ö³ÉÁ½²¿·Ö£¬¸ß7Î»±íÊ¾×ÓÀàĞÍ£¬×îºóÒ»Î»´ú±íÊÇ·ñ´æÔÚmask (¸ù¾İÉÏÃæ±¨ÎÄ¿ÉÒÔÖªµÀ)
+    /* æˆ‘ä»¬åˆ†æä¸€ä¸‹forçš„æ¡ä»¶
+     * 1ã€å¯èƒ½æœ‰å¤šä¸ªoxmå­—æ®µå› æ­¤éœ€è¦ä¸€ä¸ªä¸€ä¸ªéå†
+     * æ ‡å‡†é‡Œé¢oxmå¤´éƒ¨åªèƒ½è¯´ç±»tlvæ ¼å¼ï¼Œä¸ºä»€ä¹ˆè¯´æ˜¯ç±»tlvå‘¢?
+     * æ ‡å‡†tlvæ ¼å¼ tå’Œlæ˜¯ä¸¤ä¸ªå­—èŠ‚(æœ‰çš„æ˜¯4ä¸ªå­—èŠ‚)ï¼Œè€Œoxmä¸­tlv
+     * t = 3ä¸ªå­—èŠ‚ï¼Œl = 1ä¸ªå­—èŠ‚å…¶ä¸­tä¸­å‰ä¸¤ä¸ªå­—èŠ‚æ˜¯è¡¨ç¤ºç±»å‹ï¼Œ
+     * æœ€åä¸€ä¸ªå­—èŠ‚æ˜¯åˆè¢«åˆ†æˆä¸¤éƒ¨åˆ†ï¼Œé«˜7ä½è¡¨ç¤ºå­ç±»å‹ï¼Œæœ€åä¸€ä½ä»£è¡¨æ˜¯å¦å­˜åœ¨mask (æ ¹æ®ä¸Šé¢æŠ¥æ–‡å¯ä»¥çŸ¥é“)
      *
-     * 2¡¢forÑ­»·ÖĞÄ§¹íÊı×Ö4±íÊ¾tlvÖĞheader×Ö¶Î³¤¶È£¬Ò²¾ÍÊÇËµheaderÊÇ¹Ì³¤¶È
-     * 3¡¢º¯Êınx_entry_ok ÆäÊµÊÇ¿½±´oxm header²¿·Ö(4¸ö×Ö½Ú)µ½±äÁ¿uint32 headerÖĞ£¬¶ÔÓÚÉÏÃæ±¨ÎÄÖĞµÚÒ»¸öoxm£¬Õâ¸öheader=0x80000606¡£
-     * 4¡¢ºêNXM_LENGTHÊÇÓÃÓÚ»ñÈ¡tlvÖĞlengthÖµ¡£¾ÍÊÇheader&0xff¡£Õë¶ÔÉÏÃæheaderÊÇ0x80000606£¬ÓëoxffÓë²Ù×÷ºóÕıºÃÊÇ6¡£Í¨¹ı±¨ÎÄ²é¿´lengthµÄÈ·ÊÇ6¡£
-     * 5¡¢Ã¿½âÎöÒ»´Îoxm£¬p¾ÍÒªÖ¸ÏòÏÂÒ»¸öoxmÆğÊ¼Î»ÖÃ£¬match_len¾ÍÒª¼õÈ¥¶ÔÓ¦³¤¶È¡£
+     * 2ã€forå¾ªç¯ä¸­é­”é¬¼æ•°å­—4è¡¨ç¤ºtlvä¸­headerå­—æ®µé•¿åº¦ï¼Œä¹Ÿå°±æ˜¯è¯´headeræ˜¯å›ºé•¿åº¦
+     * 3ã€å‡½æ•°nx_entry_ok å…¶å®æ˜¯æ‹·è´oxm headeréƒ¨åˆ†(4ä¸ªå­—èŠ‚)åˆ°å˜é‡uint32 headerä¸­ï¼Œå¯¹äºä¸Šé¢æŠ¥æ–‡ä¸­ç¬¬ä¸€ä¸ªoxmï¼Œè¿™ä¸ªheader=0x80000606ã€‚
+     * 4ã€å®NXM_LENGTHæ˜¯ç”¨äºè·å–tlvä¸­lengthå€¼ã€‚å°±æ˜¯header&0xffã€‚é’ˆå¯¹ä¸Šé¢headeræ˜¯0x80000606ï¼Œä¸oxffä¸æ“ä½œåæ­£å¥½æ˜¯6ã€‚é€šè¿‡æŠ¥æ–‡æŸ¥çœ‹lengthçš„ç¡®æ˜¯6ã€‚
+     * 5ã€æ¯è§£æä¸€æ¬¡oxmï¼Œpå°±è¦æŒ‡å‘ä¸‹ä¸€ä¸ªoxmèµ·å§‹ä½ç½®ï¼Œmatch_lenå°±è¦å‡å»å¯¹åº”é•¿åº¦ã€‚
      */
     ofpbuf_use_const(&b, p, match_len);
     while (b.size) {
         const uint8_t *pos = b.data;
         const struct mf_field *field;
-        union mf_value value; /* Öµ */
-        union mf_value mask; /* ÑÚÂë */
+        union mf_value value; /* å€¼ */
+        union mf_value mask; /* æ©ç  */
         enum ofperr error;
-        /* ÒòÎª¿ÉÄÜ´æÔÚ¶à¸öÆ¥ÅäÏî,ÕâÀïÒ»´ÎÌáÈ¡³öÒ»¸öÆ¥ÅäÏî */
+        /* å› ä¸ºå¯èƒ½å­˜åœ¨å¤šä¸ªåŒ¹é…é¡¹,è¿™é‡Œä¸€æ¬¡æå–å‡ºä¸€ä¸ªåŒ¹é…é¡¹ */
         error = nx_pull_match_entry(&b, cookie != NULL, &field, &value, &mask);
         if (error) {
             if (error == OFPERR_OFPBMC_BAD_FIELD && !strict) {
@@ -618,10 +618,10 @@ nx_pull_match_loose(struct ofpbuf *b, unsigned int match_len,
 }
 
 /*
- * ½âÎömatch×Ö¶Î
- * @strict ÊÇ·ñĞèÒªÑÏ¸ñ¼ì²é
- * @match ±£´æ½âÎöºóµÄmatch
- * @b ±£´æmatchÔ­Ê¼±¨ÎÄµÄbuf
+ * è§£æmatchå­—æ®µ
+ * @strict æ˜¯å¦éœ€è¦ä¸¥æ ¼æ£€æŸ¥
+ * @match ä¿å­˜è§£æåçš„match
+ * @b ä¿å­˜matchåŸå§‹æŠ¥æ–‡çš„buf
  */
 static enum ofperr
 oxm_pull_match__(struct ofpbuf *b, bool strict, struct match *match)
@@ -642,9 +642,9 @@ oxm_pull_match__(struct ofpbuf *b, bool strict, struct match *match)
     if (omh->type != htons(OFPMT_OXM)) {
         return OFPERR_OFPBMC_BAD_TYPE;
     }
-    /* ³¢ÊÔ½«»º³åÇøbÖĞÒÆ³ı´óĞ¡Îªmatch_lenÊı¾İ
-     * ¾­¹ıÏÂÃæÕâ¸öº¯Êı´¦ÀíÖ®ºó£¬»º³åÇøbÀïÃæÒÑ¾­Ã»ÓĞmatchÏà¹ØÊı¾İ£¬
-     * Ê£ÏÂ¾ÍÊÇinstructionÓò
+    /* å°è¯•å°†ç¼“å†²åŒºbä¸­ç§»é™¤å¤§å°ä¸ºmatch_lenæ•°æ®
+     * ç»è¿‡ä¸‹é¢è¿™ä¸ªå‡½æ•°å¤„ç†ä¹‹åï¼Œç¼“å†²åŒºbé‡Œé¢å·²ç»æ²¡æœ‰matchç›¸å…³æ•°æ®ï¼Œ
+     * å‰©ä¸‹å°±æ˜¯instructionåŸŸ
      */
     p = ofpbuf_try_pull(b, ROUND_UP(match_len, 8));
     if (!p) {
@@ -653,7 +653,7 @@ oxm_pull_match__(struct ofpbuf *b, bool strict, struct match *match)
                     "length %"PRIu32")", match_len, b->size);
         return OFPERR_OFPBMC_BAD_LEN;
     }
-    /* p + sizeof *omhÌø¹ıÁËmatchÍ·²¿ */
+    /* p + sizeof *omhè·³è¿‡äº†matchå¤´éƒ¨ */
     return nx_pull_raw(p + sizeof *omh, match_len - sizeof *omh,
                        strict, match, NULL, NULL);
 }
@@ -664,7 +664,7 @@ oxm_pull_match__(struct ofpbuf *b, bool strict, struct match *match)
  * Fails with an error when encountering unknown OXM headers.
  *
  * Returns 0 if successful, otherwise an OpenFlow error code.
- * ½âÎöÆ¥Åä±¨ÎÄ
+ * è§£æåŒ¹é…æŠ¥æ–‡
  */
 enum ofperr
 oxm_pull_match(struct ofpbuf *b, struct match *match)
@@ -2045,17 +2045,17 @@ nxm_init(void)
         for (struct nxm_field_index *nfi = all_nxm_fields;
              nfi < &all_nxm_fields[ARRAY_SIZE(all_nxm_fields)]; nfi++) {
             hmap_insert(&nxm_header_map, &nfi->header_node,
-                        hash_uint64(nxm_no_len(nfi->nf.header))); /* ¸ù¾İÍ·²¿À´²éÕÒ */
+                        hash_uint64(nxm_no_len(nfi->nf.header))); /* æ ¹æ®å¤´éƒ¨æ¥æŸ¥æ‰¾ */
             hmap_insert(&nxm_name_map, &nfi->name_node,
-                        hash_string(nfi->nf.name, 0)); /* ¸ù¾İÃû³ÆÀ´²éÕÒ */
-            list_push_back(&nxm_mf_map[nfi->nf.id], &nfi->mf_node);/* ¸ù¾İidÀ´²éÕÒ */
+                        hash_string(nfi->nf.name, 0)); /* æ ¹æ®åç§°æ¥æŸ¥æ‰¾ */
+            list_push_back(&nxm_mf_map[nfi->nf.id], &nfi->mf_node);/* æ ¹æ®idæ¥æŸ¥æ‰¾ */
         }
         ovsthread_once_done(&once);
     }
 }
 
 /*
- * ¸ù¾İÍ·²¿×Ö¶Î²éÕÒnxm_field
+ * æ ¹æ®å¤´éƒ¨å­—æ®µæŸ¥æ‰¾nxm_field
  */
 static const struct nxm_field *
 nxm_field_by_header(uint64_t header)
@@ -2064,8 +2064,8 @@ nxm_field_by_header(uint64_t header)
     uint64_t header_no_len;
 
     nxm_init();
-    if (nxm_hasmask(header)) { /* ÅĞ¶ÏÊÇ·ñ´æÔÚÑÚÂë */
-        /* ´æÔÚÑÚÂë¾ÍĞèÒª½«ÑÚÂëÈ¥µô,±ãÓÚ²éÑ¯ */
+    if (nxm_hasmask(header)) { /* åˆ¤æ–­æ˜¯å¦å­˜åœ¨æ©ç  */
+        /* å­˜åœ¨æ©ç å°±éœ€è¦å°†æ©ç å»æ‰,ä¾¿äºæŸ¥è¯¢ */
         header = nxm_make_exact_header(header);
     }
 

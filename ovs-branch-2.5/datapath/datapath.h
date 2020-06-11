@@ -41,7 +41,7 @@
 /**
  * struct dp_stats_percpu - per-cpu packet processing statistics for a given
  * datapath.
- * Ã¿¸öcpuÒ»¸öµÄ¹ØÓÚdatapathµÄÍ³¼ÆĞÅÏ¢
+ * æ¯ä¸ªcpuä¸€ä¸ªçš„å…³äºdatapathçš„ç»Ÿè®¡ä¿¡æ¯
  * @n_hit: Number of received packets for which a matching flow was found in
  * the flow table.
  * @n_miss: Number of received packets that had no matching flow in the flow
@@ -55,8 +55,8 @@
  *   up per packet.
  */
 struct dp_stats_percpu {
-	u64 n_hit; /* Á÷±íÖĞÆ¥ÅäµÄÁ÷µÄ¸öÊı */
-	u64 n_missed; /* ²»Æ¥ÅäµÄ¸öÊı */
+	u64 n_hit; /* æµè¡¨ä¸­åŒ¹é…çš„æµçš„ä¸ªæ•° */
+	u64 n_missed; /* ä¸åŒ¹é…çš„ä¸ªæ•° */
 	u64 n_lost;
 	u64 n_mask_hit;
 	struct u64_stats_sync syncp;
@@ -164,7 +164,7 @@ static inline struct net *ovs_dp_get_net(const struct datapath *dp)
 }
 
 /*
- * Éè¶¨datapathËùÊôµÄÍøÂçÃüÃû¿Õ¼ä
+ * è®¾å®šdatapathæ‰€å±çš„ç½‘ç»œå‘½åç©ºé—´
  */
 static inline void ovs_dp_set_net(struct datapath *dp, struct net *net)
 {

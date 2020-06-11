@@ -3569,7 +3569,7 @@ ofpact_decode(const struct ofp_action_header *a, enum ofp_raw_action_type raw,
               enum ofp_version version, uint64_t arg, struct ofpbuf *out)
 {
     switch (raw) {
-    case OFPAT_RAW_SET_TP_SRC: /* ÉèÖÃÔ´¶Ë¿Ú */
+    case OFPAT_RAW_SET_TP_SRC: /* è®¾ç½®æºç«¯å£ */
         return decode_OFPAT_RAW_SET_TP_SRC(htons(arg), version, out);
 
     case NXAST_RAW_CT:

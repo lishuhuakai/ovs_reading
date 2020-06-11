@@ -1328,7 +1328,7 @@ match_print(const struct match *match)
 
 /* Initializes 'dst' as a copy of 'src'.  The caller must eventually free 'dst'
  * with minimatch_destroy(). 
- * ÓÃsrcµÄ¿½±´À´³õÊ¼»¯dst
+ * ç”¨srcçš„æ‹·è´æ¥åˆå§‹åŒ–dst
  */
 void
 minimatch_init(struct minimatch *dst, const struct match *src)
@@ -1337,10 +1337,10 @@ minimatch_init(struct minimatch *dst, const struct match *src)
 
     miniflow_map_init(&tmp, &src->wc.masks);
     /* Allocate two consecutive miniflows. */
-    /* ·ÖÅäÁ½¸öÁ¬ĞøµÄ×îĞ¡flow */
+    /* åˆ†é…ä¸¤ä¸ªè¿ç»­çš„æœ€å°flow */
     miniflow_alloc(dst->flows, 2, &tmp);
-    miniflow_init(dst->flow, &src->flow); /*  Á÷±íÏî */
-    minimask_init(dst->mask, &src->wc); /* Í¨Åä·û */
+    miniflow_init(dst->flow, &src->flow); /*  æµè¡¨é¡¹ */
+    minimask_init(dst->mask, &src->wc); /* é€šé…ç¬¦ */
 }
 
 /* Initializes 'dst' as a copy of 'src'.  The caller must eventually free 'dst'

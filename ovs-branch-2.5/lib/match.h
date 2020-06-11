@@ -24,7 +24,7 @@
 struct ds;
 
 /* A flow classification match.
- * Á÷±íÏî·ÖÀàÆ¥Åä
+ * æµè¡¨é¡¹åˆ†ç±»åŒ¹é…
  * Use one of the match_*() functions to initialize a "struct match".
  *
  * The match_*() functions below maintain the following important invariant.
@@ -32,9 +32,9 @@ struct ds;
  * field in 'flow' is set to all-0-bits.  (The match_zero_wildcarded_fields()
  * function can be used to restore this invariant after adding wildcards.) */
 struct match {
-    struct flow flow;  /* Á÷±íÏî */
-    struct flow_wildcards wc; /* ÑÚÂë */
-    struct tun_metadata_allocation tun_md; /* ²»ÖØÒª */
+    struct flow flow;  /* æµè¡¨é¡¹ */
+    struct flow_wildcards wc; /* æ©ç  */
+    struct tun_metadata_allocation tun_md; /* ä¸é‡è¦ */
 };
 
 /* Initializer for a "struct match" that matches every packet. */

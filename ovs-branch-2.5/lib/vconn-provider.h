@@ -19,7 +19,7 @@
 
 /* Provider interface to vconns, which provide a virtual connection to an
  * OpenFlow device. 
- * ĞéÄâÁ¬½Ó²ã,Ö÷ÒªÎª²»Í¬µÄÁ¬½ÓÀàĞÍÌá¹©Í¬Ò»¸ö³éÏó½Ó¿Ú
+ * è™šæ‹Ÿè¿æ¥å±‚,ä¸»è¦ä¸ºä¸åŒçš„è¿æ¥ç±»å‹æä¾›åŒä¸€ä¸ªæŠ½è±¡æ¥å£
  */
 
 #include "openvswitch/vconn.h"
@@ -30,8 +30,8 @@
 
 /* This structure should be treated as opaque by vconn implementations. */
 struct vconn {
-    const struct vconn_class *vclass;   /* ¶ÔÓ¦µÄ²Ù×÷·½·¨ */
-    int state;  /* ×´Ì¬ */
+    const struct vconn_class *vclass;   /* å¯¹åº”çš„æ“ä½œæ–¹æ³• */
+    int state;  /* çŠ¶æ€ */
     int error;
 
     /* OpenFlow versions. */
@@ -53,16 +53,16 @@ static inline void vconn_assert_class(const struct vconn *vconn,
 }
 
 /*
- * vconn_classÊÇ²Ù×İvconnµÄÏà¹Øº¯Êı
+ * vconn_classæ˜¯æ“çºµvconnçš„ç›¸å…³å‡½æ•°
  */
 struct vconn_class {
     /* Prefix for connection names, e.g. "nl", "tcp". */
-    const char *name; /* Á¬½ÓÃû³Æ */
+    const char *name; /* è¿æ¥åç§° */
 
     /* Attempts to connect to an OpenFlow device.  'name' is the full
      * connection name provided by the user, e.g. "tcp:1.2.3.4".  This name is
      * useful for error messages but must not be modified.
-     * ³¢ÊÔÁ¬½Óµ½Ò»¸öOpenFLowÉè±¸
+     * å°è¯•è¿æ¥åˆ°ä¸€ä¸ªOpenFLowè®¾å¤‡
      *
      * 'allowed_versions' is the OpenFlow versions that may be
      * negotiated for a connection.
@@ -70,7 +70,7 @@ struct vconn_class {
      * 'suffix' is a copy of 'name' following the colon and may be modified.
      * 'dscp' is the DSCP value that the new connection should use in the IP
      * packets it sends.
-     * 'suffix'ÊÇnameµÄºó×º(Ò²¾ÍÊÇÃ°ºÅºóÃæµÄÖµ)
+     * 'suffix'æ˜¯nameçš„åç¼€(ä¹Ÿå°±æ˜¯å†’å·åé¢çš„å€¼)
      *
      * Returns 0 if successful, otherwise a positive errno value.  If
      * successful, stores a pointer to the new connection in '*vconnp'.
@@ -122,7 +122,7 @@ struct vconn_class {
      * output buffers.
      *
      * May be null if 'vconn' doesn't have anything to do here. 
-     * runº¯ÊıÔÊĞívconn½øĞĞÏà¹ØµÄÎ¬»¤»î¶¯
+     * runå‡½æ•°å…è®¸vconnè¿›è¡Œç›¸å…³çš„ç»´æŠ¤æ´»åŠ¨
      */
     void (*run)(struct vconn *vconn);
 

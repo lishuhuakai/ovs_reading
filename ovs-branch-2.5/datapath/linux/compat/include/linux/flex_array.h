@@ -21,18 +21,18 @@ struct flex_array_part;
  * and the developer is getting tempted to use
  * vmalloc().
  */
-/* Á÷±íhashÍ° */
+/* æµè¡¨hashæ¡¶ */
 struct flex_array {
 	union {
 		struct {
-			int element_size; /* Ã¿¸öÔªËØµÄ´óĞ¡ */
-			int total_nr_elements; /* ÔªËØµÄ×Ü¸öÊı */
-			int elems_per_part; /* Ã¿¸öpart°üº¬µÄÔªËØ¸öÊı */
+			int element_size; /* æ¯ä¸ªå…ƒç´ çš„å¤§å° */
+			int total_nr_elements; /* å…ƒç´ çš„æ€»ä¸ªæ•° */
+			int elems_per_part; /* æ¯ä¸ªpartåŒ…å«çš„å…ƒç´ ä¸ªæ•° */
 			struct reciprocal_value reciprocal_elems;
             /*
-              µ±ÔªËØÕ¼ÓÃµÄ¿Õ¼ä(element_size * total_nr_elements)´óÓÚ
-              FLEX_ARRAY_BASE_BYTES_LEFTÊ±,
-              parts°üº¬¶à¸ö·ÖÒ³¿Õ¼ä,·ñÔòÖ»°üº¬Ò»Ò³¿Õ¼ä¼´¿É
+              å½“å…ƒç´ å ç”¨çš„ç©ºé—´(element_size * total_nr_elements)å¤§äº
+              FLEX_ARRAY_BASE_BYTES_LEFTæ—¶,
+              partsåŒ…å«å¤šä¸ªåˆ†é¡µç©ºé—´,å¦åˆ™åªåŒ…å«ä¸€é¡µç©ºé—´å³å¯
              */
 			struct flex_array_part *parts[];
 		};
@@ -40,8 +40,8 @@ struct flex_array {
 		 * This little trick makes sure that
 		 * sizeof(flex_array) == PAGE_SIZE
 		 */
-		/* ÕâÀïµÄpadding½ö½öÖ»ÊÇÒ»¸öÕ¼Î»·û¶øÒÑ,±£Ö¤flex arrayµÄ´óĞ¡ÖÁÉÙÎªÒ»Ò³ */
-		char padding[FLEX_ARRAY_BASE_SIZE]; /* Ò»Ò³´óĞ¡µÄpage size */
+		/* è¿™é‡Œçš„paddingä»…ä»…åªæ˜¯ä¸€ä¸ªå ä½ç¬¦è€Œå·²,ä¿è¯flex arrayçš„å¤§å°è‡³å°‘ä¸ºä¸€é¡µ */
+		char padding[FLEX_ARRAY_BASE_SIZE]; /* ä¸€é¡µå¤§å°çš„page size */
 	};
 };
 

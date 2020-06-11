@@ -47,7 +47,7 @@ rtnetlink_type_is_rtnlgrp_addr(uint16_t type)
 /* Parses a rtnetlink message 'buf' into 'change'.  If 'buf' is unparseable,
  * leaves 'change' untouched and returns false.  Otherwise, populates 'change'
  * and returns true. 
- * ½âÎönetlinkÏûÏ¢
+ * è§£ænetlinkæ¶ˆæ¯
  */
 bool
 rtnetlink_parse(struct ofpbuf *buf, struct rtnetlink_change *change)

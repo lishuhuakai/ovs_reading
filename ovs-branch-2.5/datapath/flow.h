@@ -55,31 +55,31 @@ struct ovs_tunnel_info {
 	FIELD_SIZEOF(struct sw_flow_key, recirc_id))
 
 /*
- * sw_flow_keyÊÇÕû¸öopenvswitchÖĞ×îÎªÖØÒªµÄ½á¹¹Ìå
- * ËüÖ÷Òª´æ´¢Êı¾İ°üÖĞĞ­ÒéÏà¹ØµÄĞÅÏ¢,ÕâÊÇºóÆÚ½øĞĞÁ÷±íÆ¥Åä×îÎª¹Ø¼üµÄ½á¹¹
+ * sw_flow_keyæ˜¯æ•´ä¸ªopenvswitchä¸­æœ€ä¸ºé‡è¦çš„ç»“æ„ä½“
+ * å®ƒä¸»è¦å­˜å‚¨æ•°æ®åŒ…ä¸­åè®®ç›¸å…³çš„ä¿¡æ¯,è¿™æ˜¯åæœŸè¿›è¡Œæµè¡¨åŒ¹é…æœ€ä¸ºå…³é”®çš„ç»“æ„
  */
 struct sw_flow_key {
 	u8 tun_opts[255];
 	u8 tun_opts_len;
 	struct ip_tunnel_key tun_key;  /* Encapsulating tunnel key. */
 	struct {
-        /* °üµÄÓÅÏÈ¼¶ */
+        /* åŒ…çš„ä¼˜å…ˆçº§ */
 		u32	priority;	/* Packet QoS priority. */
-        /* °üµÄmaskÖµ */
+        /* åŒ…çš„maskå€¼ */
 		u32	skb_mark;	/* SKB mark. */
-        /* °ü½øÈëµÄ¶Ë¿ÚºÅ */
+        /* åŒ…è¿›å…¥çš„ç«¯å£å· */
 		u16	in_port;	/* Input switch port (or DP_MAX_PORTS). */
 	} __packed phy; /* Safe when right after 'tun_key'. */
 	u32 ovs_flow_hash;		/* Datapath computed hash value.  */
 	u32 recirc_id;			/* Recirculation ID.  */
-    /* ÒÔÌ«ÍøÍ·²¿ĞÅÏ¢ */
+    /* ä»¥å¤ªç½‘å¤´éƒ¨ä¿¡æ¯ */
 	struct {
-	    /* Ô´mac */
+	    /* æºmac */
 		u8     src[ETH_ALEN];
-        /* Ä¿µÄmac */
+        /* ç›®çš„mac */
 		u8     dst[ETH_ALEN];
 		__be16 tci;		/* 0 if no VLAN, VLAN_TAG_PRESENT set otherwise. */
-        /* °üµÄÀàĞÍ: ip°ü»¹ÊÇarp°ü */
+        /* åŒ…çš„ç±»å‹: ipåŒ…è¿˜æ˜¯arpåŒ… */
 		__be16 type;		/* Ethernet frame type. */
 	} eth;
 	union {
@@ -87,11 +87,11 @@ struct sw_flow_key {
 			__be32 top_lse;	/* top label stack entry */
 		} mpls;
 		struct {
-            /* Ğ­ÒéÀàĞÍ, tcp--6 udp--17 */
+            /* åè®®ç±»å‹, tcp--6 udp--17 */
 			u8     proto;	/* IP protocol or lower 8 bits of ARP opcode. */
-            /* ·şÎñÀàĞÍ */
+            /* æœåŠ¡ç±»å‹ */
 			u8     tos;	    /* IP ToS. */
-            /* Éú´æÊ±¼ä */
+            /* ç”Ÿå­˜æ—¶é—´ */
 			u8     ttl;	    /* IP TTL/hop limit. */
 			u8     frag;	/* One of OVS_FRAG_TYPE_*. */
 		} ip;
@@ -143,7 +143,7 @@ struct sw_flow_key_range {
 struct sw_flow_mask {
 	int ref_count;
 	struct rcu_head rcu;
-	struct sw_flow_key_range range; /* ²Ù×÷·¶Î§½á¹¹Ìå */
+	struct sw_flow_key_range range; /* æ“ä½œèŒƒå›´ç»“æ„ä½“ */
 	struct sw_flow_key key;
 };
 
@@ -178,20 +178,20 @@ struct flow_stats {
 	__be16 tcp_flags;		/* Union of seen TCP flags. */
 };
 
-/* Á÷±íÏî */
+/* æµè¡¨é¡¹ */
 struct sw_flow {
-	struct rcu_head rcu; /* rcu±£»¤»úÖÆ */
+	struct rcu_head rcu; /* rcuä¿æŠ¤æœºåˆ¶ */
 	struct {
 		struct hlist_node node[2];
-		u32 hash; /* hashÖµ */
+		u32 hash; /* hashå€¼ */
 	} flow_table, ufid_table;
 	int stats_last_writer;		/* NUMA-node id of the last writer on
 					 * 'stats[0]'.
 					 */
-	struct sw_flow_key key; /* Á÷±íÖĞµÄkey */
+	struct sw_flow_key key; /* æµè¡¨ä¸­çš„key */
 	struct sw_flow_id id;
-	struct sw_flow_mask *mask; /* ÒªÆ¥ÅäµÄmask½á¹¹Ìå */
-	struct sw_flow_actions __rcu *sf_acts; /* ĞèÒªÆ¥ÅäµÄ¶¯×÷ */
+	struct sw_flow_mask *mask; /* è¦åŒ¹é…çš„maskç»“æ„ä½“ */
+	struct sw_flow_actions __rcu *sf_acts; /* éœ€è¦åŒ¹é…çš„åŠ¨ä½œ */
 	struct flow_stats __rcu *stats[]; /* One for each NUMA node.  First one
 					   * is allocated at flow creation time,
 					   * the rest are allocated on demand

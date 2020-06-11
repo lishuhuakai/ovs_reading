@@ -153,7 +153,7 @@ struct dpif_handler {
 };
 
 /* Datapath interface for the openvswitch Linux kernel module. */
-struct dpif_netlink { /* dpif_netlinkÊµ¼ÊÉÏÊÇdpifµÄ×ÓÀà */
+struct dpif_netlink { /* dpif_netlinkå®é™…ä¸Šæ˜¯dpifçš„å­ç±» */
     struct dpif dpif;
     int dp_ifindex;
 
@@ -250,7 +250,7 @@ dpif_netlink_open(const struct dpif_class *class OVS_UNUSED, const char *name,
 
     /* Create or look up datapath. */
     dpif_netlink_dp_init(&dp_request);
-    if (create) { /* Èç¹ûĞèÒª´´½¨Ò»¸öĞÂµÄdpif */
+    if (create) { /* å¦‚æœéœ€è¦åˆ›å»ºä¸€ä¸ªæ–°çš„dpif */
         dp_request.cmd = OVS_DP_CMD_NEW;
         upcall_pid = 0;
         dp_request.upcall_pid = &upcall_pid;
@@ -272,7 +272,7 @@ dpif_netlink_open(const struct dpif_class *class OVS_UNUSED, const char *name,
 }
 
 /*
- * ´´½¨ÏàÓ¦µÄdpifÊµÀı
+ * åˆ›å»ºç›¸åº”çš„dpifå®ä¾‹
  */
 static int
 open_dpif(const struct dpif_netlink_dp *dp, struct dpif **dpifp)
@@ -309,7 +309,7 @@ vport_del_socksp__(struct nl_sock **socksp, uint32_t n_socks)
 /* Creates an array of netlink sockets.  Returns an array of the
  * corresponding pointers.  Records the error in 'error'. */
 /*
- * ´´½¨Ò»¸önetlink_socketÊı×é£¬²¢·µ»Ø¶ÔÓ¦µÄÖ¸Õë
+ * åˆ›å»ºä¸€ä¸ªnetlink_socketæ•°ç»„ï¼Œå¹¶è¿”å›å¯¹åº”çš„æŒ‡é’ˆ
  */
 static struct nl_sock **
 vport_create_socksp__(uint32_t n_socks, int *error)
@@ -333,7 +333,7 @@ error:
 }
 
 
-/* ´´½¨Ò»¸önetlinkÌ×½Ó×Ö */
+/* åˆ›å»ºä¸€ä¸ªnetlinkå¥—æ¥å­— */
 static struct nl_sock **
 vport_create_socksp(struct dpif_netlink *dpif, int *error)
 {
@@ -689,10 +689,10 @@ dpif_netlink_port_add__(struct dpif_netlink *dpif, struct netdev *netdev,
 {
     const struct netdev_tunnel_config *tnl_cfg;
     char namebuf[NETDEV_VPORT_NAME_BUFSIZE];
-    /* ¶Ë¿ÚÃû³Æ */
+    /* ç«¯å£åç§° */
     const char *name = netdev_vport_get_dpif_port(netdev,
                                                   namebuf, sizeof namebuf);
-    /* ¶Ë¿ÚÀàĞÍ */
+    /* ç«¯å£ç±»å‹ */
     const char *type = netdev_get_type(netdev);
 
     struct dpif_netlink_vport request, reply;
@@ -704,7 +704,7 @@ dpif_netlink_port_add__(struct dpif_netlink *dpif, struct netdev *netdev,
     int error = 0;
 
     if (dpif->handlers) {
-        /* ´´½¨Ò»¸önetlinkÍ¨ÓÃÌ×½Ó×Ö */
+        /* åˆ›å»ºä¸€ä¸ªnetlinké€šç”¨å¥—æ¥å­— */
         socksp = vport_create_socksp(dpif, &error);
         if (!socksp) {
             return error;
@@ -712,9 +712,9 @@ dpif_netlink_port_add__(struct dpif_netlink *dpif, struct netdev *netdev,
     }
 
     dpif_netlink_vport_init(&request);
-    request.cmd = OVS_VPORT_CMD_NEW; /* Ôö¼Óvport */
+    request.cmd = OVS_VPORT_CMD_NEW; /* å¢åŠ vport */
     request.dp_ifindex = dpif->dp_ifindex;
-    request.type = netdev_to_ovs_vport_type(netdev); /* ¶Ë¿ÚÀàĞÍ */
+    request.type = netdev_to_ovs_vport_type(netdev); /* ç«¯å£ç±»å‹ */
     if (request.type == OVS_VPORT_TYPE_UNSPEC) {
         VLOG_WARN_RL(&error_rl, "%s: cannot create port `%s' because it has "
                      "unsupported type `%s'",
@@ -795,7 +795,7 @@ exit:
 }
 
 /*
- * Í¨Öªdatapath,ÒªÇóÔö¼Ó¶Ë¿Ú
+ * é€šçŸ¥datapath,è¦æ±‚å¢åŠ ç«¯å£
  */
 static int
 dpif_netlink_port_add(struct dpif *dpif_, struct netdev *netdev,
@@ -2277,7 +2277,7 @@ const struct dpif_class dpif_netlink_class = {
 };
 
 /*
- * ¹¹½¨ºÍÄÚºËÍ¨ĞÅµÄnetlinkÌ×½Ó×Ö
+ * æ„å»ºå’Œå†…æ ¸é€šä¿¡çš„netlinkå¥—æ¥å­—
  */
 static int
 dpif_netlink_init(void)
@@ -2414,7 +2414,7 @@ dpif_netlink_vport_to_ofpbuf(const struct dpif_netlink_vport *vport,
         nl_msg_put_u32(buf, OVS_VPORT_ATTR_TYPE, vport->type);
     }
 
-    /* ¶Ë¿ÚÃû */
+    /* ç«¯å£å */
     if (vport->name) {
         nl_msg_put_string(buf, OVS_VPORT_ATTR_NAME, vport->name);
     }
@@ -2450,7 +2450,7 @@ dpif_netlink_vport_init(struct dpif_netlink_vport *vport)
  * result of the command is expected to be an ovs_vport also, which is decoded
  * and stored in '*reply' and '*bufp'.  The caller must free '*bufp' when the
  * reply is no longer needed ('reply' will contain pointers into '*bufp').
- * ÔÚdatapathÀïÃæÖ´ĞĞÇëÇó£¬Èç¹ûÃüÁîÊ§°Ü£¬·µ»ØÒ»¸öÕıµÄ´íÎóÂë,·ñÔò·µ»Ø0
+ * åœ¨datapathé‡Œé¢æ‰§è¡Œè¯·æ±‚ï¼Œå¦‚æœå‘½ä»¤å¤±è´¥ï¼Œè¿”å›ä¸€ä¸ªæ­£çš„é”™è¯¯ç ,å¦åˆ™è¿”å›0
  */
 int
 dpif_netlink_vport_transact(const struct dpif_netlink_vport *request,
@@ -2612,7 +2612,7 @@ dpif_netlink_dp_dump_start(struct nl_dump *dump)
  * result of the command is expected to be of the same form, which is decoded
  * and stored in '*reply' and '*bufp'.  The caller must free '*bufp' when the
  * reply is no longer needed ('reply' will contain pointers into '*bufp').
- * ÏòÄÚºËµÄdatapath×öÏàÓ¦µÄrequest.Èç¹ûÖ´ĞĞÊ§°Ü£¬·µ»ØÒ»¸öÕıµÄ´íÎóÂë
+ * å‘å†…æ ¸çš„datapathåšç›¸åº”çš„request.å¦‚æœæ‰§è¡Œå¤±è´¥ï¼Œè¿”å›ä¸€ä¸ªæ­£çš„é”™è¯¯ç 
  */
 static int
 dpif_netlink_dp_transact(const struct dpif_netlink_dp *request,
@@ -2631,7 +2631,7 @@ dpif_netlink_dp_transact(const struct dpif_netlink_dp *request,
     if (reply) {
         dpif_netlink_dp_init(reply);
         if (!error) {
-            /* replyÊÇÄÚºË´«µİ»ØÀ´µÄĞÅÏ¢ */
+            /* replyæ˜¯å†…æ ¸ä¼ é€’å›æ¥çš„ä¿¡æ¯ */
             error = dpif_netlink_dp_from_ofpbuf(reply, *bufp);
         }
         if (error) {

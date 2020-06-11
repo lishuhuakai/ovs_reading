@@ -370,7 +370,7 @@ udpif_create(struct dpif_backer *backer, struct dpif *dpif)
 {
     struct udpif *udpif = xzalloc(sizeof *udpif);
 
-    udpif->dpif = dpif; /* ¼ÇÂ¼ÏÂ */
+    udpif->dpif = dpif; /* è®°å½•ä¸‹ */
     udpif->backer = backer;
     atomic_init(&udpif->flow_limit, MIN(ofproto_flow_limit, 10000));
     udpif->reval_seq = seq_create();
@@ -387,7 +387,7 @@ udpif_create(struct dpif_backer *backer, struct dpif *dpif)
         cmap_init(&udpif->ukeys[i].cmap);
         ovs_mutex_init(&udpif->ukeys[i].mutex);
     }
-    /* ×¢²á»Øµ÷º¯Êý */
+    /* æ³¨å†Œå›žè°ƒå‡½æ•° */
     dpif_register_upcall_cb(dpif, upcall_cb, udpif);
     dpif_register_dp_purge_cb(dpif, dp_purge_cb, udpif);
 

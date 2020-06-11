@@ -149,7 +149,7 @@ nl_ct_dump_start(struct nl_ct_dump_state **statep, const uint16_t *zone)
  * ct_dpif_entry_uninit() afterwards by the caller.  In case the same 'entry' is
  * passed to this function again, the entry must also be uninitialized before
  * the next call.
- * 从conntrack netlink中获取下一个entry
+ * 浠巆onntrack netlink涓幏鍙栦笅涓�涓猠ntry
  */
 int
 nl_ct_dump_next(struct nl_ct_dump_state *state, struct ct_dpif_entry *entry)

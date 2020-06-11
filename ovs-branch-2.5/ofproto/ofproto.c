@@ -344,7 +344,7 @@ char *pmd_cpu_mask;
 static struct hmap all_ofprotos = HMAP_INITIALIZER(&all_ofprotos);
 
 /* Initial mappings of port to OpenFlow number mappings. */
-/* ÕâÀïÃæÖ÷Òª´æ´¢ÁËÒ»Ğ©¶Ë¿ÚµÄĞÅÏ¢ */
+/* è¿™é‡Œé¢ä¸»è¦å­˜å‚¨äº†ä¸€äº›ç«¯å£çš„ä¿¡æ¯ */
 static struct shash init_ofp_ports = SHASH_INITIALIZER(&init_ofp_ports);
 
 static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(1, 5);
@@ -353,7 +353,7 @@ static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(1, 5);
 static bool flow_restore_wait = true;
 
 /* Must be called to initialize the ofproto library.
- * ³õÊ¼»¯ofproto¿â
+ * åˆå§‹åŒ–ofprotoåº“
  * The caller may pass in 'iface_hints', which contains an shash of
  * "iface_hint" elements indexed by the interface's name.  The provider
  * may use these hints to describe the startup configuration in order to
@@ -367,11 +367,11 @@ ofproto_init(const struct shash *iface_hints)
 {
     struct shash_node *node;
     size_t i;
-    /* ofproto½Ó¿ÚÀà×¢²á,Êµ¼ÊÉÏÕû¸ö³ÌĞò¾ÍÒ»¸ö½Ó¿Úofproto_dpif_class */
+    /* ofprotoæ¥å£ç±»æ³¨å†Œ,å®é™…ä¸Šæ•´ä¸ªç¨‹åºå°±ä¸€ä¸ªæ¥å£ofproto_dpif_class */
     ofproto_class_register(&ofproto_dpif_class);
 
     /* Make a local copy, since we don't own 'iface_hints' elements. */
-    SHASH_FOR_EACH(node, iface_hints) { /* ±éÀúÃ¿Ò»¸öinterface */
+    SHASH_FOR_EACH(node, iface_hints) { /* éå†æ¯ä¸€ä¸ªinterface */
         const struct iface_hint *orig_hint = node->data;
         struct iface_hint *new_hint = xmalloc(sizeof *new_hint);
         const char *br_type = ofproto_normalize_type(orig_hint->br_type);
@@ -383,7 +383,7 @@ ofproto_init(const struct shash *iface_hints)
         shash_add(&init_ofp_ports, node->name, new_hint);
     }
 
-    /* Ä¿Ç°µÄofproto_classÖ»ÓĞÒ»¸ö,ÄÇ¾ÍÊÇofproto_dpif_class */
+    /* ç›®å‰çš„ofproto_classåªæœ‰ä¸€ä¸ª,é‚£å°±æ˜¯ofproto_dpif_class */
     for (i = 0; i < n_ofproto_classes; i++) {
         ofproto_classes[i]->init(&init_ofp_ports);
     }
@@ -469,7 +469,7 @@ ofproto_enumerate_types(struct sset *types)
 {
     size_t i;
 
-    /* ÕâÀïÊµ¼Êµ÷ÓÃµÄÊÇofproto_dpif_classµÄenumerate_typeº¯Êı */
+    /* è¿™é‡Œå®é™…è°ƒç”¨çš„æ˜¯ofproto_dpif_classçš„enumerate_typeå‡½æ•° */
     sset_clear(types);
     for (i = 0; i < n_ofproto_classes; i++) {
         ofproto_classes[i]->enumerate_types(types);
@@ -508,7 +508,7 @@ ofproto_bump_tables_version(struct ofproto *ofproto)
 }
 
 /*
- * ´´½¨½»»»»ú
+ * åˆ›å»ºäº¤æ¢æœº,ä¸€ä¸ªofprotoç±»ä¼¼äºä¸€å°äº¤æ¢æœº
  */
 int
 ofproto_create(const char *datapath_name, const char *datapath_type,
@@ -522,7 +522,7 @@ ofproto_create(const char *datapath_name, const char *datapath_type,
     *ofprotop = NULL;
 
     datapath_type = ofproto_normalize_type(datapath_type);
-    class = ofproto_class_find__(datapath_type); /* ¾ÍÒ»¸öofproto_dpif_class */
+    class = ofproto_class_find__(datapath_type); /* å°±ä¸€ä¸ªofproto_dpif_class */
     if (!class) {
         VLOG_WARN("could not create datapath %s of unknown type %s",
                   datapath_name, datapath_type);
@@ -539,7 +539,7 @@ ofproto_create(const char *datapath_name, const char *datapath_type,
     /* Initialize. */
     ovs_mutex_lock(&ofproto_mutex);
     memset(ofproto, 0, sizeof *ofproto);
-    ofproto->ofproto_class = class; /* ¼ÇÂ¼ÏÂclass */
+    ofproto->ofproto_class = class; /* è®°å½•ä¸‹class */
     ofproto->name = xstrdup(datapath_name);
     ofproto->type = xstrdup(datapath_type);
     hmap_insert(&all_ofprotos, &ofproto->hmap_node,
@@ -700,7 +700,7 @@ ofproto_reconnect_controllers(struct ofproto *ofproto)
 /* Sets the 'n' TCP port addresses in 'extras' as ones to which 'ofproto''s
  * in-band control should guarantee access, in the same way that in-band
  * control guarantees access to OpenFlow controllers.
- * Éè¶¨n¸ötcp¶Ë¿ÚµØÖ·
+ * è®¾å®šnä¸ªtcpç«¯å£åœ°å€
  */
 void
 ofproto_set_extra_in_band_remotes(struct ofproto *ofproto,
@@ -1660,9 +1660,9 @@ ofproto_type_run(const char *datapath_type)
     int error;
 
     datapath_type = ofproto_normalize_type(datapath_type);
-    /* ÕÒµ½¶ÔÓ¦µÄofproto_class,¾ÍÒ»¸ö,¾ÍÊÇofproto_dpif_class */
+    /* æ‰¾åˆ°å¯¹åº”çš„ofproto_class,å°±ä¸€ä¸ª,å°±æ˜¯ofproto_dpif_class */
     class = ofproto_class_find__(datapath_type);
-    /* ÔËĞĞtype_run */
+    /* è¿è¡Œtype_run */
     error = class->type_run ? class->type_run(datapath_type) : 0;
     if (error && error != EAGAIN) {
         VLOG_ERR_RL(&rl, "%s: type_run failed (%s)",
@@ -1689,12 +1689,12 @@ ofproto_run(struct ofproto *p)
 {
     int error;
     uint64_t new_seq;
-    /* ¶ÔÓ¦ofproto_dpif_classµÄrunº¯Êı */
+    /* å¯¹åº”ofproto_dpif_classçš„runå‡½æ•° */
     error = p->ofproto_class->run(p);
     if (error && error != EAGAIN) {
         VLOG_ERR_RL(&rl, "%s: run failed (%s)", p->name, ovs_strerror(error));
     }
-    /* Ö´ĞĞruleÅäÖÃµ½dp */
+    /* æ‰§è¡Œruleé…ç½®åˆ°dp */
     run_rule_executes(p);
 
     /* Restore the eviction group heap invariant occasionally. */
@@ -2308,7 +2308,7 @@ ofport_open(struct ofproto *ofproto,
     enum netdev_flags flags;
     struct netdev *netdev;
     int error;
-    /* ´ò¿ªÍøÂçÉè±¸ */
+    /* æ‰“å¼€ç½‘ç»œè®¾å¤‡ */
     error = netdev_open(ofproto_port->name, ofproto_port->type, &netdev);
     if (error) {
         VLOG_WARN_RL(&rl, "%s: ignoring port %s (%"PRIu16") because netdev %s "
@@ -2372,7 +2372,7 @@ ofport_install(struct ofproto *p,
     int error;
 
     /* Create ofport. */
-    /* ofportÄã¿ÉÒÔÈÏÎªÊÇ¶Ë¿Ú */
+    /* ofportä½ å¯ä»¥è®¤ä¸ºæ˜¯ç«¯å£ */
     ofport = p->ofproto_class->port_alloc();
     if (!ofport) {
         error = ENOMEM;
@@ -2383,7 +2383,7 @@ ofport_install(struct ofproto *p,
     ofport->change_seq = netdev_get_change_seq(netdev);
     ofport->pp = *pp;
     ofport->ofp_port = pp->port_no;
-    ofport->created = time_msec(); /* ´´½¨µÄÊ±¼ä */
+    ofport->created = time_msec(); /* åˆ›å»ºçš„æ—¶é—´ */
 
     /* Add port to 'p'. */
     hmap_insert(&p->ports, &ofport->hmap_node,
@@ -2397,7 +2397,7 @@ ofport_install(struct ofproto *p,
     if (error) {
         goto error;
     }
-    /* ÕâÀïÃ²ËÆÊÇÏò¿ØÖÆÆ÷·¢ËÍÏûÏ¢ */
+    /* è¿™é‡Œè²Œä¼¼æ˜¯å‘æ§åˆ¶å™¨å‘é€æ¶ˆæ¯ */
     connmgr_send_port_status(p->connmgr, NULL, pp, OFPPR_ADD);
     return 0;
 
@@ -2921,7 +2921,7 @@ rule_actions_create(const struct ofpact *ofpacts, size_t ofpacts_len)
     actions = xmalloc(sizeof *actions + ofpacts_len);
     actions->ofpacts_len = ofpacts_len;
     actions->has_meter = ofpacts_get_meter(ofpacts, ofpacts_len) != 0;
-    /* ÕâÀïÖ±½Ó½«action¿½±´ÁË½øÈ¥ */
+    /* è¿™é‡Œç›´æ¥å°†actionæ‹·è´äº†è¿›å» */
     memcpy(actions->ofpacts, ofpacts, ofpacts_len);
 
     actions->has_learn_with_delete = (next_learn_with_delete(actions, NULL)
@@ -4504,7 +4504,7 @@ evict_rules_from_table(struct oftable *table)
 }
 
 /*
- * È¡½»¼¯
+ * å–äº¤é›†
  */
 static void
 get_conjunctions(const struct ofputil_flow_mod *fm,
@@ -4515,7 +4515,7 @@ get_conjunctions(const struct ofputil_flow_mod *fm,
     int n_conjs = 0;
 
     const struct ofpact *ofpact;
-    OFPACT_FOR_EACH (ofpact, fm->ofpacts, fm->ofpacts_len) { /* ±éÀúÃ¿Ò»¸öact */
+    OFPACT_FOR_EACH (ofpact, fm->ofpacts, fm->ofpacts_len) { /* éå†æ¯ä¸€ä¸ªact */
         if (ofpact->type == OFPACT_CONJUNCTION) {
             n_conjs++;
         } else if (ofpact->type != OFPACT_NOTE) {
@@ -4596,7 +4596,7 @@ add_flow_start(struct ofproto *ofproto, struct ofproto_flow_mod *ofm)
 
     table = &ofproto->tables[table_id];
     if (table->flags & OFTABLE_READONLY
-        && !(fm->flags & OFPUTIL_FF_NO_READONLY)) { /* Á÷±íÖ»¶Á */
+        && !(fm->flags & OFPUTIL_FF_NO_READONLY)) { /* æµè¡¨åªè¯» */
         return OFPERR_OFPBRC_EPERM;
     }
 
@@ -4606,18 +4606,18 @@ add_flow_start(struct ofproto *ofproto, struct ofproto_flow_mod *ofm)
                      "non-default values to hidden fields", ofproto->name);
         return OFPERR_OFPBRC_EPERM;
     }
-    /* matchÈ«±»¸´ÖÆµ½crÀïÃæÈ¥ÁË */
+    /* matchå…¨è¢«å¤åˆ¶åˆ°cré‡Œé¢å»äº† */
     cls_rule_init(&cr, &fm->match, fm->priority);
 
     /* Check for the existence of an identical rule.
      * This will not return rules earlier marked for removal.
-     * ¼ì²éÊÇ·ñ´æÔÚÒ»ÌõÏàÍ¬µÄ¹æÔò
+     * æ£€æŸ¥æ˜¯å¦å­˜åœ¨ä¸€æ¡ç›¸åŒçš„è§„åˆ™
      */
     rule = rule_from_cls_rule(classifier_find_rule_exactly(&table->cls, &cr,
                                                            ofm->version));
-    /* ÀÏµÄ¹æÔò */
+    /* è€çš„è§„åˆ™ */
     *old_rule = rule;
-    if (!rule) { /* Èç¹ûÁ÷±íÏî²»´æÔÚ */
+    if (!rule) { /* å¦‚æœæµè¡¨é¡¹ä¸å­˜åœ¨ */
         /* Check for overlap, if requested. */
         if (fm->flags & OFPUTIL_FF_CHECK_OVERLAP
             && classifier_rule_overlaps(&table->cls, &cr, ofm->version)) {
@@ -4626,7 +4626,7 @@ add_flow_start(struct ofproto *ofproto, struct ofproto_flow_mod *ofm)
         }
 
         /* If necessary, evict an existing rule to clear out space. */
-        /* Á÷±íÏîµÄÊıÄ¿³¬³öÁË */
+        /* æµè¡¨é¡¹çš„æ•°ç›®è¶…å‡ºäº† */
         if (table->n_flows >= table->max_flows) {
             if (!choose_rule_to_evict(table, &rule)) {
                 error = OFPERR_OFPFMFC_TABLE_FULL;
@@ -4651,7 +4651,7 @@ add_flow_start(struct ofproto *ofproto, struct ofproto_flow_mod *ofm)
     }
 
     get_conjunctions(fm, &conjs, &n_conjs);
-    /* ruleÖĞ´æ´¢µÄÊÇÀÏ¹æÔò  new_ruleÖĞ´æ´¢µÄÊÇĞÂµÄ¹æÔò */
+    /* ruleä¸­å­˜å‚¨çš„æ˜¯è€è§„åˆ™  new_ruleä¸­å­˜å‚¨çš„æ˜¯æ–°çš„è§„åˆ™ */
     replace_rule_start(ofproto, ofm->version, rule, *new_rule, conjs, n_conjs);
     free(conjs);
 
@@ -4718,7 +4718,7 @@ add_flow_finish(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
 /* Create a new rule based on attributes in 'fm', match in 'cr', 'table_id',
  * and 'old_rule'.  Note that the rule is NOT inserted into a any data
  * structures yet.  Takes ownership of 'cr'.
- * ¸ù¾İflow_modÖĞµÄÊôĞÔ´´½¨Ò»ÌõĞÂµÄ¹æÔò
+ * æ ¹æ®flow_modä¸­çš„å±æ€§åˆ›å»ºä¸€æ¡æ–°çš„è§„åˆ™
  */
 static enum ofperr
 replace_rule_create(struct ofproto *ofproto, struct ofputil_flow_mod *fm,
@@ -4729,15 +4729,15 @@ replace_rule_create(struct ofproto *ofproto, struct ofputil_flow_mod *fm,
     enum ofperr error;
 
     /* Allocate new rule. */
-    rule = ofproto->ofproto_class->rule_alloc(); /* ·ÖÅä×ÊÔ´ */
-    if (!rule) { /* ĞÂ¹æÔò·ÖÅäÊ§°Ü */
+    rule = ofproto->ofproto_class->rule_alloc(); /* åˆ†é…èµ„æº */
+    if (!rule) { /* æ–°è§„åˆ™åˆ†é…å¤±è´¥ */
         cls_rule_destroy(cr);
         VLOG_WARN_RL(&rl, "%s: failed to allocate a rule.", ofproto->name);
         return OFPERR_OFPFMFC_UNKNOWN;
     }
 
     /* Initialize base state. */
-    *CONST_CAST(struct ofproto **, &rule->ofproto) = ofproto; /* ¼ÇÂ¼ÏÂÊôÓÚÄÄÌ¨½»»»»ú */
+    *CONST_CAST(struct ofproto **, &rule->ofproto) = ofproto; /* è®°å½•ä¸‹å±äºå“ªå°äº¤æ¢æœº */
     cls_rule_move(CONST_CAST(struct cls_rule *, &rule->cr), cr);
     ovs_refcount_init(&rule->ref_count);
     rule->flow_cookie = fm->new_cookie;
@@ -4751,7 +4751,7 @@ replace_rule_create(struct ofproto *ofproto, struct ofputil_flow_mod *fm,
     rule->removed_reason = OVS_OFPRR_NONE;
 
     *CONST_CAST(uint8_t *, &rule->table_id) = table_id;
-    rule->flags = fm->flags & OFPUTIL_FF_STATE; /* ±ê¼Ç */
+    rule->flags = fm->flags & OFPUTIL_FF_STATE; /* æ ‡è®° */
     *CONST_CAST(const struct rule_actions **, &rule->actions)
         = rule_actions_create(fm->ofpacts, fm->ofpacts_len);
     list_init(&rule->meter_list_node);
@@ -4800,14 +4800,14 @@ replace_rule_start(struct ofproto *ofproto, cls_version_t version,
                    struct rule *old_rule, struct rule *new_rule,
                    struct cls_conjunction *conjs, size_t n_conjs)
 {
-    struct oftable *table = &ofproto->tables[new_rule->table_id]; /* »ñµÃÁ÷±í */
+    struct oftable *table = &ofproto->tables[new_rule->table_id]; /* è·å¾—æµè¡¨ */
 
     /* 'old_rule' may be either an evicted rule or replaced rule. */
     if (old_rule) {
         /* Mark the old rule for removal in the next version. */
         cls_rule_make_invisible_in_version(&old_rule->cr, version);
     } else {
-        table->n_flows++; /* Á÷±íÏî+1 */
+        table->n_flows++; /* æµè¡¨é¡¹+1 */
     }
     /* Insert flow to the classifier, so that later flow_mods may relate
      * to it.  This is reversible, in case later errors require this to
@@ -4815,7 +4815,7 @@ replace_rule_start(struct ofproto *ofproto, cls_version_t version,
     ofproto_rule_insert__(ofproto, new_rule);
     /* Make the new rule visible for classifier lookups only from the next
      * version. */
-    /* ½«ĞÂ¹æÔò²åÈëµ½Á´±íÖ®ÖĞ */
+    /* å°†æ–°è§„åˆ™æ’å…¥åˆ°é“¾è¡¨ä¹‹ä¸­ */
     classifier_insert(&table->cls, &new_rule->cr, version, conjs, n_conjs);
 }
 
@@ -5299,25 +5299,25 @@ ofproto_rule_reduce_timeouts(struct rule *rule,
 
 
 /*
- * Õâ¸ö¿ÉÒÔËµÊÇswitchd×îÖØÒªµÄÒ»¸öÄ£¿é£¬Ìí¼ÓÁ÷±í
+ * è¿™ä¸ªå¯ä»¥è¯´æ˜¯switchdæœ€é‡è¦çš„ä¸€ä¸ªæ¨¡å—ï¼Œæ·»åŠ æµè¡¨
  */
 static enum ofperr
 handle_flow_mod(struct ofconn *ofconn, const struct ofp_header *oh)
     OVS_EXCLUDED(ofproto_mutex)
 {
     struct ofproto *ofproto = ofconn_get_ofproto(ofconn);
-    struct ofproto_flow_mod ofm; /* Á÷±íÏî */
+    struct ofproto_flow_mod ofm; /* æµè¡¨é¡¹ */
     uint64_t ofpacts_stub[1024 / 8];
     struct ofpbuf ofpacts;
     enum ofperr error;
 
-    error = reject_slave_controller(ofconn); /* ½ÇÉ«È¨ÏŞÈÏÖ¤ */
+    error = reject_slave_controller(ofconn); /* è§’è‰²æƒé™è®¤è¯ */
     if (error) {
         goto exit;
     }
 
     ofpbuf_use_stub(&ofpacts, ofpacts_stub, sizeof ofpacts_stub);
-    /* ½âÎöFlow-ModÏûÏ¢*/
+    /* è§£æFlow-Modæ¶ˆæ¯*/
     error = ofputil_decode_flow_mod(&ofm.fm, oh, ofconn_get_protocol(ofconn),
                                     &ofpacts,
                                     u16_to_ofp(ofproto->max_ports),
@@ -5346,7 +5346,7 @@ exit:
 }
 
 /*
- * ÕâÀïÊÇ½«flow-modÏÂ·¢µ½datapath
+ * è¿™é‡Œæ˜¯å°†flow-modä¸‹å‘åˆ°datapath
  */
 static enum ofperr
 handle_flow_mod__(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
@@ -5364,7 +5364,7 @@ handle_flow_mod__(struct ofproto *ofproto, struct ofproto_flow_mod *ofm,
     }
     ofmonitor_flush(ofproto->connmgr);
     ovs_mutex_unlock(&ofproto_mutex);
-    /* ÕâÀï²ÅÊÇÕæÕıµÄ½«Êı¾İÏÂ·¢µ½datapath */
+    /* è¿™é‡Œæ‰æ˜¯çœŸæ­£çš„å°†æ•°æ®ä¸‹å‘åˆ°datapath */
     run_rule_executes(ofproto);
     return error;
 }
@@ -6807,11 +6807,11 @@ ofproto_flow_mod_start(struct ofproto *ofproto, struct ofproto_flow_mod *ofm)
     OVS_REQUIRES(ofproto_mutex)
 {
     switch (ofm->fm.command) {
-    case OFPFC_ADD: /* Ìí¼Óflow-mod */
+    case OFPFC_ADD: /* æ·»åŠ flow-mod */
         return add_flow_start(ofproto, ofm);
         /* , &be->old_rules.stub[0],
            &be->new_rules.stub[0]); */
-           /* ĞŞ¸Äflow-mod */
+           /* ä¿®æ”¹flow-mod */
     case OFPFC_MODIFY:
         return modify_flows_start_loose(ofproto, ofm);
     case OFPFC_MODIFY_STRICT:
@@ -7151,7 +7151,7 @@ handle_openflow__(struct ofconn *ofconn, const struct ofpbuf *msg)
     enum ofptype type;
     enum ofperr error;
 
-    error = ofptype_decode(&type, oh); /* »ñµÃ°üµÄÀàĞÍ */
+    error = ofptype_decode(&type, oh); /* è·å¾—åŒ…çš„ç±»å‹ */
     if (error) {
         return error;
     }
@@ -7335,7 +7335,7 @@ handle_openflow__(struct ofconn *ofconn, const struct ofpbuf *msg)
 }
 
 /*
- * ´¦ÀíopenflowĞÅÏ¢
+ * å¤„ç†openflowä¿¡æ¯
  */
 static void
 handle_openflow(struct ofconn *ofconn, const struct ofpbuf *ofp_msg)
@@ -7778,7 +7778,7 @@ oftable_configure_eviction(struct oftable *table, unsigned int eviction,
 
 /* Inserts 'rule' from the ofproto data structures BEFORE caller has inserted
  * it to the classifier.
- * ½«rule²åÈëµ½ofprotoÖ®ÖĞ
+ * å°†ruleæ’å…¥åˆ°ofprotoä¹‹ä¸­
  */
 static void
 ofproto_rule_insert__(struct ofproto *ofproto, struct rule *rule)
@@ -7788,7 +7788,7 @@ ofproto_rule_insert__(struct ofproto *ofproto, struct rule *rule)
 
     ovs_assert(rule->removed);
 
-    if (rule->hard_timeout || rule->idle_timeout) { /* ¹ıÆÚµÄÁ÷±íÏî */
+    if (rule->hard_timeout || rule->idle_timeout) { /* è¿‡æœŸçš„æµè¡¨é¡¹ */
         list_insert(&ofproto->expirable, &rule->expirable);
     }
     cookies_insert(ofproto, rule);

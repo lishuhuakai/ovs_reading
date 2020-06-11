@@ -59,12 +59,12 @@ struct ofoperation;
 extern struct ovs_mutex ofproto_mutex;
 
 /* An OpenFlow switch.
- * ofproto´ú±íÁËÒ»¸öopenflow switchµÄ¾ßÌåÊµÏÖ
+ * ofprotoä»£è¡¨äº†ä¸€ä¸ªopenflow switchçš„å…·ä½“å®žçŽ°
  *
  * With few exceptions, ofproto implementations may look at these fields but
  * should not modify them. */
 struct ofproto {
-    /* ÀûÓÃhmap_node½«½Úµã²åÈëµ½all_ofprotosÀïÃæ */
+    /* åˆ©ç”¨hmap_nodeå°†èŠ‚ç‚¹æ’å…¥åˆ°all_ofprotosé‡Œé¢ */
     struct hmap_node hmap_node; /* In global 'all_ofprotos' hmap. */
     const struct ofproto_class *ofproto_class;
     char *type;                 /* Datapath type. */
@@ -99,11 +99,11 @@ struct ofproto {
                                     * table lookups. */
 
     /* Rules indexed on their cookie values, in all flow tables. */
-    struct hindex cookies OVS_GUARDED_BY(ofproto_mutex); /* Õâ¸öÓ¦¸ÃÒ²ÊÇ±ãÓÚ²éÕÒ°É */
+    struct hindex cookies OVS_GUARDED_BY(ofproto_mutex); /* è¿™ä¸ªåº”è¯¥ä¹Ÿæ˜¯ä¾¿äºŽæŸ¥æ‰¾å§ */
     struct hmap learned_cookies OVS_GUARDED_BY(ofproto_mutex);
 
     /* List of expirable flows, in all flow tables. */
-    struct ovs_list expirable OVS_GUARDED_BY(ofproto_mutex); /* ¼ÇÂ¼¹ýÆÚµÄÁ÷±íÏî */
+    struct ovs_list expirable OVS_GUARDED_BY(ofproto_mutex); /* è®°å½•è¿‡æœŸçš„æµè¡¨é¡¹ */
 
     /* Meter table.
      * OpenFlow meters start at 1.  To avoid confusion we leave the first
@@ -113,7 +113,7 @@ struct ofproto {
     struct meter **meters; /* 'meter_features.max_meter' + 1 pointers. */
 
     /* OpenFlow connections. */
-    /* struct connmgrÖ÷ÒªÓÃÓÚ´¦ÀíopenflowÁ¬½Ó */
+    /* struct connmgrä¸»è¦ç”¨äºŽå¤„ç†openflowè¿žæŽ¥ */
     struct connmgr *connmgr;
 
     /* Delayed rule executions.
@@ -148,16 +148,16 @@ struct ofproto *ofproto_lookup(const char *name);
 struct ofport *ofproto_get_port(const struct ofproto *, ofp_port_t ofp_port);
 
 /* An OpenFlow port within a "struct ofproto".
- * ofport´ú±íÒ»¸öopenflow switchµÄ¶Ë¿Ú£¬¹ØÁªÒ»¸önetdevÉè±¸
+ * ofportä»£è¡¨ä¸€ä¸ªopenflow switchçš„ç«¯å£ï¼Œå…³è”ä¸€ä¸ªnetdevè®¾å¤‡
  * The port's name is netdev_get_name(port->netdev).
  *
  * With few exceptions, ofproto implementations may look at these fields but
  * should not modify them. */
 struct ofport {
     struct hmap_node hmap_node; /* In struct ofproto's "ports" hmap. */
-    /* ofportËù¹ØÁªµÄofproto½á¹¹ */
+    /* ofportæ‰€å…³è”çš„ofprotoç»“æž„ */
     struct ofproto *ofproto;    /* The ofproto that contains this port. */
-    struct netdev *netdev;    /* portËù¹ØÁªµÄÍøÂçÉè±¸ */
+    struct netdev *netdev;    /* portæ‰€å…³è”çš„ç½‘ç»œè®¾å¤‡ */
     struct ofputil_phy_port pp;
     ofp_port_t ofp_port;        /* OpenFlow port number. */
     uint64_t change_seq;
@@ -197,7 +197,7 @@ enum oftable_flags {
 };
 
 /* A flow table within a "struct ofproto".
- * struct ofprotoÖÐµÄÁ÷±í
+ * struct ofprotoä¸­çš„æµè¡¨
  *
  * Thread-safety
  * =============
@@ -217,17 +217,17 @@ enum oftable_flags {
  *
  * Refer to the thread-safety notes on struct rule for more information.*/
 struct oftable {
-    enum oftable_flags flags; /* Á÷±í±ê¼Ç×Ö¶Î */
-    /* Á÷±íÖÐÏà¹ØµÄ¹æÔò,ÕâÀïÖ®ËùÒÔ´æ´¢Îªclassifier£¬ÊÇÎªÁË·½±ã²éÕÒ */
+    enum oftable_flags flags; /* æµè¡¨æ ‡è®°å­—æ®µ */
+    /* æµè¡¨ä¸­ç›¸å…³çš„è§„åˆ™,è¿™é‡Œä¹‹æ‰€ä»¥å­˜å‚¨ä¸ºclassifierï¼Œæ˜¯ä¸ºäº†æ–¹ä¾¿æŸ¥æ‰¾ */
     struct classifier cls;      /* Contains "struct rule"s. */
     char *name;                 /* Table name exposed via OpenFlow, or NULL. */
 
     /* Maximum number of flows or UINT_MAX if there is no limit besides any
      * limit imposed by resource limitations. */
-    unsigned int max_flows; /* ×î´óËùÄÜÖ§³ÖµÄÁ÷±íÏî */
+    unsigned int max_flows; /* æœ€å¤§æ‰€èƒ½æ”¯æŒçš„æµè¡¨é¡¹ */
     /* Current number of flows, not counting temporary duplicates nor deferred
      * deletions. */
-    unsigned int n_flows; /* µ±Ç°ÒÑÓÐµÄÁ÷±íÏî */
+    unsigned int n_flows; /* å½“å‰å·²æœ‰çš„æµè¡¨é¡¹ */
 
     /* These members determine the handling of an attempt to add a flow that
      * would cause the table to have more than 'max_flows' flows.
@@ -361,7 +361,7 @@ struct rule {
      * The classifier owns one reference.
      * Any thread trying to keep a rule from being freed should hold its own
      * reference. */
-    struct ovs_refcount ref_count; /* ÒýÓÃ¼ÆÊý */
+    struct ovs_refcount ref_count; /* å¼•ç”¨è®¡æ•° */
 
     /* A "flow cookie" is the OpenFlow name for a 64-bit value associated with
      * a flow.. */
@@ -972,7 +972,7 @@ struct ofproto_class {
      * It doesn't matter whether the new port will be returned by a later call
      * to ->port_poll(); the implementation may do whatever is more
      * convenient.
-     * ³¢ÊÔ×Å½«Ò»¸önetdev×÷ÎªofprotoÉÏµÄÒ»¸ö¶Ë¿Ú
+     * å°è¯•ç€å°†ä¸€ä¸ªnetdevä½œä¸ºofprotoä¸Šçš„ä¸€ä¸ªç«¯å£
      */
     int (*port_add)(struct ofproto *ofproto, struct netdev *netdev);
 
@@ -989,14 +989,14 @@ struct ofproto_class {
                           struct netdev_stats *stats);
 
     /* Port iteration functions.
-     * ¶Ë¿Úµü´úÏà¹ØµÄº¯Êý
+     * ç«¯å£è¿­ä»£ç›¸å…³çš„å‡½æ•°
      * The client might not be entirely in control of the ports within an
      * ofproto.  Some hardware implementations, for example, might have a fixed
      * set of ports in a datapath.  For this reason, the client needs a way to
      * iterate through all the ports that are actually in a datapath.  These
      * functions provide that functionality.
-     * client»òÐí²¢²»ÄÜ¿ØÖÆofprotoÖÐËùÓÐµÄ¶Ë¿Ú,ÔÚÒ»Ð©Ó²¼þµÄÊµÏÖÖÐ£¬datapathÖÐ»òÐíÓÐÒ»¸ö¹Ì¶¨ÊýÄ¿µÄ¶Ë¿Ú
-     * ³öÓÚÕâ¸ö¿¼ÂÇ,clientÐèÒªÒ»ÖÖ·½Ê½À´µü´ú»ñÈ¡datapathÖÐµÄËùÓÐ¶Ë¿Ú¡£
+     * clientæˆ–è®¸å¹¶ä¸èƒ½æŽ§åˆ¶ofprotoä¸­æ‰€æœ‰çš„ç«¯å£,åœ¨ä¸€äº›ç¡¬ä»¶çš„å®žçŽ°ä¸­ï¼Œdatapathä¸­æˆ–è®¸æœ‰ä¸€ä¸ªå›ºå®šæ•°ç›®çš„ç«¯å£
+     * å‡ºäºŽè¿™ä¸ªè€ƒè™‘,clientéœ€è¦ä¸€ç§æ–¹å¼æ¥è¿­ä»£èŽ·å–datapathä¸­çš„æ‰€æœ‰ç«¯å£ã€‚
      *
      * The 'state' pointer provides the implementation a place to
      * keep track of its position.  Its format is opaque to the caller.
@@ -1013,8 +1013,8 @@ struct ofproto_class {
      * On success, it should return 0 and initialize '*statep' with any data
      * needed for iteration.  On failure, returns a positive errno value, and
      * the client will not call ->port_dump_next() or ->port_dump_done().
-     * ->port_dump_start() ³¢ÊÔ¿ªÊ¼dump ofprotoÖÐµÄ¶Ë¿Ú£¬Ò»µ©³É¹¦,·µ»Ø0£¬¶øÇÒ½«*statep
-     * ³õÊ¼»¯ÎªÒ»¸öÓÃÓÚ¼ÇÂ¼µü´úÐÅÏ¢µÄÊý¾Ý½á¹¹(ÎÞÂÛÊÇÊ²Ã´)
+     * ->port_dump_start() å°è¯•å¼€å§‹dump ofprotoä¸­çš„ç«¯å£ï¼Œä¸€æ—¦æˆåŠŸ,è¿”å›ž0ï¼Œè€Œä¸”å°†*statep
+     * åˆå§‹åŒ–ä¸ºä¸€ä¸ªç”¨äºŽè®°å½•è¿­ä»£ä¿¡æ¯çš„æ•°æ®ç»“æž„(æ— è®ºæ˜¯ä»€ä¹ˆ)
      *
      * ->port_dump_next() attempts to retrieve another port from 'ofproto' for
      * 'state'.  If there is another port, it should store the port's

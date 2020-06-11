@@ -30,7 +30,7 @@
 #include <linux/module.h>
 #include <linux/reciprocal_div.h>
 
-/* 1页大小的字符数组 */
+/* 1椤靛ぇ灏忕殑瀛楃鏁扮粍 */
 struct flex_array_part {
 	char elements[FLEX_ARRAY_PART_SIZE];
 };

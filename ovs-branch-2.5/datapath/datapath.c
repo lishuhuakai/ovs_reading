@@ -261,8 +261,8 @@ void ovs_dp_detach_port(struct vport *p)
 void ovs_dp_process_packet(struct sk_buff *skb, struct sw_flow_key *key)
 {
 	const struct vport *p = OVS_CB(skb)->input_vport;
-	struct datapath *dp = p->dp; /* »ñµÃ¶Ë¿ÚËùÖ¸ÏòµÄÍøÇÅÖ¸Õë */
-	struct sw_flow *flow; /* Á÷±íÏî */
+	struct datapath *dp = p->dp; /* è·å¾—ç«¯å£æ‰€æŒ‡å‘çš„ç½‘æ¡¥æŒ‡é’ˆ */
+	struct sw_flow *flow; /* æµè¡¨é¡¹ */
 	struct sw_flow_actions *sf_acts;
 	struct dp_stats_percpu *stats;
 	u64 *stats_counter;
@@ -271,11 +271,11 @@ void ovs_dp_process_packet(struct sk_buff *skb, struct sw_flow_key *key)
 	stats = this_cpu_ptr(dp->stats_percpu);
 
 	/* Look up flow.
-	 * ²éÕÒ¶ÔÓ¦µÄÁ÷±íÏî
+	 * æŸ¥æ‰¾å¯¹åº”çš„æµè¡¨é¡¹
      */
 	flow = ovs_flow_tbl_lookup_stats(&dp->table, key, skb_get_hash(skb),
-					 &n_mask_hit); /* ¸ù¾İmaskºÍkey½øĞĞÆ¥Åä²éÕÒ */
-	if (unlikely(!flow)) { /* Ã»ÓĞÕÒµ½flow,¾ÍÒª·¢ËÍµ½ÓÃ»§Ì¬½øĞĞÂıËÙ²éÕÒ */
+					 &n_mask_hit); /* æ ¹æ®maskå’Œkeyè¿›è¡ŒåŒ¹é…æŸ¥æ‰¾ */
+	if (unlikely(!flow)) { /* æ²¡æœ‰æ‰¾åˆ°flow,å°±è¦å‘é€åˆ°ç”¨æˆ·æ€è¿›è¡Œæ…¢é€ŸæŸ¥æ‰¾ */
 		struct dp_upcall_info upcall;
 		int error;
 
@@ -294,7 +294,7 @@ void ovs_dp_process_packet(struct sk_buff *skb, struct sw_flow_key *key)
 
 	ovs_flow_stats_update(flow, key->tp.flags, skb);
 	sf_acts = rcu_dereference(flow->sf_acts);
-    /* ¸ù¾İÆ¥Åäµ½µÄÁ÷±íÏî,Ö´ĞĞÏàÓ¦µÄaction¶¯×÷ */
+    /* æ ¹æ®åŒ¹é…åˆ°çš„æµè¡¨é¡¹,æ‰§è¡Œç›¸åº”çš„actionåŠ¨ä½œ */
 	ovs_execute_actions(dp, skb, sf_acts, key);
 
 	stats_counter = &stats->n_hit;
@@ -926,11 +926,11 @@ static struct sk_buff *ovs_flow_cmd_build_info(const struct sw_flow *flow,
 }
 
 /*
- * ´´½¨Á÷±í
+ * åˆ›å»ºæµè¡¨
  */
 static int ovs_flow_cmd_new(struct sk_buff *skb, struct genl_info *info)
 {
-	struct net *net = sock_net(skb->sk); /* ÍøÂç¿Õ¼ä */
+	struct net *net = sock_net(skb->sk); /* ç½‘ç»œç©ºé—´ */
 	struct nlattr **a = info->attrs;
 	struct ovs_header *ovs_header = info->userhdr;
 	struct sw_flow *flow = NULL, *new_flow;
@@ -958,7 +958,7 @@ static int ovs_flow_cmd_new(struct sk_buff *skb, struct genl_info *info)
 	/* Most of the time we need to allocate a new flow, do it before
 	 * locking.
 	 */
-	new_flow = ovs_flow_alloc(); /* ·ÖÅäsw_flow²¢³õÊ¼»¯ */
+	new_flow = ovs_flow_alloc(); /* åˆ†é…sw_flowå¹¶åˆå§‹åŒ– */
 	if (IS_ERR(new_flow)) {
 		error = PTR_ERR(new_flow);
 		goto error;
@@ -1419,7 +1419,7 @@ static struct genl_ops dp_flow_genl_ops[] = {
 	{ .cmd = OVS_FLOW_CMD_NEW,
 	  .flags = GENL_ADMIN_PERM, /* Requires CAP_NET_ADMIN privilege. */
 	  .policy = flow_policy,
-	  .doit = ovs_flow_cmd_new
+	  .doit = ovs_flow_cmd_new /* åˆ›å»ºæµè¡¨ */
 	},
 	{ .cmd = OVS_FLOW_CMD_DEL,
 	  .flags = GENL_ADMIN_PERM, /* Requires CAP_NET_ADMIN privilege. */
@@ -1440,7 +1440,7 @@ static struct genl_ops dp_flow_genl_ops[] = {
 };
 
 /*
- * ÓÃ»§Ì¬Í¨¹ınetlink½Ó¿Ú½øĞĞdatapathÁ÷±í¸üĞÂ
+ * ç”¨æˆ·æ€é€šè¿‡netlinkæ¥å£è¿›è¡Œdatapathæµè¡¨æ›´æ–°
  */
 static struct genl_family dp_flow_genl_family = {
 	.id = GENL_ID_GENERATE,
@@ -1552,7 +1552,7 @@ static void ovs_dp_change(struct datapath *dp, struct nlattr *a[])
 }
 
 /*
- * Ìí¼ÓÍøÇÅ
+ * æ·»åŠ ç½‘æ¡¥
  */
 static int ovs_dp_cmd_new(struct sk_buff *skb, struct genl_info *info)
 {
@@ -1580,7 +1580,7 @@ static int ovs_dp_cmd_new(struct sk_buff *skb, struct genl_info *info)
 	ovs_dp_set_net(dp, sock_net(skb->sk));
 
 	/* Allocate table. */
-    /* ¹¹½¨Á÷±í */
+    /* æ„å»ºæµè¡¨ */
 	err = ovs_flow_tbl_init(&dp->table);
 	if (err)
 		goto err_free_dp;
@@ -1613,7 +1613,7 @@ static int ovs_dp_cmd_new(struct sk_buff *skb, struct genl_info *info)
 
 	/* So far only local changes have been made, now need the lock. */
 	ovs_lock();
-    /* ´´½¨ÀàĞÍÎªOVS_VPORT_TYPE_INTERNALµÄvport */
+    /* åˆ›å»ºç±»å‹ä¸ºOVS_VPORT_TYPE_INTERNALçš„vport */
 	vport = new_vport(&parms);
 	if (IS_ERR(vport)) {
 		err = PTR_ERR(vport);
@@ -1945,7 +1945,7 @@ static struct vport *lookup_vport(struct net *net,
 }
 
 /*
- * Ìí¼Ó¶Ë¿Ú
+ * æ·»åŠ ç«¯å£
  */
 static int ovs_vport_cmd_new(struct sk_buff *skb, struct genl_info *info)
 {
@@ -1962,7 +1962,7 @@ static int ovs_vport_cmd_new(struct sk_buff *skb, struct genl_info *info)
 	    !a[OVS_VPORT_ATTR_UPCALL_PID])
 		return -EINVAL;
 
-	port_no = a[OVS_VPORT_ATTR_PORT_NO] /* ¶Ë¿ÚºÅ */
+	port_no = a[OVS_VPORT_ATTR_PORT_NO] /* ç«¯å£å· */
 		? nla_get_u32(a[OVS_VPORT_ATTR_PORT_NO]) : 0;
 	if (port_no >= DP_MAX_PORTS)
 		return -EFBIG;
@@ -2001,7 +2001,7 @@ restart:
 	parms.dp = dp;
 	parms.port_no = port_no;
 	parms.upcall_portids = a[OVS_VPORT_ATTR_UPCALL_PID];
-    /* ´´½¨Ò»¸övport */
+    /* åˆ›å»ºä¸€ä¸ªvport */
 	vport = new_vport(&parms);
 	err = PTR_ERR(vport);
 	if (IS_ERR(vport)) {
@@ -2336,7 +2336,7 @@ DEFINE_COMPAT_PNET_REG_FUNC(device);
 
 
 /*
- * datapathµÄ³õÊ¼»¯
+ * datapathçš„åˆå§‹åŒ–
  */
 static int __init dp_init(void)
 {
@@ -2350,35 +2350,35 @@ static int __init dp_init(void)
 	if (err)
 		goto error;
 
-    /* ³õÊ¼»¯action_fifos¿Õ¼ä */
+    /* åˆå§‹åŒ–action_fifosç©ºé—´ */
 	err = action_fifos_init();
 	if (err)
 		goto error_compat_exit;
-    /* ×¢²áovsµÄinternalÉè±¸µÄrtnl */
+    /* æ³¨å†Œovsçš„internalè®¾å¤‡çš„rtnl */
 	err = ovs_internal_dev_rtnl_link_register();
 	if (err)
 		goto error_action_fifos_exit;
-    /* ³õÊ¼»¯flowÄ£¿é£¬·ÖÅäÏà¹ØµÄcache */
+    /* åˆå§‹åŒ–flowæ¨¡å—ï¼Œåˆ†é…ç›¸å…³çš„cache */
 	err = ovs_flow_init();
 	if (err)
 		goto error_unreg_rtnl_link;
-    /* ³õÊ¼»¯vport,·ÖÅähash½Úµã¿Õ¼ä */
+    /* åˆå§‹åŒ–vport,åˆ†é…hashèŠ‚ç‚¹ç©ºé—´ */
 	err = ovs_vport_init();
 	if (err)
 		goto error_flow_exit;
-    /* ×¢²áovsÍøÂç¿Õ¼äÉè±¸ÀàĞÍ */
+    /* æ³¨å†Œovsç½‘ç»œç©ºé—´è®¾å¤‡ç±»å‹ */
 	err = register_pernet_device(&ovs_net_ops);
 	if (err)
 		goto error_vport_exit;
-    /* ×¢²ádpµÄinternalÀàĞÍÉè±¸µÄÍ¨ÖªÁ´ */
+    /* æ³¨å†Œdpçš„internalç±»å‹è®¾å¤‡çš„é€šçŸ¥é“¾ */
 	err = register_netdevice_notifier(&ovs_dp_device_notifier);
 	if (err)
 		goto error_netns_exit;
-   
+
 	err = ovs_netdev_init();
 	if (err)
 		goto error_unreg_notifier;
-     /* ×¢²ádpµÄnetlink faimly */
+     /* æ³¨å†Œdpçš„netlink faimly */
 	err = dp_register_genl();
 	if (err < 0)
 		goto error_unreg_netdev;

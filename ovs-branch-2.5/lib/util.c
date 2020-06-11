@@ -1105,7 +1105,7 @@ const uint8_t count_1bits_8[256] = {
 #endif
 
 /* Returns true if the 'n' bytes starting at 'p' are zeros. 
- * ÓÃÓÚÅĞ¶ÏÃ¿¸ö×Ö½ÚÊÇ·ñ¶¼ÊÇ0x00
+ * ç”¨äºåˆ¤æ–­æ¯ä¸ªå­—èŠ‚æ˜¯å¦éƒ½æ˜¯0x00
  */
 bool
 is_all_zeros(const void *p_, size_t n)
@@ -1122,7 +1122,7 @@ is_all_zeros(const void *p_, size_t n)
 }
 
 /* Returns true if the 'n' bytes starting at 'p' are 0xff.
- * Õâ¸öÊÂÊµÉÏÓÃÓÚÅĞ¶ÏÃ¿¸ö×Ö½ÚÊÇ·ñ¶¼ÊÇ0xff
+ * è¿™ä¸ªäº‹å®ä¸Šç”¨äºåˆ¤æ–­æ¯ä¸ªå­—èŠ‚æ˜¯å¦éƒ½æ˜¯0xff
  */
 bool
 is_all_ones(const void *p_, size_t n)

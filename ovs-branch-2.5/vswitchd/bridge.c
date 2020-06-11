@@ -342,13 +342,13 @@ static void add_vlan_splinter_ports(struct bridge *,
 static void discover_types(const struct ovsrec_open_vswitch *cfg);
 
 /*
- * ³õÊ¼»¯ofproto¿â
- * @cfg ovsdbÖĞµÄÅäÖÃĞÅÏ¢
+ * åˆå§‹åŒ–ofprotoåº“
+ * @cfg ovsdbä¸­çš„é…ç½®ä¿¡æ¯
  */
 static void
 bridge_init_ofproto(const struct ovsrec_open_vswitch *cfg)
 {
-    struct shash iface_hints;   /* ¼ÇÂ¼¶Ë¿ÚµÄÏà¹ØĞÅÏ¢ */
+    struct shash iface_hints;   /* è®°å½•ç«¯å£çš„ç›¸å…³ä¿¡æ¯ */
     static bool initialized = false;
     int i;
 
@@ -367,13 +367,13 @@ bridge_init_ofproto(const struct ovsrec_open_vswitch *cfg)
                 struct ovsrec_port *port_cfg = br_cfg->ports[j];
                 int k;
 
-                for (k = 0; k < port_cfg->n_interfaces; k++) { /* Ò»¸ö¶Ë¿Ú¿ÉÄÜ°üº¬ºÜ¶àinterface */
+                for (k = 0; k < port_cfg->n_interfaces; k++) { /* ä¸€ä¸ªç«¯å£å¯èƒ½åŒ…å«å¾ˆå¤šinterface */
                     struct ovsrec_interface *if_cfg = port_cfg->interfaces[k];
                     struct iface_hint *iface_hint;
 
                     iface_hint = xmalloc(sizeof *iface_hint);
-                    iface_hint->br_name = br_cfg->name; /* ¶Ë¿ÚÃû³Æ */
-                    iface_hint->br_type = br_cfg->datapath_type; /* ÀàĞÍ */
+                    iface_hint->br_name = br_cfg->name; /* ç«¯å£åç§° */
+                    iface_hint->br_type = br_cfg->datapath_type; /* ç±»å‹ */
                     iface_hint->ofp_port = iface_pick_ofport(if_cfg);
 
                     shash_add(&iface_hints, if_cfg->name, iface_hint);
@@ -413,7 +413,7 @@ if_notifier_changed(struct if_notifier *notifier OVS_UNUSED)
 /* Initializes the bridge module, configuring it to obtain its configuration
  * from an OVSDB server accessed over 'remote', which should be a string in a
  * form acceptable to ovsdb_idl_create().
- * ³õÊ¼»¯ÍøÇÅÄ£¿é
+ * åˆå§‹åŒ–ç½‘æ¡¥æ¨¡å—
  */
 void
 bridge_init(const char *remote)
@@ -592,8 +592,8 @@ collect_in_band_managers(const struct ovsrec_open_vswitch *ovs_cfg,
 }
 
 /*
- * ¹¹½¨ÍøÇÅ
- * ½«ovsdbÖĞµÄÊı¾İ¼ÓÔØ½øÈ¥
+ * æ„å»ºç½‘æ¡¥
+ * å°†ovsdbä¸­çš„æ•°æ®åŠ è½½è¿›å»
  */
 static void
 bridge_reconfigure(const struct ovsrec_open_vswitch *ovs_cfg)
@@ -608,7 +608,7 @@ bridge_reconfigure(const struct ovsrec_open_vswitch *ovs_cfg)
 
     ofproto_set_flow_limit(smap_get_int(&ovs_cfg->other_config, "flow-limit",
                                         OFPROTO_FLOW_LIMIT_DEFAULT));
-    /* Èç¹ûÃ»ÓĞÅäÖÃ,¾ÍÊ¹ÓÃÄ¬ÈÏµÄÅäÖÃ */
+    /* å¦‚æœæ²¡æœ‰é…ç½®,å°±ä½¿ç”¨é»˜è®¤çš„é…ç½® */
     ofproto_set_max_idle(smap_get_int(&ovs_cfg->other_config, "max-idle",
                                       OFPROTO_MAX_IDLE_DEFAULT));
     ofproto_set_n_dpdk_rxqs(smap_get_int(&ovs_cfg->other_config,
@@ -627,7 +627,7 @@ bridge_reconfigure(const struct ovsrec_open_vswitch *ovs_cfg)
      */
     add_del_bridges(ovs_cfg);
     splinter_vlans = collect_splinter_vlans(ovs_cfg);
-    /* ¶ÔÓÚÃ¿Ò»¸öÍøÇÅ,½«Íø¿¨Ìí¼Ó½øÈ¥ */
+    /* å¯¹äºæ¯ä¸€ä¸ªç½‘æ¡¥,å°†ç½‘å¡æ·»åŠ è¿›å» */
     HMAP_FOR_EACH (br, node, &all_bridges) {
         bridge_collect_wanted_ports(br, splinter_vlans, &br->wanted_ports);
         bridge_del_ports(br, &br->wanted_ports);
@@ -646,9 +646,9 @@ bridge_reconfigure(const struct ovsrec_open_vswitch *ovs_cfg)
      * We have to do all the deletions before we can do any additions, because
      * the ports to be added might require resources that will be freed up by
      * deletions (they might especially overlap in name).
-     * ¿ªÊ¼½«ÅäÖÃ¸Ä±äÓ¦ÓÃµ½ofproto²ã
-     *  - É¾³ıÄÇĞ©²»ÔÙÊ¹ÓÃµÄofproto
-     *  - É¾³ıÄÇĞ©²»ÔÙÊ¹ÓÃµÄport
+     * å¼€å§‹å°†é…ç½®æ”¹å˜åº”ç”¨åˆ°ofprotoå±‚
+     *  - åˆ é™¤é‚£äº›ä¸å†ä½¿ç”¨çš„ofproto
+     *  - åˆ é™¤é‚£äº›ä¸å†ä½¿ç”¨çš„port
      *  -
      */
     bridge_delete_ofprotos();
@@ -663,15 +663,15 @@ bridge_reconfigure(const struct ovsrec_open_vswitch *ovs_cfg)
      *     - Create ofprotos that are missing.
      *
      *     - Add ports that are missing.
-     * ÕâÀïÊÇvswitchdÖĞÒ»¸öºÜÖØÒªµÄº¯ÊıÆ¬¶Î,´´½¨bridge¾ÍÔÚÕâÀïÊµÏÖ
-     * ÔÚÇ°ÃæµÄadd_del_bridges
+     * è¿™é‡Œæ˜¯vswitchdä¸­ä¸€ä¸ªå¾ˆé‡è¦çš„å‡½æ•°ç‰‡æ®µ,åˆ›å»ºbridgeå°±åœ¨è¿™é‡Œå®ç°
+     * åœ¨å‰é¢çš„add_del_bridges
      */
     HMAP_FOR_EACH_SAFE (br, next, node, &all_bridges) {
         if (!br->ofproto) {
             int error;
-            /* ´´½¨Ò»¸öofprotoÊµÀı
-             * ÖµµÃËµÃ÷µÄÊÇ£¬ofprotoÏÂµÄnetdevÒ²Ë³´ø´´½¨ºÃÁË
-             * µ«ÊÇ²¢Ã»ÓĞÌí¼Ó¶Ë¿Ú
+            /* åˆ›å»ºä¸€ä¸ªofprotoå®ä¾‹
+             * å€¼å¾—è¯´æ˜çš„æ˜¯ï¼Œofprotoä¸‹çš„netdevä¹Ÿé¡ºå¸¦åˆ›å»ºå¥½äº†
+             * ä½†æ˜¯å¹¶æ²¡æœ‰æ·»åŠ ç«¯å£
              */
             error = ofproto_create(br->name, br->type, &br->ofproto);
             if (error) {
@@ -686,7 +686,7 @@ bridge_reconfigure(const struct ovsrec_open_vswitch *ovs_cfg)
         }
     }
     HMAP_FOR_EACH (br, node, &all_bridges) {
-        /* ÍùÍøÇÅÖĞÌí¼Ó¶Ë¿ÚĞÅÏ¢ */
+        /* å¾€ç½‘æ¡¥ä¸­æ·»åŠ ç«¯å£ä¿¡æ¯ */
         bridge_add_ports(br, &br->wanted_ports);
         shash_destroy(&br->wanted_ports);
     }
@@ -704,7 +704,7 @@ bridge_reconfigure(const struct ovsrec_open_vswitch *ovs_cfg)
         bridge_configure_datapath_id(br);
 
         HMAP_FOR_EACH (port, hmap_node, &br->ports) {
-            /* ±éÀúÃ¿Ò»¸ö¶Ë¿Ú */
+            /* éå†æ¯ä¸€ä¸ªç«¯å£ */
             struct iface *iface;
 
             port_configure(port);
@@ -726,7 +726,7 @@ bridge_reconfigure(const struct ovsrec_open_vswitch *ovs_cfg)
         bridge_configure_forward_bpdu(br);
         bridge_configure_mac_table(br);
         bridge_configure_mcast_snooping(br);
-        /* ´¦ÀíÁ÷±íÏî */
+        /* å¤„ç†æµè¡¨é¡¹ */
         bridge_configure_remotes(br, managers, n_managers);
         bridge_configure_netflow(br);
         bridge_configure_sflow(br, &sflow_bridge_number);
@@ -748,7 +748,7 @@ bridge_reconfigure(const struct ovsrec_open_vswitch *ovs_cfg)
 
 /* Delete ofprotos which aren't configured or have the wrong type.  Create
  * ofprotos which don't exist but need to.
- * ÖØĞÂÉè¶¨ofproto
+ * é‡æ–°è®¾å®šofproto
  */
 static void
 bridge_delete_ofprotos(void)
@@ -919,7 +919,7 @@ bridge_delete_or_reconfigure_ports(struct bridge *br)
 }
 
 /*
- * ÍùÍøÇÅÖĞÌí¼Ó¶Ë¿Ú
+ * å¾€ç½‘æ¡¥ä¸­æ·»åŠ ç«¯å£
  */
 static void
 bridge_add_ports__(struct bridge *br, const struct shash *wanted_ports,
@@ -930,18 +930,18 @@ bridge_add_ports__(struct bridge *br, const struct shash *wanted_ports,
     SHASH_FOR_EACH (port_node, wanted_ports) {
         const struct ovsrec_port *port_cfg = port_node->data;
         size_t i;
-        /* ±éÀúportÏÂÃæµÄinterface */
+        /* éå†portä¸‹é¢çš„interface */
         for (i = 0; i < port_cfg->n_interfaces; i++) {
             const struct ovsrec_interface *iface_cfg = port_cfg->interfaces[i];
             ofp_port_t requested_ofp_port;
-            /* »ñµÃÒ»¸ö¶Ë¿ÚºÅ */
+            /* è·å¾—ä¸€ä¸ªç«¯å£å· */
             requested_ofp_port = iface_get_requested_ofp_port(iface_cfg);
             if ((requested_ofp_port != OFPP_NONE) == with_requested_port) {
                 struct iface *iface = iface_lookup(br, iface_cfg->name);
 
                 if (!iface) {
-                    /* ´´½¨¶Ë¿ÚĞÅÏ¢
-                     * ÕâÀïÓĞÒ»µãĞèÒª×¢Òâ, iface_createÀïÃæÊµ¼Êµ÷ÓÃÁË
+                    /* åˆ›å»ºç«¯å£ä¿¡æ¯
+                     * è¿™é‡Œæœ‰ä¸€ç‚¹éœ€è¦æ³¨æ„, iface_createé‡Œé¢å®é™…è°ƒç”¨äº†
                      */
                     iface_create(br, iface_cfg, port_cfg);
                 }
@@ -951,7 +951,7 @@ bridge_add_ports__(struct bridge *br, const struct shash *wanted_ports,
 }
 
 /*
- * Ìí¼Ó¶Ë¿ÚĞÅÏ¢
+ * æ·»åŠ ç«¯å£ä¿¡æ¯
  */
 static void
 bridge_add_ports(struct bridge *br, const struct shash *wanted_ports)
@@ -971,7 +971,7 @@ port_configure(struct port *port)
     const struct ovsrec_port *cfg = port->cfg;
     struct bond_settings bond_settings;
     struct lacp_settings lacp_settings;
-    /* ËùÎ½bundle,ÆäÊµ¾ÍÊÇ¾ÛºÏ¿Ú */
+    /* æ‰€è°“bundle,å…¶å®å°±æ˜¯èšåˆå£ */
     struct ofproto_bundle_settings s;
     struct iface *iface;
 
@@ -1745,7 +1745,7 @@ port_is_bond_fake_iface(const struct port *port)
 }
 
 /*
- * Ìí¼Ó»òÕßÉ¾³ıÍøÇÅ
+ * æ·»åŠ æˆ–è€…åˆ é™¤ç½‘æ¡¥
  */
 static void
 add_del_bridges(const struct ovsrec_open_vswitch *cfg)
@@ -1773,12 +1773,12 @@ add_del_bridges(const struct ovsrec_open_vswitch *cfg)
 
     /* Get rid of deleted bridges or those whose types have changed.
      * Update 'cfg' of bridges that still exist. */
-    /* ±éÀú¾ÉµÄÍøÇÅ,Èç¹û·¢ÏÖÔÚĞÂÅäÖÃÖĞÕÒ²»µ½ÁËµÄ»°,ËµÃ÷´ËÍøÇÅ±»ÒÆ³ıÁË */
+    /* éå†æ—§çš„ç½‘æ¡¥,å¦‚æœå‘ç°åœ¨æ–°é…ç½®ä¸­æ‰¾ä¸åˆ°äº†çš„è¯,è¯´æ˜æ­¤ç½‘æ¡¥è¢«ç§»é™¤äº† */
     HMAP_FOR_EACH_SAFE (br, next, node, &all_bridges) {
         br->cfg = shash_find_data(&new_br, br->name);
         if (!br->cfg || strcmp(br->type, ofproto_normalize_type(
                                    br->cfg->datapath_type))) {
-            bridge_destroy(br, true); /* Îö¹¹ÍøÇÅ */
+            bridge_destroy(br, true); /* ææ„ç½‘æ¡¥ */
         }
     }
 
@@ -1787,7 +1787,7 @@ add_del_bridges(const struct ovsrec_open_vswitch *cfg)
         const struct ovsrec_bridge *br_cfg = node->data;
         struct bridge *br = bridge_lookup(br_cfg->name);
         if (!br) {
-            /* ²»´æÔÚµÄ»°,¾Í´´½¨Ò»¸öĞÂµÄÍøÇÅ */
+            /* ä¸å­˜åœ¨çš„è¯,å°±åˆ›å»ºä¸€ä¸ªæ–°çš„ç½‘æ¡¥ */
             bridge_create(br_cfg);
         }
     }
@@ -1820,7 +1820,7 @@ iface_do_create(const struct bridge *br,
     int error;
     const char *type;
 
-    /* ½Ó¿ÚµÄÃû³Æ²»ÄÜÎª±£ÁôÃû³Æ */
+    /* æ¥å£çš„åç§°ä¸èƒ½ä¸ºä¿ç•™åç§° */
     if (netdev_is_reserved_name(iface_cfg->name)) {
         VLOG_WARN("could not create interface %s, name is reserved",
                   iface_cfg->name);
@@ -1870,7 +1870,7 @@ error:
  * deallocates 'if_cfg'.
  *
  * Return true if an iface is successfully created, false otherwise.
- * ¸ù¾İif_cfgµÄÅäÖÃĞÅÏ¢,´´½¨Ò»¸öĞÂµÄ½Ó¿Ú
+ * æ ¹æ®if_cfgçš„é…ç½®ä¿¡æ¯,åˆ›å»ºä¸€ä¸ªæ–°çš„æ¥å£
  */
 static bool
 iface_create(struct bridge *br, const struct ovsrec_interface *iface_cfg,
@@ -1893,7 +1893,7 @@ iface_create(struct bridge *br, const struct ovsrec_interface *iface_cfg,
     }
 
     /* Get or create the port structure. */
-    port = port_lookup(br, port_cfg->name); /* Ñ°ÕÒ¶Ë¿ÚĞÅÏ¢ */
+    port = port_lookup(br, port_cfg->name); /* å¯»æ‰¾ç«¯å£ä¿¡æ¯ */
     if (!port) {
         port = port_create(br, port_cfg);
     }
@@ -1906,7 +1906,7 @@ iface_create(struct bridge *br, const struct ovsrec_interface *iface_cfg,
     iface->port = port;
     iface->name = xstrdup(iface_cfg->name);
     iface->ofp_port = ofp_port;
-    iface->netdev = netdev; /* Ò»¸ö½Ó¿ÚºÍÒ»¸önetdevÏà¹ØÁª */
+    iface->netdev = netdev; /* ä¸€ä¸ªæ¥å£å’Œä¸€ä¸ªnetdevç›¸å…³è” */
     iface->type = iface_get_type(iface_cfg, br->cfg);
     iface->netdev_type = ofproto_port_open_type(br->cfg->datapath_type,
                                                 iface->type);
@@ -1930,7 +1930,7 @@ iface_create(struct bridge *br, const struct ovsrec_interface *iface_cfg,
             error = netdev_open(port->name, "internal", &netdev);
             if (!error) {
                 ofp_port_t fake_ofp_port = OFPP_NONE;
-                /* ÕâÀïºÜÖØÒª,ÕâÀï½«¶Ë¿ÚĞÅÏ¢¹ÒÔØµ½dpif½á¹¹µÄ¶Ë¿ÚÉÏÁË */
+                /* è¿™é‡Œå¾ˆé‡è¦,è¿™é‡Œå°†ç«¯å£ä¿¡æ¯æŒ‚è½½åˆ°dpifç»“æ„çš„ç«¯å£ä¸Šäº† */
                 ofproto_port_add(br->ofproto, netdev, &fake_ofp_port);
                 netdev_close(netdev);
             } else {
@@ -2939,7 +2939,7 @@ status_update_wait(void)
 }
 
 /*
- * ·Ç³£ºËĞÄµÄº¯Êı
+ * éå¸¸æ ¸å¿ƒçš„å‡½æ•°
  */
 static void
 bridge_run__(void)
@@ -2950,10 +2950,10 @@ bridge_run__(void)
 
     /* Let each datapath type do the work that it needs to do. */
     sset_init(&types);
-    /* »ñÈ¡datapathµÄÀàĞÍ */
+    /* è·å–datapathçš„ç±»å‹ */
     ofproto_enumerate_types(&types);
     SSET_FOR_EACH (type, &types) {
-        /* ÕâÀïÔËĞĞdatapath */
+        /* è¿™é‡Œè¿è¡Œdatapath */
         ofproto_type_run(type);
     }
     sset_destroy(&types);
@@ -2964,7 +2964,7 @@ bridge_run__(void)
     }
 }
 
-/* ÔËĞĞbridgeÏà¹ØµÄº¯Êı
+/* è¿è¡Œbridgeç›¸å…³çš„å‡½æ•°
  *
  */
 void
@@ -2975,13 +2975,13 @@ bridge_run(void)
 
     bool vlan_splinters_changed;
 
-    ovsrec_open_vswitch_init(&null_cfg); /* ´´½¨Ò»¸öÍêÈ«µÄ¿ÕÅäÖÃ */
+    ovsrec_open_vswitch_init(&null_cfg); /* åˆ›å»ºä¸€ä¸ªå®Œå…¨çš„ç©ºé…ç½® */
 
     ovsdb_idl_run(idl);
 
     if_notifier_run();
 
-    if (ovsdb_idl_is_lock_contended(idl)) { /* Êı¾İ¿âÒÑ¾­±»Ëø×¡ÁË */
+    if (ovsdb_idl_is_lock_contended(idl)) { /* æ•°æ®åº“å·²ç»è¢«é”ä½äº† */
         static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(1, 1);
         struct bridge *br, *next_br;
 
@@ -2998,24 +2998,24 @@ bridge_run(void)
         system_stats_enable(false);
         return;
     } else if (!ovsdb_idl_has_lock(idl)
-               || !ovsdb_idl_has_ever_connected(idl)) { /* Èç¹ûÃ»ÓĞ´ÓovsdbÖĞ»ñµÃÊı¾İ */
+               || !ovsdb_idl_has_ever_connected(idl)) { /* å¦‚æœæ²¡æœ‰ä»ovsdbä¸­è·å¾—æ•°æ® */
         /* Returns if not holding the lock or not done retrieving db
          * contents. */
         return;
     }
-    cfg = ovsrec_open_vswitch_first(idl); /* »ñÈ¡ovsdbÖĞµÄÊı¾İ */
+    cfg = ovsrec_open_vswitch_first(idl); /* è·å–ovsdbä¸­çš„æ•°æ® */
 
     /* Initialize the ofproto library.  This only needs to run once, but
      * it must be done after the configuration is set.  If the
      * initialization has already occurred, bridge_init_ofproto()
      * returns immediately.
-     * ³õÊ¼»¯ofproto¿â£¬Ö»ÔËĞĞÒ»´Î
+     * åˆå§‹åŒ–ofprotoåº“ï¼Œåªè¿è¡Œä¸€æ¬¡
      */
     bridge_init_ofproto(cfg);
 
     /* Once the value of flow-restore-wait is false, we no longer should
      * check its value from the database.
-     * Èç¹ûflow-restore-waitÊÇfalse,ÎÒÃÇ²»Ó¦¸Ã¼ì²é Êı¾İ¿âÖĞËüµÄÖµ
+     * å¦‚æœflow-restore-waitæ˜¯false,æˆ‘ä»¬ä¸åº”è¯¥æ£€æŸ¥ æ•°æ®åº“ä¸­å®ƒçš„å€¼
      */
     if (cfg && ofproto_get_flow_restore_wait()) {
         ofproto_set_flow_restore_wait(smap_get_bool(&cfg->other_config,
@@ -3057,7 +3057,7 @@ bridge_run(void)
 
         idl_seqno = ovsdb_idl_get_seqno(idl);
         txn = ovsdb_idl_txn_create(idl);
-        bridge_reconfigure(cfg ? cfg : &null_cfg);  /* ¸ù¾İÅäÖÃĞÅÏ¢,ÖØĞÂ¹¹½¨ÍøÇÅ */
+        bridge_reconfigure(cfg ? cfg : &null_cfg);  /* æ ¹æ®é…ç½®ä¿¡æ¯,é‡æ–°æ„å»ºç½‘æ¡¥ */
 
         if (cfg) {
             ovsrec_open_vswitch_set_cur_cfg(cfg, cfg->next_cfg);
@@ -3253,7 +3253,7 @@ qos_unixctl_show(struct unixctl_conn *conn, int argc OVS_UNUSED,
 }
 
 /* Bridge reconfiguration functions.
- * ´´½¨ÍøÇÅÏàÓ¦µÄ½á¹¹,¸ù¾İovsdbÖĞµÄÅäÖÃĞÅÏ¢
+ * åˆ›å»ºç½‘æ¡¥ç›¸åº”çš„ç»“æ„,æ ¹æ®ovsdbä¸­çš„é…ç½®ä¿¡æ¯
  */
 static void
 bridge_create(const struct ovsrec_bridge *br_cfg)
@@ -3269,17 +3269,17 @@ bridge_create(const struct ovsrec_bridge *br_cfg)
 
     /* Derive the default Ethernet address from the bridge's UUID.  This should
      * be unique and it will be stable between ovs-vswitchd runs.  */
-    /* Éè¶¨Ä¬ÈÏµÄmacµØÖ· */
+    /* è®¾å®šé»˜è®¤çš„macåœ°å€ */
     memcpy(&br->default_ea, &br_cfg->header_.uuid, ETH_ADDR_LEN);
     eth_addr_mark_random(&br->default_ea);
 
-    hmap_init(&br->ports);
+    hmap_init(&br->ports); /*  */
     hmap_init(&br->ifaces);
     hmap_init(&br->iface_by_name);
     hmap_init(&br->mirrors);
 
     hmap_init(&br->mappings);
-    /* ½«ĞÂ´´½¨µÄÍøÇÅ½á¹¹²åÈëall_bridges ±íÖĞ */
+    /* å°†æ–°åˆ›å»ºçš„ç½‘æ¡¥ç»“æ„æ’å…¥all_bridges è¡¨ä¸­ */
     hmap_insert(&all_bridges, &br->node, hash_string(br->name, 0));
 }
 
@@ -3390,7 +3390,7 @@ bridge_get_controllers(const struct bridge *br,
 }
 
 /*
- * ÊÕ¼¯ÍøÇÅÖĞµÄ¶Ë¿ÚĞÅÏ¢
+ * æ”¶é›†ç½‘æ¡¥ä¸­çš„ç«¯å£ä¿¡æ¯
  */
 static void
 bridge_collect_wanted_ports(struct bridge *br,
@@ -3400,7 +3400,7 @@ bridge_collect_wanted_ports(struct bridge *br,
     size_t i;
 
     shash_init(wanted_ports);
-    /* ÊÕ¼¯ÍøÇÅµÄ¶Ë¿ÚĞÅÏ¢ */
+    /* æ”¶é›†ç½‘æ¡¥çš„ç«¯å£ä¿¡æ¯ */
     for (i = 0; i < br->cfg->n_ports; i++) {
         const char *name = br->cfg->ports[i]->name;
         if (!shash_add_once(wanted_ports, name, br->cfg->ports[i])) {
@@ -3436,8 +3436,8 @@ bridge_collect_wanted_ports(struct bridge *br,
 /* Deletes "struct port"s and "struct iface"s under 'br' which aren't
  * consistent with 'br->cfg'.  Updates 'br->if_cfg_queue' with interfaces which
  * 'br' needs to complete its configuration.
- * ¸ù¾İĞÂÅäÖÃÖĞµÄ¶Ë¿ÚĞÅÏ¢À´´¦ÀíÍøÇÅÖĞµÄ¶Ë¿ÚĞÅÏ¢
- * ÕâÀï×öµÄÖ÷ÒªÊÇÉ¾³ı²Ù×÷
+ * æ ¹æ®æ–°é…ç½®ä¸­çš„ç«¯å£ä¿¡æ¯æ¥å¤„ç†ç½‘æ¡¥ä¸­çš„ç«¯å£ä¿¡æ¯
+ * è¿™é‡Œåšçš„ä¸»è¦æ˜¯åˆ é™¤æ“ä½œ
  */
 static void
 bridge_del_ports(struct bridge *br, const struct shash *wanted_ports)
@@ -3450,10 +3450,10 @@ bridge_del_ports(struct bridge *br, const struct shash *wanted_ports)
     HMAP_FOR_EACH_SAFE (port, next, hmap_node, &br->ports) {
         port->cfg = shash_find_data(wanted_ports, port->name);
         if (!port->cfg) {
-            port_destroy(port); /* ¶Ë¿ÚÃ»ÓĞÕÒµ½¾ÍÒªÒÆ³ı */
+            port_destroy(port); /* ç«¯å£æ²¡æœ‰æ‰¾åˆ°å°±è¦ç§»é™¤ */
         } else {
-            /* ¶Ë¿ÚÕÒµ½ÁË£¬¿ÉÄÜÀïÃæµÄ½Ó¿ÚĞÅÏ¢·¢ÉúÁË±ä»¯
-             * ĞÂµÄ½Ó¿ÚĞÅÏ¢´æ´¢ÔÚpoort->cfgÖĞ
+            /* ç«¯å£æ‰¾åˆ°äº†ï¼Œå¯èƒ½é‡Œé¢çš„æ¥å£ä¿¡æ¯å‘ç”Ÿäº†å˜åŒ–
+             * æ–°çš„æ¥å£ä¿¡æ¯å­˜å‚¨åœ¨poort->cfgä¸­
              */
             port_del_ifaces(port);
         }
@@ -3473,7 +3473,7 @@ bridge_del_ports(struct bridge *br, const struct shash *wanted_ports)
             const char *dp_type = br->cfg->datapath_type;
             const char *netdev_type = ofproto_port_open_type(dp_type, type);
 
-            if (iface) { /* ÕÒµ½ÁËµÄ»°£¬¸üĞÂcfg,type,netdev_typeµÈĞÅÏ¢ */
+            if (iface) { /* æ‰¾åˆ°äº†çš„è¯ï¼Œæ›´æ–°cfg,type,netdev_typeç­‰ä¿¡æ¯ */
                 iface->cfg = cfg;
                 iface->type = type;
                 iface->netdev_type = netdev_type;
@@ -3607,7 +3607,7 @@ equal_pathnames(const char *a, const char *b, size_t b_stoplen)
 }
 
 /*
- * ´¦ÀíÁ÷±íÏî
+ * å¤„ç†æµè¡¨é¡¹
  */
 static void
 bridge_configure_remotes(struct bridge *br,
@@ -3615,7 +3615,7 @@ bridge_configure_remotes(struct bridge *br,
 {
     bool disable_in_band;
 
-    struct ovsrec_controller **controllers; /* ¿ØÖÆÆ÷ */
+    struct ovsrec_controller **controllers; /* æ§åˆ¶å™¨ */
     size_t n_controllers;
 
     enum ofproto_fail_mode fail_mode;
@@ -3649,8 +3649,8 @@ bridge_configure_remotes(struct bridge *br,
     for (i = 0; i < n_controllers; i++) {
         struct ovsrec_controller *c = controllers[i];
 
-        if (!strncmp(c->target, "punix:", 6) /* ±»¶¯¼àÌı */
-            || !strncmp(c->target, "unix:", 5)) { /* ·¢ÆğÖ÷¶¯Á¬½Ó */
+        if (!strncmp(c->target, "punix:", 6) /* è¢«åŠ¨ç›‘å¬ */
+            || !strncmp(c->target, "unix:", 5)) { /* å‘èµ·ä¸»åŠ¨è¿æ¥ */
             static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(1, 5);
             char *whitelist;
 
@@ -3704,7 +3704,7 @@ bridge_configure_remotes(struct bridge *br,
         }
         n_ocs++;
     }
-    /* Ö÷¶¯»òÕßÁ¬½Ó¿ØÖÆÆ÷ */
+    /* ä¸»åŠ¨æˆ–è€…è¿æ¥æ§åˆ¶å™¨ */
     ofproto_set_controllers(br->ofproto, ocs, n_ocs,
                             bridge_get_allowed_versions(br));
     free(ocs[0].target); /* From bridge_ofproto_controller_for_mgmt(). */
@@ -4083,7 +4083,7 @@ bridge_aa_refresh_queued(struct bridge *br)
 
 /* Port functions. */
 /*
- * ´´½¨¶Ë¿ÚĞÅÏ¢
+ * åˆ›å»ºç«¯å£ä¿¡æ¯
  */
 static struct port *
 port_create(struct bridge *br, const struct ovsrec_port *cfg)
@@ -4095,15 +4095,15 @@ port_create(struct bridge *br, const struct ovsrec_port *cfg)
     port->name = xstrdup(cfg->name);
     port->cfg = cfg;
     list_init(&port->ifaces);
-    /* ·½±ã¸ù¾İ¶Ë¿ÚµÄÃû³Æ,ÕÒµ½struct port */
+    /* æ–¹ä¾¿æ ¹æ®ç«¯å£çš„åç§°,æ‰¾åˆ°struct port */
     hmap_insert(&br->ports, &port->hmap_node, hash_string(port->name, 0));
     return port;
 }
 
 /* Deletes interfaces from 'port' that are no longer configured for it.
- * ´¦Àí¶Ë¿ÚÖĞµÄinterfaceĞÅÏ¢
- * Èç¹ûÄ³¸ö½Ó¿ÚÔÚĞÂÅäÖÃÖĞ²»´æÔÚÁË£¬¾ÍĞèÒªÉ¾³ıµô
- * ĞèÒª¸ù¾İcfgÀ´´¦Àí½Ó¿ÚĞÅÏ¢
+ * å¤„ç†ç«¯å£ä¸­çš„interfaceä¿¡æ¯
+ * å¦‚æœæŸä¸ªæ¥å£åœ¨æ–°é…ç½®ä¸­ä¸å­˜åœ¨äº†ï¼Œå°±éœ€è¦åˆ é™¤æ‰
+ * éœ€è¦æ ¹æ®cfgæ¥å¤„ç†æ¥å£ä¿¡æ¯
  */
 static void
 port_del_ifaces(struct port *port)
@@ -4690,7 +4690,7 @@ iface_validate_ofport__(size_t n, int64_t *ofport)
 }
 
 /*
- * »ñÈ¡Ò»¸öÓĞĞ§µÄ¶Ë¿ÚºÅ
+ * è·å–ä¸€ä¸ªæœ‰æ•ˆçš„ç«¯å£å·
  */
 static ofp_port_t
 iface_get_requested_ofp_port(const struct ovsrec_interface *cfg)

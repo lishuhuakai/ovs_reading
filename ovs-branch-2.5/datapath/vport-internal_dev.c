@@ -183,7 +183,7 @@ static void do_setup(struct net_device *netdev)
 }
 
 /*
- * ´´½¨internalÉè±¸
+ * åˆ›å»ºinternalè®¾å¤‡
  */
 static struct vport *internal_dev_create(const struct vport_parms *parms)
 {
@@ -213,7 +213,7 @@ static struct vport *internal_dev_create(const struct vport_parms *parms)
 		vport->dev->features |= NETIF_F_NETNS_LOCAL;
 
 	rtnl_lock();
-    /* ×¢²áÒ»¸öÍøÂçÉè±¸ */
+    /* æ³¨å†Œä¸€ä¸ªç½‘ç»œè®¾å¤‡ */
 	err = register_netdevice(vport->dev);
 	if (err)
 		goto error_free_netdev;

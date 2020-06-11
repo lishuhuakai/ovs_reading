@@ -34,14 +34,14 @@ extern "C" {
  *
  * This structure should be treated as opaque by dpif implementations.
  */
-struct dpif { /* datapath½Ó¿Ú */
+struct dpif { /* datapathæ¥å£ */
    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     static const struct dpif_class *base_dpif_classes[] = {
         &dpif_netlink_class,
         &dpif_netdev_class,
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-    const struct dpif_class *dpif_class; /* Ïà¹ØµÄ´¦Àíº¯Êı  */
+    const struct dpif_class *dpif_class; /* ç›¸å…³çš„å¤„ç†å‡½æ•°  */
     char *base_name;
     char *full_name;
     uint8_t netflow_engine_type;
@@ -94,9 +94,9 @@ struct ct_dpif_entry;
  * necessary to obtain a result.  Thus, they may not return EAGAIN or
  * EWOULDBLOCK or EINPROGRESS.  We may relax this requirement in the future if
  * and when we encounter performance problems. */
-/* dpif_classÒ»¹²ÓĞÁ½¸öÊµÏÖ:
- * Ò»¸öÊÇdpif_netlink_class
- * ÁíÍâÒ»¸öÊÇ dpif_netdev_class
+/* dpif_classä¸€å…±æœ‰ä¸¤ä¸ªå®ç°:
+ * ä¸€ä¸ªæ˜¯dpif_netlink_class
+ * å¦å¤–ä¸€ä¸ªæ˜¯ dpif_netdev_class
  */
 struct dpif_class {
     /* Type of dpif in this class, e.g. "system", "netdev", etc.
@@ -117,11 +117,11 @@ struct dpif_class {
      * 'dpif_class'), if possible, into 'all_dps'.  The caller has already
      * initialized 'all_dps' and other dpif classes might already have added
      * names to it.
-     * Ã¶¾ÙËùÓĞÒÑÖªµÄ£¬ÒÑ¾­´´½¨ÁËµÄdatapath
+     * æšä¸¾æ‰€æœ‰å·²çŸ¥çš„ï¼Œå·²ç»åˆ›å»ºäº†çš„datapath
      *
      * This is used by the vswitch at startup, so that it can delete any
      * datapaths that are not configured.
-     * Õâ¸öÓÃÔÚvswitchÆô¶¯µÄÊ±ºò£¬Èç¹û·¢ÏÖÓĞµÄdatapathÃ»ÓĞÅäÖÃµÄ»°£¬¿ÉÒÔÉ¾µôÕâ¸ödatapath
+     * è¿™ä¸ªç”¨åœ¨vswitchå¯åŠ¨çš„æ—¶å€™ï¼Œå¦‚æœå‘ç°æœ‰çš„datapathæ²¡æœ‰é…ç½®çš„è¯ï¼Œå¯ä»¥åˆ æ‰è¿™ä¸ªdatapath
      *
      * Some kinds of datapaths might not be practically enumerable, in which
      * case this function may be a null pointer.
@@ -141,7 +141,7 @@ struct dpif_class {
 
     /* Attempts to open an existing dpif called 'name', if 'create' is false,
      * or to open an existing dpif or create a new one, if 'create' is true.
-     * ³¢ÊÔ´ò¿ªÒ»¸öÒÑ¾­´æÔÚµÄdpif
+     * å°è¯•æ‰“å¼€ä¸€ä¸ªå·²ç»å­˜åœ¨çš„dpif
      * 'dpif_class' is the class of dpif to open.
      *
      * If successful, stores a pointer to the new dpif in '*dpifp', which must
@@ -178,7 +178,7 @@ struct dpif_class {
      * If port is successfully added, sets '*port_no' to the new port's
      * port number.  Returns EBUSY if caller attempted to choose a port
      * number, and it was in use.
-     * Ìí¼Ónetdev£¬½«Æä×÷ÎªdpifµÄĞÂ¶Ë¿Ú, port_noÎª¶Ë¿ÚÖµ
+     * æ·»åŠ netdevï¼Œå°†å…¶ä½œä¸ºdpifçš„æ–°ç«¯å£, port_noä¸ºç«¯å£å€¼
      */
     int (*port_add)(struct dpif *dpif, struct netdev *netdev,
                     odp_port_t *port_no);

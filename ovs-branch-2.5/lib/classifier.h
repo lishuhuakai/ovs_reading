@@ -31,8 +31,8 @@
  * set of packet headers, as quickly as possible find the highest-priority rule
  * that matches those headers.  The following section describes the second
  * goal.
- * ·ÖÀàÆ÷ÓĞÁ½¸öÖ÷ÒªµÄÉè¼ÆÄ¿±ê£¬µÚÒ»¸öÊÇÏÔ¶øÒ×¼ûµÄ£¬ÄÇ¾ÍÊÇÒ»ÏµÁĞµÄpacket header,¿ÉÒÔ
- * ¿ìËÙÕÒµ½Æ¥ÅäÕâĞ©headerµÄ²¢ÇÒÊÇ×î¸ßÓÅÏÈ¼¶µÄrule
+ * åˆ†ç±»å™¨æœ‰ä¸¤ä¸ªä¸»è¦çš„è®¾è®¡ç›®æ ‡ï¼Œç¬¬ä¸€ä¸ªæ˜¯æ˜¾è€Œæ˜“è§çš„ï¼Œé‚£å°±æ˜¯ä¸€ç³»åˆ—çš„packet header,å¯ä»¥
+ * å¿«é€Ÿæ‰¾åˆ°åŒ¹é…è¿™äº›headerçš„å¹¶ä¸”æ˜¯æœ€é«˜ä¼˜å…ˆçº§çš„rule
  *
  * "Un-wildcarding"
  * ================
@@ -109,12 +109,12 @@
  * If there are no matches, the classifier didn't contain a match; if you find
  * a match in one of them, that's the result; if you find a match in both of
  * them, then the result is the rule with the higher priority.
- * ¼Ù¶¨Ò»¸öclassifierÖĞµÄËùÓĞ¹æÔò¶¼¾ßÓĞÏàÍ¬µÄĞÎÊ½£¬¾Ù¸öÀı×Ó£¬¼Ù¶¨ËûÃÇÈ«¶¼Æ¥Åä
- * Ô´macºÍÄ¿µÄmac£¬¶øÇÒÍ¨ÅäÆäËû×Ö¶Î(²»¹Ü),ÄÇÃ´×îÃ÷ÏÔµÄÊµÏÖ·ÖÀàÆ÷µÄ·½·¨¾ÍÊÇÊ¹ÓÃÒ»¸ö
- * hash±í£¬¶ÔÔ´macºÍÄ¿µÄmac½øĞĞhash£¬Èç¹ûÒ»ÌõÊ¹ÓÃ±ğµÄĞÎÊ½µÄĞÂµÄ¹æÔòÒª²åÈëµÄ»°¡£
- * Äã¿ÉÄÜÒªÊ¹ÓÃµÚ¶ş¸öhash±í,¶ÔÆ¥ÅäµÄ²¿·Ö½øĞĞhash£¬¶ÔÓÚÒ»¸öÁ÷±íÏî£¬Äãµ½ÕâÁ½¸öhashÖĞ½øĞĞ
- * ²éÕÒ£¬Èç¹ûÃ»ÓĞÕÒµ½£¬·ÖÀàÆ÷ÖĞ¾Í²»°üº¬Æ¥Åä£¬Èç¹ûÕÒµ½ÁË£¬¾ÍÆ¥ÅäÉÏÁË¡£
- * Èç¹ûÁ½¸öhash±íÖĞ¶¼Æ¥ÅäÉÏÁË£¬ÄÇÃ´Ã÷ÏÔÒªÑ¡ÔñÓÅÏÈ¼¶¸ü¸ßµÄ
+ * å‡å®šä¸€ä¸ªclassifierä¸­çš„æ‰€æœ‰è§„åˆ™éƒ½å…·æœ‰ç›¸åŒçš„å½¢å¼ï¼Œä¸¾ä¸ªä¾‹å­ï¼Œå‡å®šä»–ä»¬å…¨éƒ½åŒ¹é…
+ * æºmacå’Œç›®çš„macï¼Œè€Œä¸”é€šé…å…¶ä»–å­—æ®µ(ä¸ç®¡),é‚£ä¹ˆæœ€æ˜æ˜¾çš„å®ç°åˆ†ç±»å™¨çš„æ–¹æ³•å°±æ˜¯ä½¿ç”¨ä¸€ä¸ª
+ * hashè¡¨ï¼Œå¯¹æºmacå’Œç›®çš„macè¿›è¡Œhashï¼Œå¦‚æœä¸€æ¡ä½¿ç”¨åˆ«çš„å½¢å¼çš„æ–°çš„è§„åˆ™è¦æ’å…¥çš„è¯ã€‚
+ * ä½ å¯èƒ½è¦ä½¿ç”¨ç¬¬äºŒä¸ªhashè¡¨,å¯¹åŒ¹é…çš„éƒ¨åˆ†è¿›è¡Œhashï¼Œå¯¹äºä¸€ä¸ªæµè¡¨é¡¹ï¼Œä½ åˆ°è¿™ä¸¤ä¸ªhashä¸­è¿›è¡Œ
+ * æŸ¥æ‰¾ï¼Œå¦‚æœæ²¡æœ‰æ‰¾åˆ°ï¼Œåˆ†ç±»å™¨ä¸­å°±ä¸åŒ…å«åŒ¹é…ï¼Œå¦‚æœæ‰¾åˆ°äº†ï¼Œå°±åŒ¹é…ä¸Šäº†ã€‚
+ * å¦‚æœä¸¤ä¸ªhashè¡¨ä¸­éƒ½åŒ¹é…ä¸Šäº†ï¼Œé‚£ä¹ˆæ˜æ˜¾è¦é€‰æ‹©ä¼˜å…ˆçº§æ›´é«˜çš„
  *
  * This is how the classifier works.  In a "struct classifier", each form of
  * "struct cls_rule" present (based on its ->match.mask) goes into a separate
@@ -126,8 +126,8 @@
  * found.  Eliminating lookups through priority ordering aids both classifier
  * primary design goals: skipping lookups saves time and avoids un-wildcarding
  * fields that those lookups would have examined.
- * Õâ¾ÍÊÇclassifierµÄ¹¤×÷Ô­Àí¡£ÔÚstruct classifierÖĞ,struct cls_rule±íÊ¾³ÉÁËstruct subtable
- * ²éÕÒµÄÊ±ºò£¬
+ * è¿™å°±æ˜¯classifierçš„å·¥ä½œåŸç†ã€‚åœ¨struct classifierä¸­,struct cls_ruleè¡¨ç¤ºæˆäº†struct subtable
+ * æŸ¥æ‰¾çš„æ—¶å€™ï¼Œ
  *
  * One detail: a classifier can contain multiple rules that are identical other
  * than their priority.  When this happens, only the highest priority rule out
@@ -137,9 +137,9 @@
  *
  * The following sub-sections describe various optimizations over this simple
  * approach.
- *  ½ÓÏÂÀ´µÄ¼¸½ÚÃèÊöÁË¸÷ÖÖÓÅ»¯Ïî
+ *  æ¥ä¸‹æ¥çš„å‡ èŠ‚æè¿°äº†å„ç§ä¼˜åŒ–é¡¹
  *
- * Staged Lookup (Wildcard Optimization) ·Ö½×¶Î²éÕÒ
+ * Staged Lookup (Wildcard Optimization) åˆ†é˜¶æ®µæŸ¥æ‰¾
  * -------------------------------------
  *
  * Subtable lookup is performed in ranges defined for struct flow, starting
@@ -152,7 +152,7 @@
  * It reduces un-wildcarding significantly in important use cases.
  *
  *
- * Prefix Tracking (Wildcard Optimization) Ç°×º×·×Ù
+ * Prefix Tracking (Wildcard Optimization) å‰ç¼€è¿½è¸ª
  * ---------------------------------------
  *
  * Classifier uses prefix trees ("tries") for tracking the used
@@ -182,7 +182,7 @@
  * flow table.  Currently this limit is 3.
  *
  *
- * Partitioning (Lookup Time and Wildcard Optimization) ·ÖÇø
+ * Partitioning (Lookup Time and Wildcard Optimization) åˆ†åŒº
  * ----------------------------------------------------
  *
  * Suppose that a given classifier is being used to handle multiple stages in a
@@ -343,7 +343,7 @@ enum {
 };
 
 /* A flow classifier. */
-/* Á÷±íÏî·ÖÀàÆ÷ */
+/* æµè¡¨é¡¹åˆ†ç±»å™¨ */
 struct classifier {
     int n_rules;                    /* Total number of rules. */
     uint8_t n_flow_segments;

@@ -1190,8 +1190,8 @@ classifier_lookup(const struct classifier *cls, cls_version_t version,
  * matching criteria as 'target', and that is visible in 'version'.
  * Only one such rule may ever exist.  Returns a null pointer if 'cls' doesn't
  * contain an exact match. 
- * ÔÚclassfierÀïÃæ²éÕÒ£¬ÕÒµ½Ò»ÌõÆ¥ÅätargetµÄ¹æÔò
- * @cls ¹æÔòµÄ¼¯ºÏ
+ * åœ¨classfieré‡Œé¢æŸ¥æ‰¾ï¼Œæ‰¾åˆ°ä¸€æ¡åŒ¹é…targetçš„è§„åˆ™
+ * @cls è§„åˆ™çš„é›†åˆ
  */
 const struct cls_rule *
 classifier_find_rule_exactly(const struct classifier *cls,
@@ -1200,19 +1200,19 @@ classifier_find_rule_exactly(const struct classifier *cls,
 {
     const struct cls_match *head, *rule;
     const struct cls_subtable *subtable;
-    /* ¸ù¾İÑÚÂëÀ´²éÕÒ¶ÔÓ¦µÄ×Ó±í */
+    /* æ ¹æ®æ©ç æ¥æŸ¥æ‰¾å¯¹åº”çš„å­è¡¨ */
     subtable = find_subtable(cls, target->match.mask);
     if (!subtable) {
         return NULL;
     }
-    /* È»ºó¸ù¾İÁ÷±íµÄÏ¡Êè±íÊ¾À´½øĞĞÆ¥Åä */
+    /* ç„¶åæ ¹æ®æµè¡¨çš„ç¨€ç–è¡¨ç¤ºæ¥è¿›è¡ŒåŒ¹é… */
     head = find_equal(subtable, target->match.flow,
                       miniflow_hash_in_minimask(target->match.flow,
                                                 target->match.mask, 0));
     if (!head) {
         return NULL;
     }
-    CLS_MATCH_FOR_EACH (rule, head) { /* È»ºó»¹Òª½øĞĞÓÅÏÈ¼¶µÄ±È½Ï */
+    CLS_MATCH_FOR_EACH (rule, head) { /* ç„¶åè¿˜è¦è¿›è¡Œä¼˜å…ˆçº§çš„æ¯”è¾ƒ */
         if (rule->priority < target->priority) {
             break; /* Not found. */
         }
@@ -1431,7 +1431,7 @@ find_subtable(const struct classifier *cls, const struct minimask *mask)
 
     CMAP_FOR_EACH_WITH_HASH (subtable, cmap_node, minimask_hash(mask, 0),
                              &cls->subtables_map) {
-        if (minimask_equal(mask, &subtable->mask)) { /* ¸ù¾İ */
+        if (minimask_equal(mask, &subtable->mask)) { /* æ ¹æ® */
             return subtable;
         }
     }

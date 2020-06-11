@@ -429,7 +429,7 @@ ofputil_match_to_ofp10_match(const struct match *match,
 }
 
 /*
- * ½âÎömatch×Ö¶Î
+ * è§£æžmatchå­—æ®µ
  */
 enum ofperr
 ofputil_pull_ofp11_match(struct ofpbuf *buf, struct match *match,
@@ -445,7 +445,7 @@ ofputil_pull_ofp11_match(struct ofpbuf *buf, struct match *match,
     match_len = ntohs(omh->length);
 
     switch (ntohs(omh->type)) {
-    case OFPMT_STANDARD: { /* OpenFlow 1.1Ìá³öµÄ½á¹¹,ÏÖÔÚ»ù±¾±»·ÏÆúÁË */
+    case OFPMT_STANDARD: { /* OpenFlow 1.1æå‡ºçš„ç»“æž„,çŽ°åœ¨åŸºæœ¬è¢«åºŸå¼ƒäº† */
         struct ofp11_match *om;
 
         if (match_len != sizeof *om || buf->size < sizeof *om) {
@@ -458,7 +458,7 @@ ofputil_pull_ofp11_match(struct ofpbuf *buf, struct match *match,
         return ofputil_match_from_ofp11_match(om, match);
     }
 
-    case OFPMT_OXM: /* ×îÐÂ°æ±¾µÄmatch */
+    case OFPMT_OXM: /* æœ€æ–°ç‰ˆæœ¬çš„match */
         if (padded_match_len) {
             *padded_match_len = ROUND_UP(match_len, 8);
         }
@@ -1686,7 +1686,7 @@ ofputil_encode_flow_mod_flags(enum ofputil_flow_mod_flags flags,
 /* Converts an OFPT_FLOW_MOD or NXT_FLOW_MOD message 'oh' into an abstract
  * flow_mod in 'fm'.  Returns 0 if successful, otherwise an OpenFlow error
  * code.
- * ½«ohÖÐµÄOFPT_FLOW_MOD»òÕßNXT_FLOW_MODÏûÏ¢½âÎö³ÉÔÚfmÖÐ³éÏóµÄflow_mod
+ * å°†ohä¸­çš„OFPT_FLOW_MODæˆ–è€…NXT_FLOW_MODæ¶ˆæ¯è§£æžæˆåœ¨fmä¸­æŠ½è±¡çš„flow_mod
  *
  * Uses 'ofpacts' to store the abstract OFPACT_* version of 'oh''s actions.
  * The caller must initialize 'ofpacts' and retains ownership of it.
@@ -1696,7 +1696,7 @@ ofputil_encode_flow_mod_flags(enum ofputil_flow_mod_flags flags,
  * ofpacts_check(). */
 enum ofperr
 ofputil_decode_flow_mod(struct ofputil_flow_mod *fm,
-                        const struct ofp_header *oh, /* Ô­Ê¼Êý¾Ý´æ´¢ÔÚohÖÐ */
+                        const struct ofp_header *oh, /* åŽŸå§‹æ•°æ®å­˜å‚¨åœ¨ohä¸­ */
                         enum ofputil_protocol protocol,
                         struct ofpbuf *ofpacts,
                         ofp_port_t max_port, uint8_t max_table)
@@ -1708,18 +1708,18 @@ ofputil_decode_flow_mod(struct ofputil_flow_mod *fm,
 
     /* Ignored for non-delete actions */
     fm->delete_reason = OFPRR_DELETE;
-    /* ½«flow_modÏûÏ¢¹ÒÔØÔÚofpbufµÄbÖÐ */
+    /* å°†flow_modæ¶ˆæ¯æŒ‚è½½åœ¨ofpbufçš„bä¸­ */
     ofpbuf_use_const(&b, oh, ntohs(oh->length));
-    /* ½âÎöÏûÏ¢Í·²¿ */
+    /* è§£æžæ¶ˆæ¯å¤´éƒ¨ */
     raw = ofpraw_pull_assert(&b);
     if (raw == OFPRAW_OFPT11_FLOW_MOD) {
         /* Standard OpenFlow 1.1+ flow_mod. */
         const struct ofp11_flow_mod *ofm;
-        /* ´ÓbÖÐÒÆ³ý´óÐ¡Îªsizeof(*ofm) */
+        /* ä»Žbä¸­ç§»é™¤å¤§å°ä¸ºsizeof(*ofm) */
         ofm = ofpbuf_pull(&b, sizeof *ofm);
-         /* »ñÈ¡flow_modÖÐµÄmatchÊý¾Ý¸³Öµµ½fm->matchÖÐ
-          * Èç¹û´æÔÚ¶à¸öoxmµÄ»°£¬Ò²»áÍ¬Ê±½âÎö³öÀ´µÄ£¬¶øÇÒËùÓÐµÄ
-          * oxm×öÎªÒ»¸öflowÁ÷½á¹¹
+         /* èŽ·å–flow_modä¸­çš„matchæ•°æ®èµ‹å€¼åˆ°fm->matchä¸­
+          * å¦‚æžœå­˜åœ¨å¤šä¸ªoxmçš„è¯ï¼Œä¹Ÿä¼šåŒæ—¶è§£æžå‡ºæ¥çš„ï¼Œè€Œä¸”æ‰€æœ‰çš„
+          * oxmåšä¸ºä¸€ä¸ªflowæµç»“æž„
           */
         error = ofputil_pull_ofp11_match(&b, &fm->match, NULL);
         if (error) {
@@ -1727,7 +1727,7 @@ ofputil_decode_flow_mod(struct ofputil_flow_mod *fm,
         }
 
         /* Translate the message. */
-        fm->priority = ntohs(ofm->priority); /* ÓÅÏÈ¼¶ */
+        fm->priority = ntohs(ofm->priority); /* ä¼˜å…ˆçº§ */
         if (ofm->command == OFPFC_ADD
             || (oh->version == OFP11_VERSION
                 && (ofm->command == OFPFC_MODIFY ||
@@ -1844,7 +1844,7 @@ ofputil_decode_flow_mod(struct ofputil_flow_mod *fm,
         fm->modify_cookie = fm->new_cookie != OVS_BE64_MAX;
         if (protocol & OFPUTIL_P_TID) {
             fm->command = command & 0xff;
-            fm->table_id = command >> 8; /* ÐèÒª²Ù×ÝµÄ±íµÄid */
+            fm->table_id = command >> 8; /* éœ€è¦æ“çºµçš„è¡¨çš„id */
         } else {
             if (command > 0xff) {
                 VLOG_WARN_RL(&bad_ofmsg_rl, "flow_mod has explicit table_id "
@@ -1858,7 +1858,7 @@ ofputil_decode_flow_mod(struct ofputil_flow_mod *fm,
     if (fm->command > OFPFC_DELETE_STRICT) {
         return OFPERR_OFPFMFC_BAD_COMMAND;
     }
-    /* ½âÎöinstruction×Ö¶Î,½âÎöµÄ½á¹û·ÅÈëofpactsÕâ¸ö½á¹¹ÖÐ */
+    /* è§£æžinstructionå­—æ®µ,è§£æžçš„ç»“æžœæ”¾å…¥ofpactsè¿™ä¸ªç»“æž„ä¸­ */
     error = ofpacts_pull_openflow_instructions(&b, b.size,
                                                oh->version, ofpacts);
     if (error) {

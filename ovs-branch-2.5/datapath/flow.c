@@ -465,7 +465,7 @@ static int key_extract(struct sk_buff *skb, struct sw_flow_key *key)
 
 	/* Link layer.  We are guaranteed to have at least the 14 byte Ethernet
 	 * header in the linear data area.
-	 * Êı¾İÁ´Â·²ã
+	 * æ•°æ®é“¾è·¯å±‚
 	 */
 	eth = eth_hdr(skb);
 	ether_addr_copy(key->eth.src, eth->h_source);
@@ -483,7 +483,7 @@ static int key_extract(struct sk_buff *skb, struct sw_flow_key *key)
 		if (unlikely(parse_vlan(skb, key)))
 			return -ENOMEM;
 
-	key->eth.type = parse_ethertype(skb); /* ½âÎö°üµÄÀàĞÍ */
+	key->eth.type = parse_ethertype(skb); /* è§£æåŒ…çš„ç±»å‹ */
 	if (unlikely(key->eth.type == htons(0)))
 		return -ENOMEM;
 
@@ -492,9 +492,9 @@ static int key_extract(struct sk_buff *skb, struct sw_flow_key *key)
 	__skb_push(skb, skb->data - skb_mac_header(skb));
 
 	/* Network layer.
-	 * ÍøÂç²ã
+	 * ç½‘ç»œå±‚
      */
-	if (key->eth.type == htons(ETH_P_IP)) { /* ÅĞ¶ÏÊÇ·ñÎªipÊı¾İ°ü */
+	if (key->eth.type == htons(ETH_P_IP)) { /* åˆ¤æ–­æ˜¯å¦ä¸ºipæ•°æ®åŒ… */
 		struct iphdr *nh;
 		__be16 offset;
 
@@ -529,7 +529,7 @@ static int key_extract(struct sk_buff *skb, struct sw_flow_key *key)
 			key->ip.frag = OVS_FRAG_TYPE_NONE;
 
 		/* Transport layer.
-		 * ´«Êä²ã
+		 * ä¼ è¾“å±‚
          */
 		if (key->ip.proto == IPPROTO_TCP) {
 			if (tcphdr_ok(skb)) {
@@ -572,7 +572,7 @@ static int key_extract(struct sk_buff *skb, struct sw_flow_key *key)
 		}
 
 	} else if (key->eth.type == htons(ETH_P_ARP) ||
-		   key->eth.type == htons(ETH_P_RARP)) { /* arp°ü */
+		   key->eth.type == htons(ETH_P_RARP)) { /* arpåŒ… */
 		struct arp_eth_header *arp;
 		bool arp_available = arphdr_ok(skb);
 
@@ -690,7 +690,7 @@ int ovs_flow_key_update(struct sk_buff *skb, struct sw_flow_key *key)
 	return key_extract(skb, key);
 }
 
-/* ´ÓÊı¾İ°üÖĞ³éÈ¡³ökeyµÄÄÚÈİ */
+/* ä»æ•°æ®åŒ…ä¸­æŠ½å–å‡ºkeyçš„å†…å®¹ */
 int ovs_flow_key_extract(const struct ip_tunnel_info *tun_info,
 			 struct sk_buff *skb, struct sw_flow_key *key)
 {

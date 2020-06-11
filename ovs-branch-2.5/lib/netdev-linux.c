@@ -230,11 +230,11 @@ enum {
 };
 
 /* Traffic control. */
-/* Á÷Á¿¿ØÖÆ */
+/* æµé‡æ§åˆ¶ */
 
 /* An instance of a traffic control class.  Always associated with a particular
  * network device.
- * Á÷Á¿¿ØÖÆÀàµÄÒ»¸öÊµÀı,×ÜÊÇºÍÒ»¸öÌØ¶¨µÄÍøÂçÉè±¸Ïà¹ØÁª
+ * æµé‡æ§åˆ¶ç±»çš„ä¸€ä¸ªå®ä¾‹,æ€»æ˜¯å’Œä¸€ä¸ªç‰¹å®šçš„ç½‘ç»œè®¾å¤‡ç›¸å…³è”
  * Each TC implementation subclasses this with whatever additional data it
  * needs. 
  */
@@ -248,7 +248,7 @@ struct tc {
 #define TC_INITIALIZER(TC, OPS) { OPS, HMAP_INITIALIZER(&(TC)->queues) }
 
 /* One traffic control queue.
- * Á÷Á¿¿ØÖÆ¶ÓÁĞ
+ * æµé‡æ§åˆ¶é˜Ÿåˆ—
  *
  * Each TC implementation subclasses this with whatever additional data it
  * needs.
@@ -285,8 +285,8 @@ struct tc_ops {
      * that the current qdisc is the default; that is, there is no need for it
      * to delete the current qdisc before installing itself.
      *
-     * ÔÚÍøÂçÉè±¸ÉÏ°²×°´ËTCÀà¡£´Ëº¯ÊıµÄÊµÏÖÓ¦¸Ãµ÷ÓÃnetlinkÏà¹Øº¯Êı£¬¸ù¾İdetails
-     * Éè¶¨ºÃÏà¹ØµÄqdisc
+     * åœ¨ç½‘ç»œè®¾å¤‡ä¸Šå®‰è£…æ­¤TCç±»ã€‚æ­¤å‡½æ•°çš„å®ç°åº”è¯¥è°ƒç”¨netlinkç›¸å…³å‡½æ•°ï¼Œæ ¹æ®details
+     * è®¾å®šå¥½ç›¸å…³çš„qdisc
      * The contents of 'details' should be documented as valid for 'ovs_name'
      * in the "other_config" column in the "QoS" table in vswitchd/vswitch.xml
      * (which is built as ovs-vswitchd.conf.db(8)).
@@ -303,8 +303,8 @@ struct tc_ops {
     /* Called when the netdev code determines (through a Netlink query) that
      * this TC class's qdisc is installed on 'netdev', but we didn't install
      * it ourselves and so don't know any of the details.
-     * µ÷ÓÃµÄÊ±»úÊÇÕâÑùµÄ,Í¨¹ınetlink²éÑ¯¿ÉÖª£¬qdiscÒÑ¾­±»°²×°ÉÏÁË,µ«ÊÇ²¢·ÇÎÒÃÇ×Ô¼º
-     * °²×°µÄ£¬¶øÇÒÎÒÃÇÒ²²»ÖªµÀËüÃÇµÄÏà¹ØÏ¸½Ú
+     * è°ƒç”¨çš„æ—¶æœºæ˜¯è¿™æ ·çš„,é€šè¿‡netlinkæŸ¥è¯¢å¯çŸ¥ï¼Œqdiscå·²ç»è¢«å®‰è£…ä¸Šäº†,ä½†æ˜¯å¹¶éæˆ‘ä»¬è‡ªå·±
+     * å®‰è£…çš„ï¼Œè€Œä¸”æˆ‘ä»¬ä¹Ÿä¸çŸ¥é“å®ƒä»¬çš„ç›¸å…³ç»†èŠ‚
      *
      * 'nlmsg' is the kernel reply to a RTM_GETQDISC Netlink message for
      * 'netdev'.  The TCA_KIND attribute of 'nlmsg' is 'linux_name'.  The
@@ -331,7 +331,7 @@ struct tc_ops {
     void (*tc_destroy)(struct tc *tc);
 
     /* Retrieves details of 'netdev->tc' configuration into 'details'.
-     * »ñÈ¡ÍøÂçÉè±¸µÄqdiscĞÅÏ¢£¬½«Æä·ÅÈëdetailsÖĞ
+     * è·å–ç½‘ç»œè®¾å¤‡çš„qdiscä¿¡æ¯ï¼Œå°†å…¶æ”¾å…¥detailsä¸­
      *
      * The implementation should not need to perform any Netlink calls, because
      * the 'tc_install' or 'tc_load' that instantiated 'netdev->tc' should have
@@ -416,7 +416,7 @@ struct tc_ops {
                             netdev_dump_queue_stats_cb *cb, void *aux);
 };
 
-/* ³õÊ¼»¯Á÷Á¿¿ØÖÆÀà
+/* åˆå§‹åŒ–æµé‡æ§åˆ¶ç±»
  */
 static void
 tc_init(struct tc *tc, const struct tc_ops *ops)
@@ -821,7 +821,7 @@ netdev_linux_construct(struct netdev *netdev_)
  * situation we share a single file descriptor, and consequently
  * buffers, across all readers.  Therefore once data is read it will
  * be unavailable to other reads for tap devices. */
- /* ¹¹½¨Ò»¸ötapÉè±¸ */
+ /* æ„å»ºä¸€ä¸ªtapè®¾å¤‡ */
 static int
 netdev_linux_construct_tap(struct netdev *netdev_)
 {
@@ -834,7 +834,7 @@ netdev_linux_construct_tap(struct netdev *netdev_)
     netdev_linux_common_construct(netdev);
 
     /* Open tap device. */
-    netdev->tap_fd = open(tap_dev, O_RDWR); /* Ö±½Ó´ò¿ªtapÉè±¸ */
+    netdev->tap_fd = open(tap_dev, O_RDWR); /* ç›´æ¥æ‰“å¼€tapè®¾å¤‡ */
     if (netdev->tap_fd < 0) {
         error = errno;
         VLOG_WARN("opening \"%s\" failed: %s", tap_dev, ovs_strerror(error));
@@ -852,7 +852,7 @@ netdev_linux_construct_tap(struct netdev *netdev_)
     }
 
     /* Make non-blocking. */
-    /* ÉèÖÃ³É·Ç×èÈû */
+    /* è®¾ç½®æˆéé˜»å¡ */
     error = set_nonblocking(netdev->tap_fd);
     if (error) {
         goto error_close;
@@ -1739,7 +1739,7 @@ netdev_linux_get_stats(const struct netdev *netdev_,
 /* Retrieves current device stats for 'netdev-tap' netdev or
  * netdev-internal. */
 /*
- * »ñÈ¡tapÉè±¸µÄÊôĞÔ
+ * è·å–tapè®¾å¤‡çš„å±æ€§
  */
 static int
 netdev_tap_get_stats(const struct netdev *netdev_, struct netdev_stats *stats)
@@ -1750,7 +1750,7 @@ netdev_tap_get_stats(const struct netdev *netdev_, struct netdev_stats *stats)
 
     ovs_mutex_lock(&netdev->mutex);
     get_stats_via_vport(netdev_, stats);
-    /* Í¨¹ınetlinkÀ´»ñÈ¡Í³¼ÆĞÅÏ¢ */
+    /* é€šè¿‡netlinkæ¥è·å–ç»Ÿè®¡ä¿¡æ¯ */
     error = get_stats_via_netlink(netdev_, &dev_stats);
     if (error) {
         if (!netdev->vport_stats_error) {
@@ -1818,7 +1818,7 @@ netdev_internal_get_stats(const struct netdev *netdev_,
 }
                           
 /*
- * »ñÈ¡Éè±¸ËùÖ§³ÖµÄÊôĞÔ
+ * è·å–è®¾å¤‡æ‰€æ”¯æŒçš„å±æ€§
  */
 static void
 netdev_linux_read_features(struct netdev_linux *netdev)
@@ -2001,7 +2001,7 @@ netdev_linux_get_features(const struct netdev *netdev_,
 }
 
 /* Set the features advertised by 'netdev' to 'advertise'. 
- * ¸øÍø¿¨ÉèÖÃÊôĞÔ
+ * ç»™ç½‘å¡è®¾ç½®å±æ€§
  */
 static int
 netdev_linux_set_advertisements(struct netdev *netdev_,
@@ -3640,7 +3640,7 @@ htb_get__(const struct netdev *netdev_)
 }
 
 /*
- * Ö±½Ó½«qdiscÏà¹Ø½á¹¹¹Ò½ÓÔÚnetdevÉÏÃæ
+ * ç›´æ¥å°†qdiscç›¸å…³ç»“æ„æŒ‚æ¥åœ¨netdevä¸Šé¢
  */
 static void
 htb_install__(struct netdev *netdev_, uint64_t max_rate)
@@ -3658,7 +3658,7 @@ htb_install__(struct netdev *netdev_, uint64_t max_rate)
 /* Create an HTB qdisc.
  *
  * Equivalent to "tc qdisc add dev <dev> root handle 1: htb default 1".
- * µÈÍ¬ÓÚÖ´ĞĞ tc qdisc add dev <dev> root handle 1: htb default 1
+ * ç­‰åŒäºæ‰§è¡Œ tc qdisc add dev <dev> root handle 1: htb default 1
  */
 static int
 htb_setup_qdisc__(struct netdev *netdev)
@@ -3705,7 +3705,7 @@ htb_setup_class__(struct netdev *netdev, unsigned int handle,
     struct tcmsg *tcmsg;
     int error;
     int mtu;
-    /* »ñÈ¡mtuÖµ */
+    /* è·å–mtuå€¼ */
     error = netdev_linux_get_mtu__(netdev_linux_cast(netdev), &mtu);
     if (error) {
         VLOG_WARN_RL(&rl, "cannot set up HTB on device %s that lacks MTU",
@@ -3807,7 +3807,7 @@ htb_parse_tcmsg__(struct ofpbuf *tcmsg, unsigned int *queue_id,
 }
 
 /*
- * ½âÎöÏà¹ØµÄĞÅÏ¢
+ * è§£æç›¸å…³çš„ä¿¡æ¯
  */
 static void
 htb_parse_qdisc_details__(struct netdev *netdev_,
@@ -3896,7 +3896,7 @@ htb_query_class__(const struct netdev *netdev, unsigned int handle,
 }
 
 /*
- * ¸ù¾İdetailsµÄÏà¹ØĞÅÏ¢£¬ÉèÖÃÍøÂçÉè±¸µÄÁ÷Á¿¿ØÖÆÊôĞÔ
+ * æ ¹æ®detailsçš„ç›¸å…³ä¿¡æ¯ï¼Œè®¾ç½®ç½‘ç»œè®¾å¤‡çš„æµé‡æ§åˆ¶å±æ€§
  */
 static int
 htb_tc_install(struct netdev *netdev, const struct smap *details)
@@ -3950,7 +3950,7 @@ htb_update_queue__(struct netdev *netdev, unsigned int queue_id,
 }
 
 /*
- * Í¨¹ınetlink²éÑ¯qdiscµÄÏà¹ØĞÅÏ¢
+ * é€šè¿‡netlinkæŸ¥è¯¢qdiscçš„ç›¸å…³ä¿¡æ¯
  */
 static int
 htb_tc_load(struct netdev *netdev, struct ofpbuf *nlmsg OVS_UNUSED)
@@ -3962,7 +3962,7 @@ htb_tc_load(struct netdev *netdev, struct ofpbuf *nlmsg OVS_UNUSED)
     /* Get qdisc options. */
     hc.max_rate = 0;
     htb_query_class__(netdev, tc_make_handle(1, 0xfffe), 0, &hc, NULL);
-    /* ²éÑ¯µ½ÁËÖ®ºó,½«Ïà¹ØĞÅÏ¢¹ÒÔØµ½Éè±¸ÉÏ */
+    /* æŸ¥è¯¢åˆ°äº†ä¹‹å,å°†ç›¸å…³ä¿¡æ¯æŒ‚è½½åˆ°è®¾å¤‡ä¸Š */
     htb_install__(netdev, hc.max_rate);
 
     /* Get queues. */
@@ -4102,7 +4102,7 @@ htb_class_dump_stats(const struct netdev *netdev OVS_UNUSED,
     return 0;
 }
 
-/* ¿ÉÒÔ²ÎÕÕÒ»ÏÂÏà¹ØµÄÁ÷Á¿¿ØÖÆÊÇÈçºÎÊµÏÖµÄ */
+/* å¯ä»¥å‚ç…§ä¸€ä¸‹ç›¸å…³çš„æµé‡æ§åˆ¶æ˜¯å¦‚ä½•å®ç°çš„ */
 static const struct tc_ops tc_ops_htb = {
     "htb",                      /* linux_name */
     "linux-htb",                /* ovs_name */
@@ -5393,7 +5393,7 @@ netdev_linux_ethtool_set_flag(struct netdev *netdev, uint32_t flag,
 
     COVERAGE_INC(netdev_get_ethtool);
     memset(&evalue, 0, sizeof evalue);
-    /* Ê×ÏÈ»ñµÃÍø¿¨µÄflag */
+    /* é¦–å…ˆè·å¾—ç½‘å¡çš„flag */
     error = netdev_linux_do_ethtool(netdev_name,
                                     (struct ethtool_cmd *)&evalue,
                                     ETHTOOL_GFLAGS, "ETHTOOL_GFLAGS");
@@ -5402,12 +5402,12 @@ netdev_linux_ethtool_set_flag(struct netdev *netdev, uint32_t flag,
     }
 
     COVERAGE_INC(netdev_set_ethtool);
-    /* È»ºóÌí¼ÓÉÏflag */
+    /* ç„¶åæ·»åŠ ä¸Šflag */
     new_flags = (evalue.data & ~flag) | (enable ? flag : 0);
     if (new_flags == evalue.data) {
         return 0;
     }
-    /* È»ºóÉè¶¨µ½Íø¿¨ÉÏÃæÈ¥ */
+    /* ç„¶åè®¾å®šåˆ°ç½‘å¡ä¸Šé¢å» */
     evalue.data = new_flags;
     error = netdev_linux_do_ethtool(netdev_name,
                                     (struct ethtool_cmd *)&evalue,
@@ -5418,7 +5418,7 @@ netdev_linux_ethtool_set_flag(struct netdev *netdev, uint32_t flag,
 
     COVERAGE_INC(netdev_get_ethtool);
     memset(&evalue, 0, sizeof evalue);
-    /* ×îºóÔÙÑéÖ¤Ò»°ÑÊÇ·ñÉèÖÃ³É¹¦ */
+    /* æœ€åå†éªŒè¯ä¸€æŠŠæ˜¯å¦è®¾ç½®æˆåŠŸ */
     error = netdev_linux_do_ethtool(netdev_name,
                                     (struct ethtool_cmd *)&evalue,
                                     ETHTOOL_GFLAGS, "ETHTOOL_GFLAGS");
@@ -5495,7 +5495,7 @@ netdev_stats_from_rtnl_link_stats64(struct netdev_stats *dst,
 }
 
 /*
- * Í¨¹ınetlink»úÖÆ£¬ÏòÄÚºË»ñÈ¡½Ó¿ÚµÄÍ³¼ÆĞÅÏ¢,±ÈÈçËµÊÕ·¢ÁË¶àÉÙ°ü
+ * é€šè¿‡netlinkæœºåˆ¶ï¼Œå‘å†…æ ¸è·å–æ¥å£çš„ç»Ÿè®¡ä¿¡æ¯,æ¯”å¦‚è¯´æ”¶å‘äº†å¤šå°‘åŒ…
  */
 static int
 get_stats_via_netlink(const struct netdev *netdev_, struct netdev_stats *stats)
@@ -5583,7 +5583,7 @@ do_get_ifindex(const char *netdev_name)
 }
 
 /*
- * »ñÈ¡¶Ë¿ÚµÄindex
+ * è·å–ç«¯å£çš„index
  */
 static int
 get_ifindex(const struct netdev *netdev_, int *ifindexp)
@@ -5608,7 +5608,7 @@ get_ifindex(const struct netdev *netdev_, int *ifindexp)
 }
 
 /*
- * »ñÈ¡¶Ë¿ÚµÄmacµØÖ·
+ * è·å–ç«¯å£çš„macåœ°å€
  */
 static int
 get_etheraddr(const char *netdev_name, struct eth_addr *ea)
@@ -5641,7 +5641,7 @@ get_etheraddr(const char *netdev_name, struct eth_addr *ea)
 }
 
 /*
- * ÉèÖÃ¶Ë¿ÚµÄmacµØÖ·ĞÅÏ¢
+ * è®¾ç½®ç«¯å£çš„macåœ°å€ä¿¡æ¯
  */
 static int
 set_etheraddr(const char *netdev_name, const struct eth_addr mac)
@@ -5674,7 +5674,7 @@ netdev_linux_do_ethtool(const char *name, struct ethtool_cmd *ecmd,
     ifr.ifr_data = (caddr_t) ecmd;
 
     ecmd->cmd = cmd;
-    /* »ñÈ¡ÍøÏßÁ¬½Ó×´Ì¬ */
+    /* è·å–ç½‘çº¿è¿æ¥çŠ¶æ€ */
     error = af_inet_ioctl(SIOCETHTOOL, &ifr);
     if (error) {
         if (error != EOPNOTSUPP) {
@@ -5689,7 +5689,7 @@ netdev_linux_do_ethtool(const char *name, struct ethtool_cmd *ecmd,
 }
 
 /*
- * »ñÈ¡ipv4µØÖ·
+ * è·å–ipv4åœ°å€
  */
 static int
 netdev_linux_get_ipv4(const struct netdev *netdev, struct in_addr *ip,

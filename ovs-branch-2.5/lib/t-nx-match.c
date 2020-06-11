@@ -1,7 +1,7 @@
 /* Generated automatically; do not modify!    "-*- buffer-read-only: t -*- */
 
 /*
- * ÕâÀïÖ÷Òª¶¨ÒåÁË¸÷ÖÖÆ¥ÅäÏî
+ * è¿™é‡Œä¸»è¦å®šä¹‰äº†å„ç§åŒ¹é…é¡¹
  */
 
 
@@ -12,16 +12,16 @@
  ((uint64_t) (LENGTH) << 32) |                                    \
  (VENDOR))
 
-/* NXM_HEADERÖ÷Òª¹¹½¨Ò»¸önxmÍ·²¿
+/* NXM_HEADERä¸»è¦æ„å»ºä¸€ä¸ªnxmå¤´éƒ¨
  */
 
-/* ÏÂÃæµÄnfÊÇnxm_fieldÀàĞÍµÄ,½á¹¹¶¨ÒåÈçÏÂ */ 
+/* ä¸‹é¢çš„nfæ˜¯nxm_fieldç±»å‹çš„,ç»“æ„å®šä¹‰å¦‚ä¸‹ */ 
 struct nxm_field {
     uint64_t header;
     enum ofp_version version;
     const char *name;           /* e.g. "NXM_OF_IN_PORT". */
 
-    enum mf_field_id id; /* Æ¥Åä×Ö¶Îid */
+    enum mf_field_id id; /* åŒ¹é…å­—æ®µid */
 };
 static struct nxm_field_index all_nxm_fields[] = {
 { .nf = { NXM_HEADER(0x0,0x1,35,0,4), 0, "NXM_NX_DP_HASH", MFF_DP_HASH } },

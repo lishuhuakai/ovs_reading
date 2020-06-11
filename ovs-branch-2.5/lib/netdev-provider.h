@@ -35,14 +35,14 @@ extern "C" {
 #define NETDEV_NUMA_UNSPEC OVS_NUMA_UNSPEC
 
 /* A network device (e.g. an Ethernet device).
- * ÍøÂçÉè±¸
+ * ç½‘ç»œè®¾å¤‡
  * Network device implementations may read these members but should not modify
  * them. */
 struct netdev {
     /* The following do not change during the lifetime of a struct netdev. */
-    char *name;                         /* Name of network device. ÍøÂçÉè±¸Ãû³Æ*/
+    char *name;                         /* Name of network device. ç½‘ç»œè®¾å¤‡åç§°*/
     const struct netdev_class *netdev_class; /* Functions to control
-                                                this device.  ²Ù¿ØÍøÂçÉè±¸µÄº¯Êı*/
+                                                this device.  æ“æ§ç½‘ç»œè®¾å¤‡çš„å‡½æ•°*/
 
     /* A sequence number which indicates changes in one of 'netdev''s
      * properties.   It must be nonzero so that users have a value which
@@ -61,7 +61,7 @@ struct netdev {
 };
 
 /*
- * ÍøÂçÉè±¸µÄĞòÁĞºÅ·¢ÉúÁË¸Ä±ä
+ * ç½‘ç»œè®¾å¤‡çš„åºåˆ—å·å‘ç”Ÿäº†æ”¹å˜
  */
 static void
 netdev_change_seq_changed(const struct netdev *netdev_)
@@ -83,10 +83,10 @@ void netdev_get_devices(const struct netdev_class *,
 struct netdev **netdev_get_vports(size_t *size);
 
 /* A data structure for capturing packets received by a network device.
- * ÓÃÓÚ²¶×½´ÓÍøÂçÉè±¸ÖĞ½ÓÊÕµÄ°üµÄÊı¾İ½á¹¹
+ * ç”¨äºæ•æ‰ä»ç½‘ç»œè®¾å¤‡ä¸­æ¥æ”¶çš„åŒ…çš„æ•°æ®ç»“æ„
  * Network device implementations may read these members but should not modify
  * them.
- * ÍøÂçÉè±¸µÄÊµÏÖ¿ÉÒÔ¶ÁËüÃÇ£¬µ«ÊÇ²»Òª¸ü¸ÄËûÃÇ.
+ * ç½‘ç»œè®¾å¤‡çš„å®ç°å¯ä»¥è¯»å®ƒä»¬ï¼Œä½†æ˜¯ä¸è¦æ›´æ”¹ä»–ä»¬.
  * None of these members change during the lifetime of a struct netdev_rxq. */
 struct netdev_rxq {
     struct netdev *netdev;      /* Owns a reference to the netdev. */
@@ -197,12 +197,12 @@ struct netdev *netdev_rxq_get_netdev(const struct netdev_rxq *);
  * described in detail in seq.h. */
 struct netdev_class {
     /* Type of netdevs in this class, e.g. "system", "tap", "gre", etc.
-     * ÍøÂçÉè±¸µÄÀàĞÍ
+     * ç½‘ç»œè®¾å¤‡çš„ç±»å‹
      * One of the providers should supply a "system" type, since this is
      * the type assumed if no type is specified when opening a netdev.
      * The "system" type corresponds to an existing network device on
      * the system.
-     * system ¶ÔÓ¦×ÅÒ»¸öÒÑ¾­´æÔÚÓÚÏµÍ³ÉÏµÄÍøÂçÉè±¸
+     * system å¯¹åº”ç€ä¸€ä¸ªå·²ç»å­˜åœ¨äºç³»ç»Ÿä¸Šçš„ç½‘ç»œè®¾å¤‡
      */
     const char *type;
 
@@ -242,20 +242,20 @@ struct netdev_class {
 
     /* Fetches the device 'netdev''s configuration, storing it in 'args'.
      * The caller owns 'args' and pre-initializes it to an empty smap.
-     * »ñÈ¡ÍøÂçÉè±¸µÄÅäÖÃ
+     * è·å–ç½‘ç»œè®¾å¤‡çš„é…ç½®
      * If this netdev class does not have any configuration options, this may
      * be a null pointer. */
     int (*get_config)(const struct netdev *netdev, struct smap *args);
 
     /* Changes the device 'netdev''s configuration to 'args'.
-     * ¸Ä±äÍøÂçÉè±¸µÄÅäÖÃ
+     * æ”¹å˜ç½‘ç»œè®¾å¤‡çš„é…ç½®
      * If this netdev class does not support configuration, this may be a null
      * pointer. */
     int (*set_config)(struct netdev *netdev, const struct smap *args);
 
     /* Returns the tunnel configuration of 'netdev'.  If 'netdev' is
      * not a tunnel, returns null.
-     * ·µ»ØÍøÂçÉè±¸µÄtunnelÉèÖÃ
+     * è¿”å›ç½‘ç»œè®¾å¤‡çš„tunnelè®¾ç½®
      * If this function would always return null, it may be null instead. */
     const struct netdev_tunnel_config *
         (*get_tunnel_config)(const struct netdev *netdev);
@@ -302,12 +302,12 @@ struct netdev_class {
                       unsigned int n_rxq);
 
     /* Sends buffers on 'netdev'.
-     * ÔÚÍøÂçÉè±¸ÉÏ·¢°ü
+     * åœ¨ç½‘ç»œè®¾å¤‡ä¸Šå‘åŒ…
      * Returns 0 if successful (for every buffer), otherwise a positive errno
      * value.  Returns EAGAIN without blocking if one or more packets cannot be
      * queued immediately. Returns EMSGSIZE if a partial packet was transmitted
      * or if a packet is too big or too small to transmit on the device.
-     * Èç¹û³É¹¦µÄ»°£¬·µ»Ø0£¬·ñÔòÊÇÒ»¸öÕıµÄ´íÎóÖµ
+     * å¦‚æœæˆåŠŸçš„è¯ï¼Œè¿”å›0ï¼Œå¦åˆ™æ˜¯ä¸€ä¸ªæ­£çš„é”™è¯¯å€¼
      * If the function returns a non-zero value, some of the packets might have
      * been sent anyway.
      *
@@ -371,7 +371,7 @@ struct netdev_class {
 
     /* Returns the ifindex of 'netdev', if successful, as a positive number.
      * On failure, returns a negative errno value.
-     * »ñµÃÍøÂçÉè±¸µÄË÷ÒıºÅ
+     * è·å¾—ç½‘ç»œè®¾å¤‡çš„ç´¢å¼•å·
      * The desired semantics of the ifindex value are a combination of those
      * specified by POSIX for if_nametoindex() and by SNMP for ifIndex.  An
      * ifindex value should be unique within a host and remain stable at least

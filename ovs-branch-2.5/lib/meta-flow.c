@@ -81,7 +81,7 @@ mf_from_name(const char *name)
 }
 
 /*
- * ÕâÀïÊµ¼ÊÉÏ¾ÍÊÇ³õÊ¼»¯ÁËÒ»¸öhash±í£¬±ãÓÚÍ¨¹ýfieldµÄÃû³ÆÕÒµ½ËüÃÇµÄ¹æ·¶
+ * è¿™é‡Œå®žé™…ä¸Šå°±æ˜¯åˆå§‹åŒ–äº†ä¸€ä¸ªhashè¡¨ï¼Œä¾¿äºŽé€šè¿‡fieldçš„åç§°æ‰¾åˆ°å®ƒä»¬çš„è§„èŒƒ
  */
 static void
 nxm_do_init(void)
@@ -851,7 +851,7 @@ mf_get_value(const struct mf_field *mf, const struct flow *flow,
  * 'value'.  The caller is responsible for ensuring that 'match' meets 'mf''s
  * prerequisites.
  *
- * ÕâÀï¸ù¾ÝÆ¥ÅäÏîµÄÄÚÈÝ½øÐÐÕýÈ·µÄ¸³Öµ²Ù×÷
+ * è¿™é‡Œæ ¹æ®åŒ¹é…é¡¹çš„å†…å®¹è¿›è¡Œæ­£ç¡®çš„èµ‹å€¼æ“ä½œ
  * If non-NULL, 'err_str' returns a malloc'ed string describing any errors
  * with the request or NULL if there is no error. The caller is reponsible
  * for freeing the string.
@@ -865,7 +865,7 @@ mf_set_value(const struct mf_field *mf,
     }
 
     switch (mf->id) {
-    case MFF_DP_HASH: /* 32Î»µÄdatapath hashÖµ */
+    case MFF_DP_HASH: /* 32ä½çš„datapath hashå€¼ */
         match_set_dp_hash(match, ntohl(value->be32));
         break;
     case MFF_RECIRC_ID:
@@ -1756,7 +1756,7 @@ mf_set(const struct mf_field *mf,
        const union mf_value *value, const union mf_value *mask,
        struct match *match, char **err_str)
 {
-    /* Èç¹û²»´æÔÚmask,»òÕßËµmaskÃ»Ê²Ã´ÓÃ´¦ */
+    /* å¦‚æžœä¸å­˜åœ¨mask,æˆ–è€…è¯´maskæ²¡ä»€ä¹ˆç”¨å¤„ */
     if (!mask || is_all_ones(mask, mf->n_bytes)) {
         mf_set_value(mf, value, match, err_str);
         return mf->usable_protocols_exact;
@@ -1771,7 +1771,7 @@ mf_set(const struct mf_field *mf,
     if (err_str) {
         *err_str = NULL;
     }
-    /* ÏÂÃæ£¬maskÊÇÓÐÐ§µÄ */
+    /* ä¸‹é¢ï¼Œmaskæ˜¯æœ‰æ•ˆçš„ */
     switch (mf->id) {
     case MFF_CT_ZONE:
     case MFF_RECIRC_ID:

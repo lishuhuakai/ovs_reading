@@ -68,12 +68,12 @@ static struct vlog_rate_limit err_rl = VLOG_RATE_LIMIT_INIT(60, 5);
 #define DEFAULT_TTL 64
 
 struct netdev_vport {
-    struct netdev up; /* ËùÊôµÄÍøÂçÉè±¸ */
+    struct netdev up; /* æ‰€å±çš„ç½‘ç»œè®¾å¤‡ */
 
     /* Protects all members below. */
     struct ovs_mutex mutex;
 
-    struct eth_addr etheraddr; /* ÒÔÌ«ÍøµØÖ· */
+    struct eth_addr etheraddr; /* ä»¥å¤ªç½‘åœ°å€ */
     struct netdev_stats stats;
 
     /* Tunnels. */
@@ -241,16 +241,16 @@ netdev_vport_alloc(void)
 }
 
 /*
- * ´´½¨Ò»¸övport
+ * åˆ›å»ºä¸€ä¸ªvport
  */
 static int
 netdev_vport_construct(struct netdev *netdev_)
 {
     struct netdev_vport *dev = netdev_vport_cast(netdev_);
-    const char *type = netdev_get_type(netdev_); /* »ñÈ¡Éè±¸À×Ïµ */
+    const char *type = netdev_get_type(netdev_); /* è·å–è®¾å¤‡é›·ç³» */
 
     ovs_mutex_init(&dev->mutex);
-    eth_addr_random(&dev->etheraddr); /* ´´½¨Ëæ»úµÄmacµØÖ· */
+    eth_addr_random(&dev->etheraddr); /* åˆ›å»ºéšæœºçš„macåœ°å€ */
 
     /* Add a default destination port for tunnel ports if none specified. */
     if (!strcmp(type, "geneve")) {
@@ -285,7 +285,7 @@ netdev_vport_dealloc(struct netdev *netdev_)
 }
 
 /*
- * Éè¶¨macµØÖ·
+ * è®¾å®šmacåœ°å€
  */
 static int
 netdev_vport_set_etheraddr(struct netdev *netdev_, const struct eth_addr mac)
@@ -383,7 +383,7 @@ netdev_vport_run(void)
     seq = route_table_get_change_seq();
     if (rt_change_seqno != seq) {
         rt_change_seqno = seq;
-        netdev_vport_route_changed(); /* Â·ÓÉ·¢ÉúÁË¸ü¸Ä */
+        netdev_vport_route_changed(); /* è·¯ç”±å‘ç”Ÿäº†æ›´æ”¹ */
     }
 }
 
@@ -1596,7 +1596,7 @@ netdev_vport_tunnel_register(void)
 }
 
 /*
- * ×¢²ávportµÄÏà¹Øº¯Êı
+ * æ³¨å†Œvportçš„ç›¸å…³å‡½æ•°
  */
 void
 netdev_vport_patch_register(void)

@@ -74,7 +74,7 @@ struct in_band_remote {
 };
 
 /* What to do to an in_band_rule.
- * Ìí¼Ó´øÄÚ¹æÔòµÄ·½Ê½
+ * æ·»åŠ å¸¦å†…è§„åˆ™çš„æ–¹å¼
  */
 enum in_band_op {
     ADD,                       /* Add the rule to ofproto's flow table. */
@@ -89,7 +89,7 @@ struct in_band_rule {
     enum in_band_op op;
 };
 
-/* ´øÄÚ¿ØÖÆ */
+/* å¸¦å†…æ§åˆ¶ */
 struct in_band {
     struct ofproto *ofproto;
     int queue_id;

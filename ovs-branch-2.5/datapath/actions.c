@@ -1039,7 +1039,7 @@ static int execute_recirc(struct datapath *dp, struct sk_buff *skb,
 }
 
 /* Execute a list of actions against 'skb'.
- * ¸ù¾İskb£¬Ö´ĞĞÏàÓ¦µÄaction
+ * æ ¹æ®skbï¼Œæ‰§è¡Œç›¸åº”çš„action
  */
 static int do_execute_actions(struct datapath *dp, struct sk_buff *skb,
 			      struct sw_flow_key *key,
@@ -1068,7 +1068,7 @@ static int do_execute_actions(struct datapath *dp, struct sk_buff *skb,
 		}
 
 		switch (nla_type(a)) {
-		case OVS_ACTION_ATTR_OUTPUT: /* »ñÈ¡¶Ë¿ÚºÅ */
+		case OVS_ACTION_ATTR_OUTPUT: /* è·å–ç«¯å£å· */
 			prev_port = nla_get_u32(a);
 			break;
 
@@ -1088,7 +1088,7 @@ static int do_execute_actions(struct datapath *dp, struct sk_buff *skb,
 			err = pop_mpls(skb, key, nla_get_be16(a));
 			break;
 
-		case OVS_ACTION_ATTR_PUSH_VLAN: /* Ôö¼ÓvlanÍ· */
+		case OVS_ACTION_ATTR_PUSH_VLAN: /* å¢åŠ vlanå¤´ */
 			err = push_vlan(skb, key, nla_data(a));
 			break;
 
@@ -1211,7 +1211,7 @@ int ovs_execute_actions(struct datapath *dp, struct sk_buff *skb,
 
 int action_fifos_init(void)
 {
-    /* Ã¿¸öcpu¶¼·ÖÅäÒ»¸öÕâÑùµÄ½á¹¹ */
+    /* æ¯ä¸ªcpuéƒ½åˆ†é…ä¸€ä¸ªè¿™æ ·çš„ç»“æ„ */
 	action_fifos = alloc_percpu(struct action_fifo);
 	if (!action_fifos)
 		return -ENOMEM;

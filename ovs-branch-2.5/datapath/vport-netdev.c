@@ -38,7 +38,9 @@
 
 static struct vport_ops ovs_netdev_vport_ops;
 
-/* Must be called with rcu_read_lock. */
+/* Must be called with rcu_read_lock.
+ * @param skb æ¥æ”¶åˆ°çš„åŒ…
+ */
 void netdev_port_receive(struct sk_buff *skb, struct ip_tunnel_info *tun_info)
 {
 	struct vport *vport;
@@ -53,7 +55,7 @@ void netdev_port_receive(struct sk_buff *skb, struct ip_tunnel_info *tun_info)
 	/* Make our own copy of the packet.  Otherwise we will mangle the
 	 * packet for anyone who came before us (e.g. tcpdump via AF_PACKET).
 	 */
-	skb = skb_share_check(skb, GFP_ATOMIC); /* ¿½±´Ò»¸öÊı¾İ°ü */
+	skb = skb_share_check(skb, GFP_ATOMIC); /* æ‹·è´ä¸€ä¸ªæ•°æ®åŒ… */
 	if (unlikely(!skb))
 		return;
 
@@ -129,7 +131,7 @@ struct vport *ovs_netdev_link(struct vport *vport, const char *name)
 		goto error_free_vport;
 	}
 
-    /* ±£Ö¤vport²»ÊÇ±¾µØ»·»ØÉè±¸ */
+    /* ä¿è¯vportä¸æ˜¯æœ¬åœ°ç¯å›è®¾å¤‡ */
 	if (vport->dev->flags & IFF_LOOPBACK ||
 	    vport->dev->type != ARPHRD_ETHER ||
 	    ovs_is_internal_dev(vport->dev)) {
@@ -143,14 +145,14 @@ struct vport *ovs_netdev_link(struct vport *vport, const char *name)
 	if (err)
 		goto error_unlock;
 
-    /* ÕâÀï×¢²áÍøÂçÉè±¸µÄÊÕ°üº¯Êı */
+    /* è¿™é‡Œæ³¨å†Œç½‘ç»œè®¾å¤‡çš„æ”¶åŒ…å‡½æ•° */
 	err = netdev_rx_handler_register(vport->dev, netdev_frame_hook,
 					 vport);
 	if (err)
 		goto error_master_upper_dev_unlink;
 
 	dev_disable_lro(vport->dev);
-    /* ½«vport¶ÔÓ¦µÄÍøÂçÉè±¸Éè¶¨Îª»ìÔÓÄ£Ê½ */
+    /* å°†vportå¯¹åº”çš„ç½‘ç»œè®¾å¤‡è®¾å®šä¸ºæ··æ‚æ¨¡å¼ */
 	dev_set_promiscuity(vport->dev, 1);
 	vport->dev->priv_flags |= IFF_OVS_DATAPATH;
 	rtnl_unlock();
@@ -170,7 +172,7 @@ error_free_vport:
 EXPORT_SYMBOL_GPL(ovs_netdev_link);
 
 /*
- * ¸ù¾İ²ÎÊı´´½¨Ò»¸övport
+ * æ ¹æ®å‚æ•°åˆ›å»ºä¸€ä¸ªvport
  */
 static struct vport *netdev_create(const struct vport_parms *parms)
 {
@@ -235,7 +237,9 @@ void ovs_netdev_tunnel_destroy(struct vport *vport)
 }
 EXPORT_SYMBOL_GPL(ovs_netdev_tunnel_destroy);
 
-/* Returns null if this device is not attached to a datapath. */
+/* Returns null if this device is not attached to a datapath.
+ * æ‰¾åˆ°å¯¹åº”çš„vport
+ */
 struct vport *ovs_netdev_get_vport(struct net_device *dev)
 {
 #if defined HAVE_NETDEV_RX_HANDLER_REGISTER || \

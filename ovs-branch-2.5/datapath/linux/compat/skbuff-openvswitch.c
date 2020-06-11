@@ -237,7 +237,7 @@ int rpl_skb_vlan_push(struct sk_buff *skb, __be16 vlan_proto, u16 vlan_tci)
 			skb->csum = csum_add(skb->csum, csum_partial(skb->data
 					+ (2 * ETH_ALEN), VLAN_HLEN, 0));
 	}
-    /* Ôö¼Óvlan_protoºÍvlan_tciµ½skb½á¹¹ÖÐ */
+    /* å¢žåŠ vlan_protoå’Œvlan_tciåˆ°skbç»“æž„ä¸­ */
 	__vlan_hwaccel_put_tag(skb, vlan_proto, vlan_tci);
 	return 0;
 }

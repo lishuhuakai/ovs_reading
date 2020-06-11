@@ -78,7 +78,7 @@ VLOG_DEFINE_THIS_MODULE(dpif_netdev);
 DEFINE_STATIC_PER_THREAD_DATA(uint32_t, recirc_depth, 0)
 
 /* Configuration parameters. */
-enum { MAX_FLOWS = 65536 };     /* Á÷±íÖÐ×î´óµÄÁ÷±íÏîµÄ¸öÊý -- Maximum number of flows in flow table. */
+enum { MAX_FLOWS = 65536 };     /* æµè¡¨ä¸­æœ€å¤§çš„æµè¡¨é¡¹çš„ä¸ªæ•° -- Maximum number of flows in flow table. */
 
 /* Protects against changes to 'dp_netdevs'. */
 static struct ovs_mutex dp_netdev_mutex = OVS_MUTEX_INITIALIZER;
@@ -172,7 +172,7 @@ static bool dpcls_lookup(const struct dpcls *cls,
                          struct dpcls_rule **rules, size_t cnt);
 
 /* Datapath based on the network device interface from netdev.h.
- * »ùÓÚÍøÂçÉè±¸µÄdatapath
+ * åŸºäºŽç½‘ç»œè®¾å¤‡çš„datapath
  *
  * Thread-safety
  * =============
@@ -196,14 +196,14 @@ struct dp_netdev {
      *
      * Protected by RCU.  Take the mutex to add or remove ports. */
     struct ovs_mutex port_mutex;
-    struct cmap ports;      /* ¶Ë¿ÚÐÅÏ¢ */
+    struct cmap ports;      /* ç«¯å£ä¿¡æ¯ */
     struct seq *port_seq;       /* Incremented whenever a port changes. */
 
     /* Protects access to ofproto-dpif-upcall interface during revalidator
      * thread synchronization. */
-    struct fat_rwlock upcall_rwlock; /* ¶ÁÐ´Ëø */
+    struct fat_rwlock upcall_rwlock; /* è¯»å†™é” */
     upcall_callback *upcall_cb;  /* Callback function for executing upcalls. */
-    void *upcall_aux; /* ²ÎÊý */
+    void *upcall_aux; /* å‚æ•° */
 
     /* Callback function for notifying the purging of dp flows (during
      * reseting pmd deletion). */
@@ -246,12 +246,12 @@ enum pmd_cycles_counter_type {
 };
 
 /* A port in a netdev-based datapath.
- * Ò»¸ödp_netdev_port¶ÔÓ¦Ò»¸önetdev
- * Ò»¸ödp_netdev ÓÐ°üº¬ÓÐºÜ¶à dp_netdev_port
+ * ä¸€ä¸ªdp_netdev_portå¯¹åº”ä¸€ä¸ªnetdev
+ * ä¸€ä¸ªdp_netdev æœ‰åŒ…å«æœ‰å¾ˆå¤š dp_netdev_port
  */
 struct dp_netdev_port {
-    odp_port_t port_no;     /* ¶Ë¿ÚºÅ */
-    struct netdev *netdev; /* ¶ÔÓ¦µÄÍøÂçÉè±¸ */
+    odp_port_t port_no;     /* ç«¯å£å· */
+    struct netdev *netdev; /* å¯¹åº”çš„ç½‘ç»œè®¾å¤‡ */
     struct cmap_node node;      /* Node in dp_netdev's 'ports'. */
     struct netdev_saved_flags *sf;
     struct netdev_rxq **rxq;
@@ -456,8 +456,8 @@ struct dp_netdev_pmd_thread {
 #define PMD_INITIAL_SEQ 1
 
 /* Interface to netdev-based datapath.
- * Éè±¸¼¶±ðµÄdatapath
- * Õâ¸öÊµ¼ÊÉÏÊÇdpifµÄ×ÓÀà
+ * è®¾å¤‡çº§åˆ«çš„datapath
+ * è¿™ä¸ªå®žé™…ä¸Šæ˜¯dpifçš„å­ç±»
  */
 struct dpif_netdev {
     struct dpif dpif;
@@ -769,7 +769,7 @@ dpif_netdev_pmd_info(struct unixctl_conn *conn, int argc, const char *argv[],
 
 
 /*
- * ³õÊ¼»¯interface
+ * åˆå§‹åŒ–interface
  */
 static int
 dpif_netdev_init(void)
@@ -791,7 +791,7 @@ dpif_netdev_init(void)
 }
 
 /*
- * Ã¶¾ÙËùÓÐÊ¹ÓÃÁË´ËclassµÄnetdev
+ * æžšä¸¾æ‰€æœ‰ä½¿ç”¨äº†æ­¤classçš„netdev
  */
 static int
 dpif_netdev_enumerate(struct sset *all_dps,
@@ -807,7 +807,7 @@ dpif_netdev_enumerate(struct sset *all_dps,
              * If the class doesn't match, skip this dpif. */
              continue;
         }
-        sset_add(all_dps, node->name); /* ½«Ãû³Æ¼Ó½øÈ¥ */
+        sset_add(all_dps, node->name); /* å°†åç§°åŠ è¿›åŽ» */
     }
     ovs_mutex_unlock(&dp_netdev_mutex);
 
@@ -887,7 +887,7 @@ choose_port(struct dp_netdev *dp, const char *name)
 }
 
 /*
- * ´´½¨Ò»¸ödatapathÍøÂçÉè±¸
+ * åˆ›å»ºä¸€ä¸ªdatapathç½‘ç»œè®¾å¤‡
  */
 static int
 create_dp_netdev(const char *name, const struct dpif_class *class,
@@ -923,7 +923,7 @@ create_dp_netdev(const char *name, const struct dpif_class *class,
     dp->n_dpdk_rxqs = NR_QUEUE;
 
     ovs_mutex_lock(&dp->port_mutex);
-    /* Ìí¼ÓÒ»¸ö¶Ë¿Ú */
+    /* æ·»åŠ ä¸€ä¸ªç«¯å£ */
     error = do_add_port(dp, name, "internal", ODPP_LOCAL);
     ovs_mutex_unlock(&dp->port_mutex);
     if (error) {
@@ -937,9 +937,9 @@ create_dp_netdev(const char *name, const struct dpif_class *class,
 }
 
 
-/* ´ò¿ªnetdev£¬ÓÐ¿ÉÄÜnetdevÒÑ¾­´´½¨ÁË
- * @nsmr Éè±¸µÄÃû³Æ
- * @create ÊÇ·ñ´´½¨
+/* æ‰“å¼€netdevï¼Œæœ‰å¯èƒ½netdevå·²ç»åˆ›å»ºäº†
+ * @nsmr è®¾å¤‡çš„åç§°
+ * @create æ˜¯å¦åˆ›å»º
  */
 static int
 dpif_netdev_open(const struct dpif_class *class, const char *name,
@@ -950,7 +950,7 @@ dpif_netdev_open(const struct dpif_class *class, const char *name,
 
     ovs_mutex_lock(&dp_netdev_mutex);
     dp = shash_find_data(&dp_netdevs, name);
-    if (!dp) { /* Ã»ÓÐÕÒµ½µÄ»° */
+    if (!dp) { /* æ²¡æœ‰æ‰¾åˆ°çš„è¯ */
         error = create ? create_dp_netdev(name, class, &dp) : ENODEV;
     } else {
         error = (dp->class != class ? EINVAL
@@ -1112,7 +1112,7 @@ hash_port_no(odp_port_t port_no)
 }
 
 /*
- * Ö´ÐÐÌí¼Ó¶Ë¿ÚµÄ²Ù×÷
+ * æ‰§è¡Œæ·»åŠ ç«¯å£çš„æ“ä½œ
  */
 static int
 do_add_port(struct dp_netdev *dp, const char *devname, const char *type,
@@ -1133,7 +1133,7 @@ do_add_port(struct dp_netdev *dp, const char *devname, const char *type,
     }
 
     /* Open and validate network device. */
-    open_type = dpif_netdev_port_open_type(dp->class, type); /* ´ò¿ªºÎÖÖÀàÐÍµÄÍøÂçÉè±¸ */
+    open_type = dpif_netdev_port_open_type(dp->class, type); /* æ‰“å¼€ä½•ç§ç±»åž‹çš„ç½‘ç»œè®¾å¤‡ */
     error = netdev_open(devname, open_type, &netdev);
     if (error) {
         return error;
@@ -1165,7 +1165,7 @@ do_add_port(struct dp_netdev *dp, const char *devname, const char *type,
     }
     port = xzalloc(sizeof *port);
     port->port_no = port_no;
-    port->netdev = netdev;  /* ¼ÇÂ¼netdev */
+    port->netdev = netdev;  /* è®°å½•netdev */
     port->rxq = xmalloc(sizeof *port->rxq * netdev_n_rxq(netdev));
     port->type = xstrdup(type);
     for (i = 0; i < netdev_n_rxq(netdev); i++) {
@@ -1226,7 +1226,7 @@ do_add_port(struct dp_netdev *dp, const char *devname, const char *type,
 }
 
 /*
- * ÍùÉè±¸ÖÐÌí¼Ó¶Ë¿Ú
+ * å¾€è®¾å¤‡ä¸­æ·»åŠ ç«¯å£
  */
 static int
 dpif_netdev_port_add(struct dpif *dpif, struct netdev *netdev,
@@ -1249,7 +1249,7 @@ dpif_netdev_port_add(struct dpif *dpif, struct netdev *netdev,
     }
     if (!error) {
         *port_nop = port_no;
-        /* Ìí¼ÓÍøÂçÉè±¸ */
+        /* æ·»åŠ ç½‘ç»œè®¾å¤‡ */
         error = do_add_port(dp, dpif_port, netdev_get_type(netdev), port_no);
     }
     ovs_mutex_unlock(&dp->port_mutex);
@@ -1558,7 +1558,7 @@ dpif_netdev_port_dump_next(const struct dpif *dpif, void *state_,
                            struct dpif_port *dpif_port)
 {
     struct dp_netdev_port_state *state = state_;
-    struct dp_netdev *dp = get_dp_netdev(dpif); /* »ñÈ¡¶ÔÓ¦µÄÉè±¸ */
+    struct dp_netdev *dp = get_dp_netdev(dpif); /* èŽ·å–å¯¹åº”çš„è®¾å¤‡ */
     struct cmap_node *node;
     int retval;
 
@@ -1569,7 +1569,7 @@ dpif_netdev_port_dump_next(const struct dpif *dpif, void *state_,
         port = CONTAINER_OF(node, struct dp_netdev_port, node);
 
         free(state->name);
-        state->name = xstrdup(netdev_get_name(port->netdev)); /* ¶Ë¿ÚµÄÃû³Æ */
+        state->name = xstrdup(netdev_get_name(port->netdev)); /* ç«¯å£çš„åç§° */
         dpif_port->name = state->name;
         dpif_port->type = port->type;
         dpif_port->port_no = port->port_no;

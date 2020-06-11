@@ -5233,7 +5233,7 @@ log_bad_action(const struct ofp_action_header *actions, size_t actions_len,
 }
 
 /*
- * ½âÎöaction,²¢½«½á¹û´æ´¢µ½ofpactsÀïÃæ
+ * è§£æaction,å¹¶å°†ç»“æœå­˜å‚¨åˆ°ofpactsé‡Œé¢
  */
 static enum ofperr
 ofpacts_decode(const void *actions, size_t actions_len,
@@ -5242,8 +5242,8 @@ ofpacts_decode(const void *actions, size_t actions_len,
     struct ofpbuf openflow;
 
     ofpbuf_use_const(&openflow, actions, actions_len);
-    while (openflow.size) { /* ÕâÀïÊµ¼ÊÉÏÊÇÔÚ²»¶ÏÑ­»·±éÀú */
-        /* »ñµÃactionµÄÍ·²¿ */
+    while (openflow.size) { /* è¿™é‡Œå®é™…ä¸Šæ˜¯åœ¨ä¸æ–­å¾ªç¯éå† */
+        /* è·å¾—actionçš„å¤´éƒ¨ */
         const struct ofp_action_header *action = openflow.data;
         enum ofp_raw_action_type raw;
         enum ofperr error;
@@ -5790,8 +5790,8 @@ instruction_is_valid(const struct ofp11_instruction *inst,
           (ITER) = instruction_next(ITER)))
 
 /*
- * ½âÎöÖ¸Áî×Ö¶Î
- * @inst ´ú±íÒ»¸öÖ¸Áî
+ * è§£ææŒ‡ä»¤å­—æ®µ
+ * @inst ä»£è¡¨ä¸€ä¸ªæŒ‡ä»¤
  */
 static enum ofperr
 decode_openflow11_instruction(const struct ofp11_instruction *inst,
@@ -5802,13 +5802,13 @@ decode_openflow11_instruction(const struct ofp11_instruction *inst,
     switch (inst->type) {
     case CONSTANT_HTONS(OFPIT11_EXPERIMENTER):
         return OFPERR_OFPBIC_BAD_EXPERIMENTER;
-        /* ÏÂÃæÖ÷ÒªÊ¹ÓÃºêÔÚ±à³Ì,¿ÉÒÔºêÕ¹¿ª
-         * ÒÔapply actionÎªÀı×Ó:
+        /* ä¸‹é¢ä¸»è¦ä½¿ç”¨å®åœ¨ç¼–ç¨‹,å¯ä»¥å®å±•å¼€
+         * ä»¥apply actionä¸ºä¾‹å­:
          *    case CONSTANT_HTONS(OFPIT11_APPLY_ACTIONS):
          *           if (true ? len >= sizeof(struct ofp11_instruction_actions) : 
                             len == sizeof(struct ofp11_instruction_actions))
          *           {
-         *                *type = OVSINST_OFPIT11_APPLY_ACTIONS;  #·µ»ØÃ¶¾Ù¶¨Òå
+         *                *type = OVSINST_OFPIT11_APPLY_ACTIONS;  #è¿”å›æšä¸¾å®šä¹‰
          *                 return (0);
          *           }
          */
@@ -5832,7 +5832,7 @@ OVS_INSTRUCTIONS
 }
 
 /*
- * ½âÎöÖ¸Áî×Ö¶Î
+ * è§£ææŒ‡ä»¤å­—æ®µ
  */
 static enum ofperr
 decode_openflow11_instructions(const struct ofp11_instruction insts[],
@@ -5843,7 +5843,7 @@ decode_openflow11_instructions(const struct ofp11_instruction insts[],
     size_t left;
 
     memset(out, 0, N_OVS_INSTRUCTIONS * sizeof *out);
-    INSTRUCTION_FOR_EACH (inst, left, insts, n_insts) { /* Ñ­»·±éÀú */
+    INSTRUCTION_FOR_EACH (inst, left, insts, n_insts) { /* å¾ªç¯éå† */
         enum ovs_instruction_type type;
         enum ofperr error;
 
@@ -5855,7 +5855,7 @@ decode_openflow11_instructions(const struct ofp11_instruction insts[],
         if (out[type]) {
             return OFPERR_OFPBIC_DUP_INST;
         }
-        out[type] = inst; /* ¼ÇÂ¼ÏÂinstruction */
+        out[type] = inst; /* è®°å½•ä¸‹instruction */
     }
 
     if (left) {
@@ -5876,7 +5876,7 @@ get_actions_from_instruction(const struct ofp11_instruction *inst,
 }
 
 /*
- * ½âÎöinstruction
+ * è§£æinstruction
  */
 enum ofperr
 ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
@@ -5896,7 +5896,7 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
     }
 
     ofpbuf_clear(ofpacts);
-    /* 8×Ö½Ú¶ÔÆë */
+    /* 8å­—èŠ‚å¯¹é½ */
     if (instructions_len % OFP11_INSTRUCTION_ALIGN != 0) {
         VLOG_WARN_RL(&rl, "OpenFlow message instructions length %u is not a "
                      "multiple of %d",
@@ -5914,11 +5914,11 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
         goto exit;
     }
     /*
-     * ½âÎöopenflowÖĞinstructions£¬²¢±£´æÔÚÖ¸ÕëÊı×éinstsÖĞ
-     * Õâ¸öº¯Êı½éÉÜÖØµã¡£ÎÒÃÇ·Åµ½ºóÃæ½øĞĞÏêÏ¸½âËµ£¡£¡
-     * ÕâÀïËµÒ»ÏÂinstsÕâ¸öÖ¸ÕëÊı×é£¬¼´Ã¿¸öÊı×éÔªËØ¶¼ÊÇÒ»¸öÖ¸Õë£¬Ö¸ÕëÀàĞÍ¾ÍÊÇ
-     * ±ê×¼instructionÍ·²¿£¬Æä´óĞ¡¹Ì¶¨ÊÇ6¡£ÕâÀïinsts¾ÍÊÇÉÏÃæ±í¸ñ£¬¾­¹ıÕâ¸öº¯Êı
-     * ´¦ÀíÖ®ºó¾Í»á°ÑÄ³Ò»¸öÊı×éµ¥ÔªÉèÖÃ³ÉÓĞĞ§µØÖ·¡£
+     * è§£æopenflowä¸­instructionsï¼Œå¹¶ä¿å­˜åœ¨æŒ‡é’ˆæ•°ç»„instsä¸­
+     * è¿™ä¸ªå‡½æ•°ä»‹ç»é‡ç‚¹ã€‚æˆ‘ä»¬æ”¾åˆ°åé¢è¿›è¡Œè¯¦ç»†è§£è¯´ï¼ï¼
+     * è¿™é‡Œè¯´ä¸€ä¸‹instsè¿™ä¸ªæŒ‡é’ˆæ•°ç»„ï¼Œå³æ¯ä¸ªæ•°ç»„å…ƒç´ éƒ½æ˜¯ä¸€ä¸ªæŒ‡é’ˆï¼ŒæŒ‡é’ˆç±»å‹å°±æ˜¯
+     * æ ‡å‡†instructionå¤´éƒ¨ï¼Œå…¶å¤§å°å›ºå®šæ˜¯6ã€‚è¿™é‡Œinstså°±æ˜¯ä¸Šé¢è¡¨æ ¼ï¼Œç»è¿‡è¿™ä¸ªå‡½æ•°
+     * å¤„ç†ä¹‹åå°±ä¼šæŠŠæŸä¸€ä¸ªæ•°ç»„å•å…ƒè®¾ç½®æˆæœ‰æ•ˆåœ°å€ã€‚
      */
     error = decode_openflow11_instructions(
         instructions, instructions_len / OFP11_INSTRUCTION_ALIGN,
@@ -5930,21 +5930,21 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
     if (insts[OVSINST_OFPIT13_METER]) {
         const struct ofp13_instruction_meter *oim;
         struct ofpact_meter *om;
-        /* ÕâÀïÃ²ËÆÃ»ÓĞ¸Ä±äÊ²Ã´¶«Î÷,ÓĞÊ²Ã´ÓÃ´¦Âğ£¿ */
+        /* è¿™é‡Œè²Œä¼¼æ²¡æœ‰æ”¹å˜ä»€ä¹ˆä¸œè¥¿,æœ‰ä»€ä¹ˆç”¨å¤„å—ï¼Ÿ */
         oim = ALIGNED_CAST(const struct ofp13_instruction_meter *,
                            insts[OVSINST_OFPIT13_METER]);
 
         om = ofpact_put_METER(ofpacts);
         om->meter_id = ntohl(oim->meter_id);
     }
-    /* ÕâÀïÊÇÖØµã */
+    /* è¿™é‡Œæ˜¯é‡ç‚¹ */
     if (insts[OVSINST_OFPIT11_APPLY_ACTIONS]) {
         const struct ofp_action_header *actions;
         size_t actions_len;
         /*
-         * ¿ÉÒÔÓĞ¶à¸öaction
-         * actions±äÁ¿±£´æ±¨ÎÄactionsÖ¸Õë£¬ÕâÊÇÒ»¸öÁªºÏ½á¹¹¡£
-         * max_actions±äÁ¿±£´æaction¸öÊı
+         * å¯ä»¥æœ‰å¤šä¸ªaction
+         * actionså˜é‡ä¿å­˜æŠ¥æ–‡actionsæŒ‡é’ˆï¼Œè¿™æ˜¯ä¸€ä¸ªè”åˆç»“æ„ã€‚
+         * max_actionså˜é‡ä¿å­˜actionä¸ªæ•°
          */
         get_actions_from_instruction(insts[OVSINST_OFPIT11_APPLY_ACTIONS],
                                      &actions, &actions_len);

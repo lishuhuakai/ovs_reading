@@ -25,7 +25,7 @@
 /* Classifier internal definitions, subject to change at any time. */
 
 /* A set of rules that all have the same fields wildcarded. 
- * cls_subtable ¼ÇÂ¼Ò»ÏµÁĞµÄÓµÓĞÏàÍ¬fields wildcarded(Í¨ÅäµÄÓò)µÄ¹æÔò
+ * cls_subtable è®°å½•ä¸€ç³»åˆ—çš„æ‹¥æœ‰ç›¸åŒfields wildcarded(é€šé…çš„åŸŸ)çš„è§„åˆ™
  */
 struct cls_subtable {
     struct cmap_node cmap_node;    /* Within classifier's 'subtables_map'. */
@@ -56,7 +56,7 @@ struct cls_subtable {
 };
 
 /* Internal representation of a rule in a "struct cls_subtable".
- * struct cls_subtableÖĞ¹æÔòµÄÄÚ²¿µÄ±íÊ¾ 
+ * struct cls_subtableä¸­è§„åˆ™çš„å†…éƒ¨çš„è¡¨ç¤º 
  * The 'next' member is an element in a singly linked, null-terminated list.
  * This list links together identical "cls_match"es in order of decreasing
  * priority.  The classifier code maintains the invariant that at most one rule
@@ -64,7 +64,7 @@ struct cls_subtable {
  */
 struct cls_match {
     /* Accessed by everybody. */
-    /* ½«ËùÓĞµÄ¹æÔòÀ­³ÉÁ´±í */
+    /* å°†æ‰€æœ‰çš„è§„åˆ™æ‹‰æˆé“¾è¡¨ */
     OVSRCU_TYPE(struct cls_match *) next; /* Equal, lower-priority matches. */
     OVSRCU_TYPE(struct cls_conjunction_set *) conj_set;
 
@@ -83,7 +83,7 @@ struct cls_match {
     const cls_version_t add_version;        /* Version rule was added in. */
     ATOMIC(cls_version_t) remove_version;   /* Version rule is removed in. */
 
-    const struct cls_rule *cls_rule; /* ¼ÇÂ¼ÏÂÕæÕıµÄ¹æÔò,Á÷±íÏî */
+    const struct cls_rule *cls_rule; /* è®°å½•ä¸‹çœŸæ­£çš„è§„åˆ™,æµè¡¨é¡¹ */
     const struct miniflow flow; /* Matching rule. Mask is in the subtable. */
     /* 'flow' must be the last field. */
 };

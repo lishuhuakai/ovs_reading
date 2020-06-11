@@ -48,7 +48,7 @@ VLOG_DEFINE_THIS_MODULE(connmgr);
 static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(1, 5);
 
 /* An OpenFlow connection.
- * ofconn´ú±íÒ»¸öOpenFLowÁ¬½Ó
+ * ofconnä»£è¡¨ä¸€ä¸ªOpenFLowè¿žæŽ¥
  *
  * Thread-safety
  * =============
@@ -60,14 +60,14 @@ static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(1, 5);
  */
 struct ofconn {
 /* Configuration that persists from one connection to the next. */
-    /* Á´±í½Úµã */
+    /* é“¾è¡¨èŠ‚ç‚¹ */
     struct ovs_list node;       /* In struct connmgr's "all_conns" list. */
     struct hmap_node hmap_node; /* In struct connmgr's "controllers" map. */
 
     struct connmgr *connmgr;    /* Connection's manager. */
     struct rconn *rconn;        /* OpenFlow connection. */
     enum ofconn_type type;      /* Type. */
-    /* ´øÄÚ¿ØÖÆ£¬»¹ÊÇ´øÍâ¿ØÖÆ */
+    /* å¸¦å†…æŽ§åˆ¶ï¼Œè¿˜æ˜¯å¸¦å¤–æŽ§åˆ¶ */
     enum ofproto_band band;     /* In-band or out-of-band? */
     bool enable_async_msgs;     /* Initially enable async messages? */
 
@@ -191,7 +191,7 @@ static struct ofservice *ofservice_lookup(struct connmgr *,
                                           const char *target);
 
 /* Connection manager for an OpenFlow switch. */
-/* Ö÷ÒªÓÃÓÚ´¦ÀíÒ»Ì¨OpenFlow½»»»»úÉÏµÄÁ¬½Ó */
+/* ä¸»è¦ç”¨äºŽå¤„ç†ä¸€å°OpenFlowäº¤æ¢æœºä¸Šçš„è¿žæŽ¥ */
 struct connmgr {
     struct ofproto *ofproto;
     char *name;
@@ -229,9 +229,9 @@ static void ofmonitor_wait(struct connmgr *);
  * a name for the ofproto suitable for using in log messages.
  * 'local_port_name' is the name of the local port (OFPP_LOCAL) within
  * 'ofproto'.
- * ´´½¨²¢·µ»ØÒ»¸öÐÂµÄconnection manager
- * @ofproto ´Ëconnection managerËùÊôµÄ½»»»»ú
- * @name ÓÃÓÚÈÕÖ¾ÐÅÏ¢
+ * åˆ›å»ºå¹¶è¿”å›žä¸€ä¸ªæ–°çš„connection manager
+ * @ofproto æ­¤connection manageræ‰€å±žçš„äº¤æ¢æœº
+ * @name ç”¨äºŽæ—¥å¿—ä¿¡æ¯
  * @local_port_name
  */
 struct connmgr *
@@ -321,7 +321,7 @@ connmgr_run(struct connmgr *mgr,
     struct ofservice *ofservice;
     size_t i;
 
-    /* Ê²Ã´½Ð×öin_band */
+    /* ä»€ä¹ˆå«åšin_band */
     if (mgr->in_band) {
         if (!in_band_run(mgr->in_band)) {
             in_band_destroy(mgr->in_band);
@@ -568,7 +568,7 @@ connmgr_set_controllers(struct connmgr *mgr,
     shash_init(&new_controllers);
     for (i = 0; i < n_controllers; i++) {
         const struct ofproto_controller *c = &controllers[i];
-        /* target ÀàËÆÓÚtcp:127.0.0.1 */
+        /* target ç±»ä¼¼äºŽtcp:127.0.0.1 */
         if (!vconn_verify_name(c->target)) {
             bool add = false;
             ofconn = find_controller_by_target(mgr, c->target);
@@ -584,7 +584,7 @@ connmgr_set_controllers(struct connmgr *mgr,
                 ofconn_destroy(ofconn);
             }
             if (add) {
-                /* Ö´ÐÐÌí¼Ó¿ØÖÆÆ÷µÄ²Ù×÷ */
+                /* æ‰§è¡Œæ·»åŠ æŽ§åˆ¶å™¨çš„æ“ä½œ */
                 add_controller(mgr, c->target, c->dscp, allowed_versions);
             }
         } else if (!pvconn_verify_name(c->target)) {
@@ -689,7 +689,7 @@ connmgr_get_snoops(const struct connmgr *mgr, struct sset *snoops)
 }
 
 /* Returns true if 'mgr' has at least one snoop, false if it has none. 
- * Èç¹ûmgrÖÁÉÙÓÐÒ»¸ösnoop£¬·µ»ØTRUE
+ * å¦‚æžœmgrè‡³å°‘æœ‰ä¸€ä¸ªsnoopï¼Œè¿”å›žTRUE
  */
 bool
 connmgr_has_snoops(const struct connmgr *mgr)
@@ -699,7 +699,7 @@ connmgr_has_snoops(const struct connmgr *mgr)
 
 /* Creates a new controller for 'target' in 'mgr'.  update_controller() needs
  * to be called later to finish the new ofconn's configuration. 
- * @target ÐèÒªÁ¬½ÓµÄÄ¿±ê
+ * @target éœ€è¦è¿žæŽ¥çš„ç›®æ ‡
  */
 static void
 add_controller(struct connmgr *mgr, const char *target, uint8_t dscp,
@@ -708,7 +708,7 @@ add_controller(struct connmgr *mgr, const char *target, uint8_t dscp,
 {
     char *name = ofconn_make_name(mgr, target);
     struct ofconn *ofconn;
-    /* ´´½¨Ò»¸öÁ¬½Ó */
+    /* åˆ›å»ºä¸€ä¸ªè¿žæŽ¥ */
     ofconn = ofconn_create(mgr, rconn_create(5, 8, dscp, allowed_versions),
                            OFCONN_PRIMARY, true);
     ofconn->pktbuf = pktbuf_create();

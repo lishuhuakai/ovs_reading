@@ -74,7 +74,7 @@ const char *flow_tun_flag_to_string(uint32_t flags);
 
 /*
  * A flow in the network.
- * ÍøÂçÖĞµÄÒ»¸öÁ÷±íÏî
+ * ç½‘ç»œä¸­çš„ä¸€ä¸ªæµè¡¨é¡¹
  *
  * Must be initialized to all zeros to make any compiler-induced padding
  * zeroed.  Helps also in keeping unused fields (such as mutually exclusive
@@ -316,11 +316,11 @@ hash_odp_port(odp_port_t odp_port)
 }
 
 /* Wildcards for a flow.
- * Á÷±íÏîµÄÍ¨Åä·û
+ * æµè¡¨é¡¹çš„é€šé…ç¬¦
  * A 1-bit in each bit in 'masks' indicates that the corresponding bit of
  * the flow is significant (must match).  A 0-bit indicates that the
  * corresponding bit of the flow is wildcarded (need not match).
- * Èç¹ûÓĞÒ»¸öbitÎª1£¬´ú±í¶ÔÓ¦µÄÁ÷µÄÄÄÒ»¸öbit±ØĞëÆ¥Åä,·ñÔò´ú±í²»ÓÃÆ¥Åä
+ * å¦‚æœæœ‰ä¸€ä¸ªbitä¸º1ï¼Œä»£è¡¨å¯¹åº”çš„æµçš„å“ªä¸€ä¸ªbitå¿…é¡»åŒ¹é…,å¦åˆ™ä»£è¡¨ä¸ç”¨åŒ¹é…
  */
 struct flow_wildcards {
     struct flow masks;
@@ -609,39 +609,39 @@ flowmap_next_index(struct flowmap_aux *aux, size_t *idx)
 
 
 /* Compressed flow. 
- * Ñ¹ËõµÄflow
+ * å‹ç¼©çš„flow
  */
 
 /* A sparse representation of a "struct flow".
- * struct flowµÄÏ¡Êè±íÊ¾
+ * struct flowçš„ç¨€ç–è¡¨ç¤º
  *
  * A "struct flow" is fairly large and tends to be mostly zeros.  Sparse
  * representation has two advantages.  First, it saves memory and, more
  * importantly, minimizes the number of accessed cache lines.  Second, it saves
  * time when the goal is to iterate over only the nonzero parts of the struct.
  *
- * Ò»¸östruct flowµÄÊµÀıÒ»°ãÀ´Ëµ»áºÜ´ó£¬¶øÇÒ´ó¶àÊı¶¼Îª0£¬Ï¡ÊèĞÎÊ½µÄ±íÊ¾ÓĞÁ½¸öÓÅÊÆ
- * µÚÒ»ÊÇ½ÚÊ¡ÄÚ´æ£¬¿ÉÒÔ×îĞ¡»¯·ÃÎÊcacheµÄ´óĞ¡
- * µÚ¶ş£¬½ÚÊ¡µü´úµÄÊ±¼ä
+ * ä¸€ä¸ªstruct flowçš„å®ä¾‹ä¸€èˆ¬æ¥è¯´ä¼šå¾ˆå¤§ï¼Œè€Œä¸”å¤§å¤šæ•°éƒ½ä¸º0ï¼Œç¨€ç–å½¢å¼çš„è¡¨ç¤ºæœ‰ä¸¤ä¸ªä¼˜åŠ¿
+ * ç¬¬ä¸€æ˜¯èŠ‚çœå†…å­˜ï¼Œå¯ä»¥æœ€å°åŒ–è®¿é—®cacheçš„å¤§å°
+ * ç¬¬äºŒï¼ŒèŠ‚çœè¿­ä»£çš„æ—¶é—´
  *
  * The map member hold one bit for each uint64_t in a "struct flow".  Each
  * 0-bit indicates that the corresponding uint64_t is zero, each 1-bit that it
  * *may* be nonzero (see below how this applies to minimasks).
  *
- * map³ÉÔ±µÄÃ¿Ò»¸öbit¶¼´ú±ístruct flowÖĞµÄÒ»¸öuint64_t´óĞ¡µÄÊı¾İ¡£Èç¹ûÎª0£¬±íÊ¾flowÖĞÕâ64bitÎª0
- * ·ñÔòµÄ»°£¬¿ÉÄÜÊÇ·Ç0
+ * mapæˆå‘˜çš„æ¯ä¸€ä¸ªbitéƒ½ä»£è¡¨struct flowä¸­çš„ä¸€ä¸ªuint64_tå¤§å°çš„æ•°æ®ã€‚å¦‚æœä¸º0ï¼Œè¡¨ç¤ºflowä¸­è¿™64bitä¸º0
+ * å¦åˆ™çš„è¯ï¼Œå¯èƒ½æ˜¯é0
  *
  * The values indicated by 'map' always follow the miniflow in memory.  The
  * user of the miniflow is responsible for always having enough storage after
  * the struct miniflow corresponding to the number of 1-bits in maps.
- * ±»mapËùÖ¸Ê¾µÄvaluesÔÚminiflow½á¹¹ÖĞ×ÜÊÇÔÚmapµÄºóÃæ,Ê¹ÓÃstruct miniflow¶ÔÓ¦×ÅmapÖĞµÄ1Î»¡£
+ * è¢«mapæ‰€æŒ‡ç¤ºçš„valuesåœ¨miniflowç»“æ„ä¸­æ€»æ˜¯åœ¨mapçš„åé¢,ä½¿ç”¨struct miniflowå¯¹åº”ç€mapä¸­çš„1ä½ã€‚
  *
  * Elements in values array are allowed to be zero.  This is useful for "struct
  * minimatch", for which ensuring that the miniflow and minimask members have
  * same maps allows optimization.  This allowance applies only to a miniflow
  * that is not a mask.  That is, a minimask may NOT have zero elements in its
  * values.
- * ÔÚvaluesÊı×éÖĞµÄÔªËØÔÊĞíÎª0.
+ * åœ¨valuesæ•°ç»„ä¸­çš„å…ƒç´ å…è®¸ä¸º0.
  *
  * A miniflow is always dynamically allocated so that the maps are followed by
  * at least as many elements as there are 1-bits in maps. */
@@ -845,11 +845,11 @@ uint32_t miniflow_hash_5tuple(const struct miniflow *flow, uint32_t basis);
 
 
 /* Compressed flow wildcards. 
- * ¶ÔÓ¦×ÅÁ÷Í¨Åä·û
+ * å¯¹åº”ç€æµé€šé…ç¬¦
  */
 
 /* A sparse representation of a "struct flow_wildcards".
- * Á÷Í¨Åä·ûµÄÒ»¸öÏ¡Êè±íÊ¾
+ * æµé€šé…ç¬¦çš„ä¸€ä¸ªç¨€ç–è¡¨ç¤º
  * See the large comment on struct miniflow for details.
  *
  * Note: While miniflow can have zero data for a 1-bit in the map,

@@ -66,14 +66,14 @@ static u16 range_n_bytes(const struct sw_flow_key_range *range)
 void ovs_flow_mask_key(struct sw_flow_key *dst, const struct sw_flow_key *src,
 		       bool full, const struct sw_flow_mask *mask)
 {
-    /* mask±íÊ¾µÄÊÇÆ¥ÅäµÄ·¶Î§ */
-	int start = full ? 0 : mask->range.start; /* ´ÓÄÄÀï¿ªÊ¼Æ¥Åä */
-    /* Æ¥ÅäµÄ³¤¶È */
+    /* maskè¡¨ç¤ºçš„æ˜¯åŒ¹é…çš„èŒƒå›´ */
+	int start = full ? 0 : mask->range.start; /* ä»å“ªé‡Œå¼€å§‹åŒ¹é… */
+    /* åŒ¹é…çš„é•¿åº¦ */
 	int len = full ? sizeof *dst : range_n_bytes(&mask->range);
 	const long *m = (const long *)((const u8 *)&mask->key + start);
-    /* Ô­keyÖĞµÄ¿ªÊ¼±È½ÏµÄÎ»ÖÃ */
+    /* åŸkeyä¸­çš„å¼€å§‹æ¯”è¾ƒçš„ä½ç½® */
 	const long *s = (const long *)((const u8 *)src + start);
-	long *d = (long *)((u8 *)dst + start); /* dst±íÊ¾Æ¥ÅäµÄ½á¹û */
+	long *d = (long *)((u8 *)dst + start); /* dstè¡¨ç¤ºåŒ¹é…çš„ç»“æœ */
 	int i;
 
 	/* If 'full' is true then all of 'dst' is fully initialized. Otherwise,
@@ -274,7 +274,7 @@ static int tbl_mask_array_realloc(struct flow_table *tbl, int size)
 }
 
 /*
- * ´´½¨Á÷±í
+ * åˆ›å»ºæµè¡¨
  */
 int ovs_flow_tbl_init(struct flow_table *table)
 {
@@ -555,8 +555,8 @@ static bool ovs_flow_cmp_unmasked_key(const struct sw_flow *flow,
 
 
 /*
- * Á÷±íµÄ±È½ÏºÍ²éÑ¯
- * @param ti Á÷±íÊµÀı
+ * æµè¡¨çš„æ¯”è¾ƒå’ŒæŸ¥è¯¢
+ * @param ti æµè¡¨å®ä¾‹
  * @param key key
  */
 static struct sw_flow *masked_flow_lookup(struct table_instance *ti,
@@ -568,13 +568,13 @@ static struct sw_flow *masked_flow_lookup(struct table_instance *ti,
 	struct hlist_head *head;
 	u32 hash;
 	struct sw_flow_key masked_key;
-    /* unmaskedÕâ¸ökeyºÍmaskÖĞµÄkey£¬ÔÚrange·¶Î§ÄÚµÄÓë²Ù×÷µÄ½á¹û·ÅÈëmasked_key */
+    /* unmaskedè¿™ä¸ªkeyå’Œmaskä¸­çš„keyï¼Œåœ¨rangeèŒƒå›´å†…çš„ä¸æ“ä½œçš„ç»“æœæ”¾å…¥masked_key */
 	ovs_flow_mask_key(&masked_key, unmasked, false, mask);
-    /* ¼ÆËãhashÖµ */
+    /* è®¡ç®—hashå€¼ */
 	hash = flow_hash(&masked_key, &mask->range);
-	head = find_bucket(ti, hash); /* »ñµÃhashÁ´±íÍ·²¿ */
+	head = find_bucket(ti, hash); /* è·å¾—hashé“¾è¡¨å¤´éƒ¨ */
 	(*n_mask_hit)++;
-    /* ±éÀúÁ÷±íÏî */
+    /* éå†æµè¡¨é¡¹ */
 	hlist_for_each_entry_rcu(flow, head, flow_table.node[ti->node_ver]) {
 		if (flow->mask == mask && flow->flow_table.hash == hash &&
 		    flow_cmp_masked_key(flow, &masked_key, &mask->range))
@@ -600,7 +600,7 @@ static struct sw_flow *flow_lookup(struct flow_table *tbl,
 	if (*index < ma->max) {
 		mask = rcu_dereference_ovsl(ma->masks[*index]);
 		if (mask) {
-            /* Á÷±í²éÑ¯º¯Êı */
+            /* æµè¡¨æŸ¥è¯¢å‡½æ•° */
 			flow = masked_flow_lookup(ti, key, mask, n_mask_hit);
 			if (flow)
 				return flow;
@@ -639,13 +639,13 @@ struct sw_flow *ovs_flow_tbl_lookup_stats(struct flow_table *tbl,
 					  u32 *n_mask_hit)
 {
 	struct mask_array *ma = rcu_dereference(tbl->mask_array);
-	struct table_instance *ti = rcu_dereference(tbl->ti); /* »ñÈ¡Á÷±íÊµÀı */
+	struct table_instance *ti = rcu_dereference(tbl->ti); /* è·å–æµè¡¨å®ä¾‹ */
 	struct mask_cache_entry *entries, *ce;
 	struct sw_flow *flow;
 	u32 hash;
 	int seg;
 
-	*n_mask_hit = 0; /* Í³¼ÆmaskÆ¥ÅäµÄ¸öÊı */
+	*n_mask_hit = 0; /* ç»Ÿè®¡maskåŒ¹é…çš„ä¸ªæ•° */
 	if (unlikely(!skb_hash)) {
 		u32 mask_index = 0;
 

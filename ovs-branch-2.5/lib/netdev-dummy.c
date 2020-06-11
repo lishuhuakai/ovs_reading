@@ -55,8 +55,8 @@ struct dummy_packet_stream {
 
 enum dummy_packet_conn_type {
     NONE,       /* No connection is configured. */
-    PASSIVE,    /* Listener. ×÷Îª¼àÌıÕß */
-    ACTIVE      /* Connect to listener. Ïò¼àÌıÕß·¢ÆğÁ¬½Ó */
+    PASSIVE,    /* Listener. ä½œä¸ºç›‘å¬è€… */
+    ACTIVE      /* Connect to listener. å‘ç›‘å¬è€…å‘èµ·è¿æ¥ */
 };
 
 enum dummy_netdev_conn_state {
@@ -66,7 +66,7 @@ enum dummy_netdev_conn_state {
 };
 
 struct dummy_packet_pconn {
-    struct pstream *pstream; /* passive classÒ²¼´·şÎñ¶Ë */
+    struct pstream *pstream; /* passive classä¹Ÿå³æœåŠ¡ç«¯ */
     struct dummy_packet_stream *streams; 
     size_t n_streams;
 };
@@ -76,7 +76,7 @@ struct dummy_packet_rconn {
     struct reconnect *reconnect;
 };
 
-struct dummy_packet_conn { /* ´ú±íÒ»¸öÁ¬½Ó */
+struct dummy_packet_conn { /* ä»£è¡¨ä¸€ä¸ªè¿æ¥ */
     enum dummy_packet_conn_type type;
     union {
         struct dummy_packet_pconn pconn;
@@ -84,7 +84,7 @@ struct dummy_packet_conn { /* ´ú±íÒ»¸öÁ¬½Ó */
     } u;
 };
 
-/* °üÀ­³ÉµÄÁ´±í */
+/* åŒ…æ‹‰æˆçš„é“¾è¡¨ */
 struct pkt_list_node {
     struct dp_packet *pkt;
     struct ovs_list list_node;
@@ -106,7 +106,7 @@ struct netdev_dummy {
     /* Protects all members below. */
     struct ovs_mutex mutex OVS_ACQ_AFTER(dummy_list_mutex);
 
-    struct eth_addr hwaddr OVS_GUARDED; /* macµØÖ· */
+    struct eth_addr hwaddr OVS_GUARDED; /* macåœ°å€ */
     int mtu OVS_GUARDED;
     struct netdev_stats stats OVS_GUARDED;
     enum netdev_flags flags OVS_GUARDED;
@@ -141,7 +141,7 @@ static void dummy_packet_stream_close(struct dummy_packet_stream *);
 static void pkt_list_delete(struct ovs_list *);
 
 /*
- * ÅĞ¶Ïnetdev_classÀàÊÇ·ñÎªdummy_class
+ * åˆ¤æ–­netdev_classç±»æ˜¯å¦ä¸ºdummy_class
  */
 static bool
 is_dummy_class(const struct netdev_class *class)
@@ -168,7 +168,7 @@ dummy_packet_stream_init(struct dummy_packet_stream *s, struct stream *stream)
 {
     int rxbuf_size = stream ? 2048 : 0;
     s->stream = stream;
-    dp_packet_init(&s->rxbuf, rxbuf_size); /* ÉèÖÃ»º´æ´óĞ¡ */
+    dp_packet_init(&s->rxbuf, rxbuf_size); /* è®¾ç½®ç¼“å­˜å¤§å° */
     list_init(&s->txq);
 }
 
@@ -217,14 +217,14 @@ dummy_packet_stream_run(struct netdev_dummy *dev, struct dummy_packet_stream *s)
 
     stream_run(s->stream);
 
-    if (!list_is_empty(&s->txq)) { /* Èç¹û·¢ËÍ¶ÓÁĞ²»Îª¿Õ */
+    if (!list_is_empty(&s->txq)) { /* å¦‚æœå‘é€é˜Ÿåˆ—ä¸ä¸ºç©º */
         struct pkt_list_node *txbuf_node;
         struct dp_packet *txbuf;
         int retval;
 
         ASSIGN_CONTAINER(txbuf_node, list_front(&s->txq), list_node);
         txbuf = txbuf_node->pkt;
-        /* Ö´ĞĞ·¢°ü²Ù×÷ */
+        /* æ‰§è¡Œå‘åŒ…æ“ä½œ */
         retval = stream_send(s->stream, dp_packet_data(txbuf), dp_packet_size(txbuf));
 
         if (retval > 0) {
@@ -240,7 +240,7 @@ dummy_packet_stream_run(struct netdev_dummy *dev, struct dummy_packet_stream *s)
     }
 
     if (!error) {
-        /* ´¦ÀíÊÕ°ü */
+        /* å¤„ç†æ”¶åŒ… */
         if (dp_packet_size(&s->rxbuf) < 2) {
             n = 2 - dp_packet_size(&s->rxbuf);
         } else {
@@ -259,7 +259,7 @@ dummy_packet_stream_run(struct netdev_dummy *dev, struct dummy_packet_stream *s)
         int retval;
 
         dp_packet_prealloc_tailroom(&s->rxbuf, n);
-        /* ½ÓÊÕµÄÊı¾İ¶¼Ğ´µ½»º´æÀïÃæ */
+        /* æ¥æ”¶çš„æ•°æ®éƒ½å†™åˆ°ç¼“å­˜é‡Œé¢ */
         retval = stream_recv(s->stream, dp_packet_tail(&s->rxbuf), n);
 
         if (retval > 0) {
@@ -315,7 +315,7 @@ dummy_packet_conn_get_config(struct dummy_packet_conn *conn, struct smap *args)
 }
 
 /*
- * ¹Ø±ÕÁ¬½Ó
+ * å…³é—­è¿æ¥
  */
 static void
 dummy_packet_conn_close(struct dummy_packet_conn *conn)
@@ -353,7 +353,7 @@ dummy_packet_conn_close(struct dummy_packet_conn *conn)
 }
 
 /*
- * ¶ÔÍøÂçÉè±¸½øĞĞÅäÖÃ
+ * å¯¹ç½‘ç»œè®¾å¤‡è¿›è¡Œé…ç½®
  */
 static void
 dummy_packet_conn_set_config(struct dummy_packet_conn *conn,
@@ -369,7 +369,7 @@ dummy_packet_conn_set_config(struct dummy_packet_conn *conn,
     }
 
     switch (conn->type) {
-    case PASSIVE: /* ×÷Îª·şÎñ¶ËµÈ´ıÁ¬½Ó */
+    case PASSIVE: /* ä½œä¸ºæœåŠ¡ç«¯ç­‰å¾…è¿æ¥ */
         if (pstream &&
             !strcmp(pstream_get_name(conn->u.pconn.pstream), pstream)) {
             return;
@@ -399,7 +399,7 @@ dummy_packet_conn_set_config(struct dummy_packet_conn *conn,
         }
     }
 
-    if (stream) { /* Èç¹ûÊÇ·¢ÆğÁ¬½ÓµÄÒ»¶Ë */
+    if (stream) { /* å¦‚æœæ˜¯å‘èµ·è¿æ¥çš„ä¸€ç«¯ */
         int error;
         struct stream *active_stream;
         struct reconnect *reconnect;
@@ -413,7 +413,7 @@ dummy_packet_conn_set_config(struct dummy_packet_conn *conn,
         conn->u.rconn.reconnect = reconnect;
         conn->type = ACTIVE;
 
-        /* ÏòÁíÍâÒ»¶Ë·¢ÆğÁ¬½Ó */
+        /* å‘å¦å¤–ä¸€ç«¯å‘èµ·è¿æ¥ */
         error = stream_open(stream, &active_stream, DSCP_DEFAULT);
         conn->u.rconn.rstream = dummy_packet_stream_create(active_stream);
 
@@ -436,7 +436,7 @@ dummy_packet_conn_set_config(struct dummy_packet_conn *conn,
 }
 
 /*
- * ·şÎñ¶Ë´¦ÀíÊÕ°ü
+ * æœåŠ¡ç«¯å¤„ç†æ”¶åŒ…
  */
 static void
 dummy_pconn_run(struct netdev_dummy *dev)
@@ -454,7 +454,7 @@ dummy_pconn_run(struct netdev_dummy *dev)
         pconn->streams = xrealloc(pconn->streams,
                                 ((pconn->n_streams + 1)
                                  * sizeof *s));
-        s = &pconn->streams[pconn->n_streams++]; /* »ñµÃÒ»¸öÁ¬½Ó */
+        s = &pconn->streams[pconn->n_streams++]; /* è·å¾—ä¸€ä¸ªè¿æ¥ */
         dummy_packet_stream_init(s, new_stream);
     } else if (error != EAGAIN) {
         VLOG_WARN("%s: accept failed (%s)",
@@ -485,7 +485,7 @@ OVS_REQUIRES(dev->mutex)
     struct dummy_packet_rconn *rconn = &dev->conn.u.rconn;
 
     switch (reconnect_run(rconn->reconnect, time_msec())) {
-    case RECONNECT_CONNECT: /* Á¬½Ó³É¹¦ */
+    case RECONNECT_CONNECT: /* è¿æ¥æˆåŠŸ */
         {
             int error;
 
@@ -534,7 +534,7 @@ OVS_REQUIRES(dev->mutex)
 }
 
 /*
- * ´¦ÀíÊÕ°ü£¬·¢°üÊÂ¼ş
+ * å¤„ç†æ”¶åŒ…ï¼Œå‘åŒ…äº‹ä»¶
  */
 static void
 dummy_packet_conn_run(struct netdev_dummy *dev)
@@ -655,7 +655,7 @@ netdev_dummy_wait(void)
 }
 
 /*
- * ÄÚ´æ¿Õ¼äµÄ·ÖÅä
+ * å†…å­˜ç©ºé—´çš„åˆ†é…
  */
 static struct netdev *
 netdev_dummy_alloc(void)
@@ -665,7 +665,7 @@ netdev_dummy_alloc(void)
 }
 
 /*
- * ´´½¨Ò»¸önetdev
+ * åˆ›å»ºä¸€ä¸ªnetdev
  */
 static int
 netdev_dummy_construct(struct netdev *netdev_)
@@ -678,7 +678,7 @@ netdev_dummy_construct(struct netdev *netdev_)
 
     ovs_mutex_init(&netdev->mutex);
     ovs_mutex_lock(&netdev->mutex);
-    /* Ğ´ËÀµÄmacµØÖ· */
+    /* å†™æ­»çš„macåœ°å€ */
     netdev->hwaddr.ea[0] = 0xaa;
     netdev->hwaddr.ea[1] = 0x55;
     netdev->hwaddr.ea[2] = n >> 24;
@@ -727,7 +727,7 @@ netdev_dummy_dealloc(struct netdev *netdev_)
 }
 
 /*
- * »ñÈ¡ÏàÓ¦µÄÅäÖÃĞÅÏ¢
+ * è·å–ç›¸åº”çš„é…ç½®ä¿¡æ¯
  */
 static int
 netdev_dummy_get_config(const struct netdev *netdev_, struct smap *args)
@@ -799,7 +799,7 @@ netdev_dummy_set_in6(struct netdev *netdev_, struct in6_addr *in6)
 }
 
 /*
- * dummyÉè±¸Éè¶¨ÏàÓ¦µÄ²ÎÊıĞÅÏ¢
+ * dummyè®¾å¤‡è®¾å®šç›¸åº”çš„å‚æ•°ä¿¡æ¯
  */
 static int
 netdev_dummy_set_config(struct netdev *netdev_, const struct smap *args)
@@ -808,7 +808,7 @@ netdev_dummy_set_config(struct netdev *netdev_, const struct smap *args)
     const char *pcap;
 
     ovs_mutex_lock(&netdev->mutex);
-    /* ÉèÖÃË÷ÒıÖµ */
+    /* è®¾ç½®ç´¢å¼•å€¼ */
     netdev->ifindex = smap_get_int(args, "ifindex", -EOPNOTSUPP);
 
     dummy_packet_conn_set_config(&netdev->conn, args);
@@ -885,7 +885,7 @@ netdev_dummy_rxq_dealloc(struct netdev_rxq *rxq_)
 }
 
 /*
- * ´¦ÀíÊÕ°üÊÂ¼ş
+ * å¤„ç†æ”¶åŒ…äº‹ä»¶
  */
 static int
 netdev_dummy_rxq_recv(struct netdev_rxq *rxq_, struct dp_packet **arr,
@@ -1031,7 +1031,7 @@ netdev_dummy_send(struct netdev *netdev, int qid OVS_UNUSED,
 }
 
 /*
- * Éè¶¨macµØÖ·
+ * è®¾å®šmacåœ°å€
  */
 static int
 netdev_dummy_set_etheraddr(struct netdev *netdev, const struct eth_addr mac)
@@ -1049,7 +1049,7 @@ netdev_dummy_set_etheraddr(struct netdev *netdev, const struct eth_addr mac)
 }
 
 /*
- * »ñÈ¡macµØÖ·
+ * è·å–macåœ°å€
  */
 static int
 netdev_dummy_get_etheraddr(const struct netdev *netdev, struct eth_addr *mac)

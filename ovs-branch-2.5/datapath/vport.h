@@ -81,7 +81,7 @@ struct vport_portids {
 
 /**
  * struct vport - one port within a datapath
- *   datapathÉÏµÄÒ»¸ö¶Ë¿Ú
+ *   datapathä¸Šçš„ä¸€ä¸ªç«¯å£
  * @rcu: RCU callback head for deferred destruction.
  * @dp: Datapath to which this port belongs.
  * @upcall_portids: RCU protected 'struct vport_portids'.
@@ -93,7 +93,7 @@ struct vport_portids {
  */
 struct vport {
 	struct net_device *dev;
-	struct datapath	*dp;    /* ¶Ë¿ÚËùÊôµÄdatapath */
+	struct datapath	*dp;    /* ç«¯å£æ‰€å±çš„datapath */
 	struct vport_portids __rcu *upcall_portids;
 	u16 port_no; 
 
@@ -107,7 +107,7 @@ struct vport {
 
 /**
  * struct vport_parms - parameters for creating a new vport
- *             ´´½¨Ò»¸övportËùÊ¹ÓÃÓÃµÄ²ÎÊıĞÅÏ¢
+ *             åˆ›å»ºä¸€ä¸ªvportæ‰€ä½¿ç”¨ç”¨çš„å‚æ•°ä¿¡æ¯
  * @name: New vport's name.
  * @type: New vport's type.
  * @options: %OVS_VPORT_ATTR_OPTIONS attribute from Netlink message, %NULL if
@@ -116,9 +116,9 @@ struct vport {
  * @port_no: New vport's port number.
  */
 struct vport_parms {
-	const char *name; /* ¶Ë¿ÚÃû³Æ */
-	enum ovs_vport_type type; /* ¶Ë¿ÚÀàĞÍ */
-	struct nlattr *options; /* netlinkÏà¹ØµÄÊôĞÔ */
+	const char *name; /* ç«¯å£åç§° */
+	enum ovs_vport_type type; /* ç«¯å£ç±»å‹ */
+	struct nlattr *options; /* netlinkç›¸å…³çš„å±æ€§ */
 
 	/* For ovs_vport_alloc(). */
 	struct datapath *dp;
@@ -128,7 +128,7 @@ struct vport_parms {
 
 /**
  * struct vport_ops - definition of a type of virtual port
- *     Ò»ÖÖÀàĞÍµÄĞéÄâ¶Ë¿Ú
+ *     ä¸€ç§ç±»å‹çš„è™šæ‹Ÿç«¯å£
  * @type: %OVS_VPORT_TYPE_* value for this type of virtual port.
  * @create: Create a new vport configured as specified.  On success returns
  * a new vport allocated with ovs_vport_alloc(), otherwise an ERR_PTR() value.
@@ -144,16 +144,16 @@ struct vport_parms {
  * @get_egress_tun_info: Get the egress tunnel 5-tuple and other info for
  * a packet.
  */
- /* vport_ops¶¨ÒåÁË¶ÔvportµÄ²Ù×÷ */
+ /* vport_opså®šä¹‰äº†å¯¹vportçš„æ“ä½œ */
 struct vport_ops { 
-	enum ovs_vport_type type; /* ĞéÄâ¶Ë¿ÚµÄÀàĞÍ */
+	enum ovs_vport_type type; /* è™šæ‹Ÿç«¯å£çš„ç±»å‹ */
 
 	/* Called with ovs_mutex. */
 	struct vport *(*create)(const struct vport_parms *); 
 	void (*destroy)(struct vport *);
 
-	int (*set_options)(struct vport *, struct nlattr *); /* ĞŞ¸Ä¶Ë¿ÚÊôĞÔ */
-	int (*get_options)(const struct vport *, struct sk_buff *); /* »ñÈ¡¶Ë¿ÚÊôĞÔ */
+	int (*set_options)(struct vport *, struct nlattr *); /* ä¿®æ”¹ç«¯å£å±æ€§ */
+	int (*get_options)(const struct vport *, struct sk_buff *); /* è·å–ç«¯å£å±æ€§ */
 
 	int (*get_egress_tun_info)(struct vport *, struct sk_buff *,
 				   struct dp_upcall_info *upcall);
@@ -172,7 +172,7 @@ void ovs_vport_deferred_free(struct vport *vport);
 
 /**
  *	vport_priv - access private data area of vport
- *               »ñµÃvportÖĞË½ÓĞµÄÊı¾İĞÅÏ¢
+ *               è·å¾—vportä¸­ç§æœ‰çš„æ•°æ®ä¿¡æ¯
  * @vport: vport to access
  *
  * If a nonzero size was passed in priv_size of vport_alloc() a private data
@@ -186,7 +186,7 @@ static inline void *vport_priv(const struct vport *vport)
 
 /**
  *	vport_from_priv - lookup vport from private data pointer
- *                    Í¨¹ıË½ÓĞÊı¾İÖ¸Õë»ñµÃvport½á¹¹µÄÖ¸Õë
+ *                    é€šè¿‡ç§æœ‰æ•°æ®æŒ‡é’ˆè·å¾—vportç»“æ„çš„æŒ‡é’ˆ
  * @priv: Start of private data area.
  *
  * It is sometimes useful to translate from a pointer to the private data

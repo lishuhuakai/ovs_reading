@@ -268,7 +268,7 @@ COVERAGE_DEFINE(rev_mcast_snooping);
 
 /* All datapaths of a given type share a single dpif backer instance. */
 /*
- * Í¬Ò»¸öÀàĞÍµÄdatapath¹²ÏíÒ»¸ödpif backerÊµÀı
+ * åŒä¸€ä¸ªç±»å‹çš„datapathå…±äº«ä¸€ä¸ªdpif backerå®ä¾‹
  */
 struct dpif_backer {
     char *type;
@@ -290,7 +290,7 @@ struct dpif_backer {
 
     /* Datapath feature support. */
     struct dpif_backer_support support;
-    struct atomic_count tnl_count; /* ÒıÓÃ¼ÆÊı */
+    struct atomic_count tnl_count; /* å¼•ç”¨è®¡æ•° */
 };
 
 /* All existing ofproto_backer instances, indexed by ofproto->up.type. */
@@ -365,7 +365,7 @@ ofproto_dpif_cast(const struct ofproto *ofproto)
 }
 
 /*
- * ÅĞ¶ÏÊÇ·ñÖ§³ÖufidÌØĞÔ
+ * åˆ¤æ–­æ˜¯å¦æ”¯æŒufidç‰¹æ€§
  */
 bool
 ofproto_dpif_get_enable_ufid(const struct dpif_backer *backer)
@@ -374,7 +374,7 @@ ofproto_dpif_get_enable_ufid(const struct dpif_backer *backer)
 }
 
 /*
- * »ñÈ¡Ò»ÀàdatapathµÄÌØĞÔ
+ * è·å–ä¸€ç±»datapathçš„ç‰¹æ€§
  */
 struct dpif_backer_support *
 ofproto_dpif_get_support(const struct ofproto_dpif *ofproto)
@@ -441,7 +441,7 @@ ofproto_dpif_wants_packet_in_on_miss(struct ofproto_dpif *ofproto)
 
 /* Factory functions. */
 /*
- * ¹¹½¨Ò»¸öÍøÇÅ
+ * æ„å»ºä¸€ä¸ªç½‘æ¡¥
  */
 static void
 init(const struct shash *iface_hints)
@@ -456,7 +456,7 @@ init(const struct shash *iface_hints)
         new_hint->br_name = xstrdup(orig_hint->br_name);
         new_hint->br_type = xstrdup(orig_hint->br_type);
         new_hint->ofp_port = orig_hint->ofp_port;
-        /* ½«ÍøÇÅÒÔ¼°Ïà¹ØµÄÅäÖÃ´æ´¢ÆğÀ´ */
+        /* å°†ç½‘æ¡¥ä»¥åŠç›¸å…³çš„é…ç½®å­˜å‚¨èµ·æ¥ */
         shash_add(&init_ofp_ports, node->name, new_hint);
     }
 
@@ -535,14 +535,14 @@ ofproto_dpif_backer_enabled(struct dpif_backer* backer)
 }
 
 /*
- * ¸ù¾İdatapathµÄÀàĞÍ,À´´¦ÀíÏà¹ØµÄÊÂÇé
+ * æ ¹æ®datapathçš„ç±»å‹,æ¥å¤„ç†ç›¸å…³çš„äº‹æƒ…
  */
 static int
 type_run(const char *type)
 {
     struct dpif_backer *backer;
 
-    /* ¹ØÓÚall_dpif_backers,Ö»ÓĞµ÷ÓÃconstructº¯ÊıµÄÊ±ºò²Å»áÓĞÄÚÈİ¼ÓÈë */
+    /* å…³äºall_dpif_backers,åªæœ‰è°ƒç”¨constructå‡½æ•°çš„æ—¶å€™æ‰ä¼šæœ‰å†…å®¹åŠ å…¥ */
     backer = shash_find_data(&all_dpif_backers, type);
     if (!backer) {
         /* This is not necessarily a problem, since backers are only
@@ -894,7 +894,7 @@ static bool check_variable_length_userdata(struct dpif_backer *backer);
 static void check_support(struct dpif_backer *backer);
 
 /*
- * ´ò¿ªÒ»¸ödpif
+ * æ‰“å¼€ä¸€ä¸ªdpif
  */
 static int
 open_dpif_backer(const char *type, struct dpif_backer **backerp)
@@ -912,8 +912,8 @@ open_dpif_backer(const char *type, struct dpif_backer **backerp)
     int error;
 
     recirc_init();
-    /* ¹ØÓÚall_dpif_backers,½ö½öµ±µ÷ÓÃÁËconstructº¯Êı£¬²Å»áÍù
-     * all_dpif_backersÖĞÌí¼ÓÄÚÈİ
+    /* å…³äºall_dpif_backers,ä»…ä»…å½“è°ƒç”¨äº†constructå‡½æ•°ï¼Œæ‰ä¼šå¾€
+     * all_dpif_backersä¸­æ·»åŠ å†…å®¹
      */
     backer = shash_find_data(&all_dpif_backers, type);
     if (backer) {
@@ -957,7 +957,7 @@ open_dpif_backer(const char *type, struct dpif_backer **backerp)
         free(backer);
         return error;
     }
-    /* Õâ¸öºÍ½»»»»úÉÏ±¨¿ØÖÆÆ÷ÓĞ¹Ø */
+    /* è¿™ä¸ªå’Œäº¤æ¢æœºä¸ŠæŠ¥æ§åˆ¶å™¨æœ‰å…³ */
     backer->udpif = udpif_create(backer, backer->dpif);
 
     backer->type = xstrdup(type);
@@ -977,10 +977,10 @@ open_dpif_backer(const char *type, struct dpif_backer **backerp)
      * that we don't need anymore. */
     list_init(&garbage_list);
     dpif_port_dump_start(&port_dump, backer->dpif);
-    while (dpif_port_dump_next(&port_dump, &port)) { /* ±éÀúÃ¿Ò»¸ö¶Ë¿ÚµÄĞÅÏ¢ */
+    while (dpif_port_dump_next(&port_dump, &port)) { /* éå†æ¯ä¸€ä¸ªç«¯å£çš„ä¿¡æ¯ */
         node = shash_find(&init_ofp_ports, port.name);
         if (!node && strcmp(port.name, dpif_base_name(backer->dpif))) {
-            /* ÕÒ²»µ½,ËµÃ÷Õâ¸ö¶Ë¿ÚÒÑ¾­±»ÒÆ³ıµôÁË */
+            /* æ‰¾ä¸åˆ°,è¯´æ˜è¿™ä¸ªç«¯å£å·²ç»è¢«ç§»é™¤æ‰äº† */
             garbage = xmalloc(sizeof *garbage);
             garbage->odp_port = port.port_no;
             list_push_front(&garbage_list, &garbage->list_node);
@@ -989,7 +989,7 @@ open_dpif_backer(const char *type, struct dpif_backer **backerp)
     dpif_port_dump_done(&port_dump);
 
     LIST_FOR_EACH_POP (garbage, list_node, &garbage_list) {
-        /* ÒòÎª¶Ë¿ÚÒÑ¾­±»É¾³ıÁË,ËùÒÔÒªÖ´ĞĞÉ¾³ı²Ù×÷ */
+        /* å› ä¸ºç«¯å£å·²ç»è¢«åˆ é™¤äº†,æ‰€ä»¥è¦æ‰§è¡Œåˆ é™¤æ“ä½œ */
         dpif_port_del(backer->dpif, garbage->odp_port);
         free(garbage);
     }
@@ -1007,7 +1007,7 @@ open_dpif_backer(const char *type, struct dpif_backer **backerp)
         return error;
     }
 
-    if (backer->recv_set_enable) { /* Èç¹ûÔÊĞí½ÓÊÕÊı¾İ */
+    if (backer->recv_set_enable) { /* å¦‚æœå…è®¸æ¥æ”¶æ•°æ® */
         udpif_set_threads(backer->udpif, n_handlers, n_revalidators);
     }
 
@@ -1016,7 +1016,7 @@ open_dpif_backer(const char *type, struct dpif_backer **backerp)
      * is non-zero. */
     backer->support.variable_length_userdata
         = check_variable_length_userdata(backer);
-    /* »ñµÃ°æ±¾ºÅĞÅÏ¢ */
+    /* è·å¾—ç‰ˆæœ¬å·ä¿¡æ¯ */
     backer->dp_version_string = dpif_get_dp_version(backer->dpif);
 
     return error;
@@ -1324,7 +1324,7 @@ check_support(struct dpif_backer *backer)
 }
 
 /*
- * ´´½¨ÍøÇÅ
+ * åˆ›å»ºç½‘æ¡¥
  */
 static int
 construct(struct ofproto *ofproto_)
@@ -1348,7 +1348,7 @@ construct(struct ofproto *ofproto_)
     ofproto->stp = NULL;
     ofproto->rstp = NULL;
     ofproto->dump_seq = 0;
-    /* bundleµ½µ×ÊÇÉ¶£¿ */
+    /* bundleåˆ°åº•æ˜¯å•¥ï¼Ÿ */
     hmap_init(&ofproto->bundles);
     ofproto->ml = mac_learning_create(MAC_ENTRY_DEFAULT_IDLE_TIME);
     ofproto->ms = NULL;
@@ -1371,8 +1371,8 @@ construct(struct ofproto *ofproto_)
     ofproto->pins_seq = seq_create();
     ofproto->pins_seqno = seq_read(ofproto->pins_seq);
 
-    /* ÎªÊ²Ã´¶Ë¿Ú²»´æÔÚ,¾Í²»½øĞĞ´´½¨¹¤×÷ */
-    SHASH_FOR_EACH_SAFE (node, next, &init_ofp_ports) { /* ±éÀú¶Ë¿ÚĞÅÏ¢ */
+    /* ä¸ºä»€ä¹ˆç«¯å£ä¸å­˜åœ¨,å°±ä¸è¿›è¡Œåˆ›å»ºå·¥ä½œ */
+    SHASH_FOR_EACH_SAFE (node, next, &init_ofp_ports) { /* éå†ç«¯å£ä¿¡æ¯ */
         struct iface_hint *iface_hint = node->data;
 
         if (!strcmp(iface_hint->br_name, ofproto->up.name)) {
@@ -1533,7 +1533,7 @@ destruct(struct ofproto *ofproto_)
 }
 
 /*
- * ÔËĞĞÏàÓ¦µÄofproto
+ * è¿è¡Œç›¸åº”çš„ofproto
  */
 static int
 run(struct ofproto *ofproto_)
@@ -1563,7 +1563,7 @@ run(struct ofproto *ofproto_)
 
         guarded_list_pop_all(&ofproto->pins, &pins);
         LIST_FOR_EACH_POP (pin, list_node, &pins) {
-            /* ·¢ËÍ»º´æÏûÏ¢µ½¿ØÖÆÆ÷ */
+            /* å‘é€ç¼“å­˜æ¶ˆæ¯åˆ°æ§åˆ¶å™¨ */
             connmgr_send_packet_in(ofproto->up.connmgr, pin);
             free(CONST_CAST(void *, pin->up.packet));
             free(pin);
@@ -3479,8 +3479,8 @@ port_query_by_name(const struct ofproto *ofproto_, const char *devname,
 }
 
 /*
- * Ìí¼Ó¶Ë¿ÚĞÅÏ¢
- * @netdev ´ıÌí¼ÓµÄÍøÂçÉè±¸
+ * æ·»åŠ ç«¯å£ä¿¡æ¯
+ * @netdev å¾…æ·»åŠ çš„ç½‘ç»œè®¾å¤‡
  */
 static int
 port_add(struct ofproto *ofproto_, struct netdev *netdev)

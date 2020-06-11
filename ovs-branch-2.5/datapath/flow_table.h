@@ -48,15 +48,15 @@ struct mask_array {
 };
 
 struct table_instance {
-	struct flex_array *buckets; /* hashÍ°µØÖ·Ö¸Õë */
-	unsigned int n_buckets;  /* hashÍ°µÄ¸öÊı */
-	struct rcu_head rcu; /* rcu°üº¬»úÖÆ */
+	struct flex_array *buckets; /* hashæ¡¶åœ°å€æŒ‡é’ˆ */
+	unsigned int n_buckets;  /* hashæ¡¶çš„ä¸ªæ•° */
+	struct rcu_head rcu; /* rcuåŒ…å«æœºåˆ¶ */
 	int node_ver;
 	u32 hash_seed; 
-	bool keep_flows; /* ÊÇ·ñ±£ÁôÁ÷±íÏî */
+	bool keep_flows; /* æ˜¯å¦ä¿ç•™æµè¡¨é¡¹ */
 };
 
-/* Á÷±í */
+/* æµè¡¨ */
 struct flow_table {
 	struct table_instance __rcu *ti;
 	struct table_instance __rcu *ufid_ti;

@@ -1828,13 +1828,13 @@ enum OVS_PACKED_ENUM mf_string {
     MFS_TCP_FLAGS,              /* TCP_* flags */
 };
 
-/* mf_fieldµÄËùÓĞÊµÏÖ¶¼ÔÚt-meta-flow.cÎÄ¼şÖ®ÖĞ 
- * ¸öÈËµÄÀí½âÊÇ£¬my_fieldÊµ¼ÊÉÏ¶¨ÒåÁËÃ¿Ò»¸öÆ¥ÅäÏîµÄ¹æ·¶
- * ±ÈÈçËµËüÃÇµÄ³¤¶È
+/* mf_fieldçš„æ‰€æœ‰å®ç°éƒ½åœ¨t-meta-flow.cæ–‡ä»¶ä¹‹ä¸­ 
+ * ä¸ªäººçš„ç†è§£æ˜¯ï¼Œmy_fieldå®é™…ä¸Šå®šä¹‰äº†æ¯ä¸€ä¸ªåŒ¹é…é¡¹çš„è§„èŒƒ
+ * æ¯”å¦‚è¯´å®ƒä»¬çš„é•¿åº¦
  */
 struct mf_field {
     /* Identification. */
-    /* ±êÊ¶·û */
+    /* æ ‡è¯†ç¬¦ */
     enum mf_field_id id;        /* MFF_*. */
     const char *name;           /* Name of this field, e.g. "eth_type". */
     const char *extra_name;     /* Alternate name, e.g. "dl_type", or NULL. */
@@ -1851,7 +1851,7 @@ struct mf_field {
      *     - "mpls_tc"    is 1 byte but only 3 bits.
      *     - "mpls_bos"   is 1 byte but only 1 bit.
      */
-    /* ´ËÓòËùÕ¼ÓÃµÄ³¤¶È */
+    /* æ­¤åŸŸæ‰€å ç”¨çš„é•¿åº¦ */
     unsigned int n_bytes;       /* Width of the field in bytes. */
     unsigned int n_bits;        /* Number of significant bits in field. */
     bool variable_len;          /* Length is variable, if so width is max. */
@@ -1883,7 +1883,7 @@ struct mf_field {
 };
 
 /* The representation of a field's value. */
-/* Õâ¸övalueÏàµ±ÓĞÒâË¼£¬ÊÇÒ»¸öunionÀàĞÍµÄ */
+/* è¿™ä¸ªvalueç›¸å½“æœ‰æ„æ€ï¼Œæ˜¯ä¸€ä¸ªunionç±»å‹çš„ */
 union mf_value {
     uint8_t tun_metadata[128];
     struct in6_addr ipv6;

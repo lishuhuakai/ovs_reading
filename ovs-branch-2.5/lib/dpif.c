@@ -70,9 +70,9 @@ static const struct dpif_class *base_dpif_classes[] = {
 };
 
 /*
- * registered_dpif_classÖ»ÊÇÒ»¸ö¼òµ¥µÄ¸´ºÏ½á¹¹,¼ÇÂ¼¸÷ÖÖdpif_classµÄÒıÓÃ¼ÆÊı
- * ÔÚº¯Êıdp_register_provider__ÖĞ,»áÍùdpfi_classes(¼ÇÂ¼´ËÀàÊµÀıµÄhash±í)ÖĞÌí¼ÓÄÚÈİ
- * ¶ødp_register_provider__±»dp_initializedµ÷ÓÃ
+ * registered_dpif_classåªæ˜¯ä¸€ä¸ªç®€å•çš„å¤åˆç»“æ„,è®°å½•å„ç§dpif_classçš„å¼•ç”¨è®¡æ•°
+ * åœ¨å‡½æ•°dp_register_provider__ä¸­,ä¼šå¾€dpfi_classes(è®°å½•æ­¤ç±»å®ä¾‹çš„hashè¡¨)ä¸­æ·»åŠ å†…å®¹
+ * è€Œdp_register_provider__è¢«dp_initializedè°ƒç”¨
  */
 struct registered_dpif_class {
     const struct dpif_class *dpif_class;
@@ -115,14 +115,14 @@ static void log_flow_get_message(const struct dpif *,
 struct seq *tnl_conf_seq;
 
 /*
- * datapathµÄ³õÊ¼»¯
+ * datapathçš„åˆå§‹åŒ–
  */
 static void
 dp_initialize(void)
 {
     static struct ovsthread_once once = OVSTHREAD_ONCE_INITIALIZER;
 
-    if (ovsthread_once_start(&once)) { /* Õâ¸öÍæÒâ±£Ö¤Ö»»á³õÊ¼»¯Ò»´Î */
+    if (ovsthread_once_start(&once)) { /* è¿™ä¸ªç©æ„ä¿è¯åªä¼šåˆå§‹åŒ–ä¸€æ¬¡ */
         int i;
 
         tnl_conf_seq = seq_create();
@@ -244,22 +244,22 @@ dp_blacklist_provider(const char *type)
 
 /* Adds the types of all currently registered datapath providers to 'types'.
  * The caller must first initialize the sset.
- * Ìí¼Óµ±Ç°ÒÑ¾­×¢²áÁËµÄdatapath providersµ½typesÖĞ
+ * æ·»åŠ å½“å‰å·²ç»æ³¨å†Œäº†çš„datapath providersåˆ°typesä¸­
  */
 void
 dp_enumerate_types(struct sset *types)
 {
     struct shash_node *node;
-    /* ×¢²áÁËdpif_netlink_classÒÔ¼°dpif_netdev_classµ½dpif_classes
-     * Õâ¸öhash±íÖĞ,ÆäÖĞdpif_netlink_classµÄtypeÎªsystem
-     * dpif_netdev_classµÄtypeÎªnetdev
+    /* æ³¨å†Œäº†dpif_netlink_classä»¥åŠdpif_netdev_classåˆ°dpif_classes
+     * è¿™ä¸ªhashè¡¨ä¸­,å…¶ä¸­dpif_netlink_classçš„typeä¸ºsystem
+     * dpif_netdev_classçš„typeä¸ºnetdev
      */
     dp_initialize();
 
     ovs_mutex_lock(&dpif_mutex);
     SHASH_FOR_EACH(node, &dpif_classes) {
         const struct registered_dpif_class *registered_class = node->data;
-        /* Êµ¼Ê¾ÍÁ½¸ösystemºÍnetdev */
+        /* å®é™…å°±ä¸¤ä¸ªsystemå’Œnetdev */
         sset_add(types, registered_class->dpif_class->type);
     }
     ovs_mutex_unlock(&dpif_mutex);
@@ -346,8 +346,8 @@ dp_parse_name(const char *datapath_name_, char **name, char **type)
 }
 
 /*
- * ´ò¿ªdpif
- * @create ÊÇ·ñÒª´´½¨
+ * æ‰“å¼€dpif
+ * @create æ˜¯å¦è¦åˆ›å»º
  */
 static int
 do_open(const char *name, const char *type, bool create, struct dpif **dpifp)
@@ -366,8 +366,8 @@ do_open(const char *name, const char *type, bool create, struct dpif **dpifp)
         error = EAFNOSUPPORT;
         goto exit;
     }
-    /* ÕâÀïÊµ¼Êµ÷ÓÃµÄÊÇ dpif_netlink_class»òÕßdpif_netdev_class
-     * µÄopenº¯Êı
+    /* è¿™é‡Œå®é™…è°ƒç”¨çš„æ˜¯ dpif_netlink_classæˆ–è€…dpif_netdev_class
+     * çš„openå‡½æ•°
      */
     error = registered_class->dpif_class->open(registered_class->dpif_class,
                                                name, create, &dpif);
@@ -387,7 +387,7 @@ exit:
  * the empty string to specify the default system type.  Returns 0 if
  * successful, otherwise a positive errno value.  On success stores a pointer
  * to the datapath in '*dpifp', otherwise a null pointer.
- * ³¢ÊÔ´ò¿ªÒ»¸öÒÑ¾­´æÔÚµÄdatapath,Èç¹û²»´æÔÚ£¬»á·µ»ØNULL
+ * å°è¯•æ‰“å¼€ä¸€ä¸ªå·²ç»å­˜åœ¨çš„datapath,å¦‚æœä¸å­˜åœ¨ï¼Œä¼šè¿”å›NULL
  */
 int
 dpif_open(const char *name, const char *type, struct dpif **dpifp)
@@ -411,7 +411,7 @@ dpif_create(const char *name, const char *type, struct dpif **dpifp)
  * the default system type.  Returns 0 if successful, otherwise a positive
  * errno value. On success stores a pointer to the datapath in '*dpifp',
  * otherwise a null pointer.
- * ³¢ÊÔ´ò¿ªÒ»¸öÓĞ×Å¸ø¶¨nameºÍtypeµÄdatapath,Èç¹û²»´æÔÚ,ÄÇ¾Í´´½¨Ò»¸ö
+ * å°è¯•æ‰“å¼€ä¸€ä¸ªæœ‰ç€ç»™å®šnameå’Œtypeçš„datapath,å¦‚æœä¸å­˜åœ¨,é‚£å°±åˆ›å»ºä¸€ä¸ª
  */
 int
 dpif_create_and_open(const char *name, const char *type, struct dpif **dpifp)
@@ -547,8 +547,8 @@ dpif_port_open_type(const char *datapath_type, const char *port_type)
 /* Attempts to add 'netdev' as a port on 'dpif'.  If 'port_nop' is
  * non-null and its value is not ODPP_NONE, then attempts to use the
  * value as the port number.
- * ½«Ò»¸önetdev×÷ÎªÒ»¸öportÌí¼Óµ½dpifÉÏÈ¥,Èç¹ûport_nop²»Îªnull£¬¶øÇÒ²»ÎªODPP_NONE
- * ÄÇÃ´½«Õâ¸öÖµ×÷Îª¶Ë¿ÚÖµ
+ * å°†ä¸€ä¸ªnetdevä½œä¸ºä¸€ä¸ªportæ·»åŠ åˆ°dpifä¸Šå»,å¦‚æœport_nopä¸ä¸ºnullï¼Œè€Œä¸”ä¸ä¸ºODPP_NONE
+ * é‚£ä¹ˆå°†è¿™ä¸ªå€¼ä½œä¸ºç«¯å£å€¼
  *
  * If successful, returns 0 and sets '*port_nop' to the new port's port
  * number (if 'port_nop' is non-null).  On failure, returns a positive
@@ -566,9 +566,9 @@ dpif_port_add(struct dpif *dpif, struct netdev *netdev, odp_port_t *port_nop)
     if (port_nop) {
         port_no = *port_nop;
     }
-    /* µ÷ÓÃµ×²ãµÄdatapath interface½Ó¿ÚÀ´Ìí¼Ó¶Ë¿Ú
-     * ÔÙÏÂÃæµÄÓ¦¸ÃÊÇdpif_netlink_port_add
-     * »òÕßÊÇdpif_netdev_port_add
+    /* è°ƒç”¨åº•å±‚çš„datapath interfaceæ¥å£æ¥æ·»åŠ ç«¯å£
+     * å†ä¸‹é¢çš„åº”è¯¥æ˜¯dpif_netlink_port_add
+     * æˆ–è€…æ˜¯dpif_netdev_port_add
      */
     error = dpif->dpif_class->port_add(dpif, netdev, &port_no);
     if (!error) {
@@ -1332,7 +1332,7 @@ dpif_upcall_type_to_string(enum dpif_upcall_type type)
  * assignments returned by dpif_port_get_pid().  If the client does this, it
  * must update all of the flows that have OVS_ACTION_ATTR_USERSPACE actions
  * using the new PID assignment.
- * Éè¶¨ÔÊĞí»òÕß²»ÔÊĞí´ÓdpifÖĞµ÷ÓÃdpif_recv()À´½ÓÊÕÊı¾İ°ü.
+ * è®¾å®šå…è®¸æˆ–è€…ä¸å…è®¸ä»dpifä¸­è°ƒç”¨dpif_recv()æ¥æ¥æ”¶æ•°æ®åŒ….
  */
 int
 dpif_recv_set(struct dpif *dpif, bool enable)

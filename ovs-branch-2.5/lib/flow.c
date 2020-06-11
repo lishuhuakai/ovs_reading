@@ -2309,7 +2309,7 @@ flow_compose(struct dp_packet *p, const struct flow *flow)
 }
 
 /* Compressed flow. */
-/* Á÷Ñ¹Ëõ */
+/* æµå‹ç¼© */
 /* Completes an initialization of 'dst' as a miniflow copy of 'src' begun by
  * the caller.  The caller must have already computed 'dst->map' properly to
  * indicate the significant uint64_t elements of 'src'.
@@ -2324,7 +2324,7 @@ miniflow_init(struct miniflow *dst, const struct flow *src)
     size_t idx;
 
     FLOWMAP_FOR_EACH_INDEX(idx, dst->map) {
-        *dst_u64++ = flow_u64_value(src, idx); /* Ò»¸öÒ»¸öµØ½øĞĞ¿½±´ */
+        *dst_u64++ = flow_u64_value(src, idx); /* ä¸€ä¸ªä¸€ä¸ªåœ°è¿›è¡Œæ‹·è´ */
     }
 }
 
@@ -2334,7 +2334,7 @@ miniflow_map_init(struct miniflow *flow, const struct flow *src)
 {
     /* Initialize map, counting the number of nonzero elements. */
     flowmap_init(&flow->map);
-    /* Õâ¸öºÜÒâË¼,Èç¹ûflowµÄÄ³Ò»64bit²»Îª0£¬ÄÇÃ´¾Í½«mapµÄÄ³Ò»bitÉèÖÃ³É1 */
+    /* è¿™ä¸ªå¾ˆæ„æ€,å¦‚æœflowçš„æŸä¸€64bitä¸ä¸º0ï¼Œé‚£ä¹ˆå°±å°†mapçš„æŸä¸€bitè®¾ç½®æˆ1 */
     for (size_t i = 0; i < FLOW_U64S; i++) {
         if (flow_u64_value(src, i)) {
             flowmap_set(&flow->map, i, 1);
@@ -2345,14 +2345,14 @@ miniflow_map_init(struct miniflow *flow, const struct flow *src)
 /* Allocates 'n' count of miniflows, consecutive in memory, initializing the
  * map of each from 'src'.
  * Returns the size of the miniflow data. 
- * ·ÖÅän¸öÔÚÄÚ´æÉÏÁ¬ĞøµÄminiflow,ÓÃsrcÀ´³õÊ¼»¯ÕâĞ©miniflow
- * @dsts ³ö²ÎÊı
- * @src Ô­²ÎÊı
+ * åˆ†é…nä¸ªåœ¨å†…å­˜ä¸Šè¿ç»­çš„miniflow,ç”¨srcæ¥åˆå§‹åŒ–è¿™äº›miniflow
+ * @dsts å‡ºå‚æ•°
+ * @src åŸå‚æ•°
  */
 size_t
 miniflow_alloc(struct miniflow *dsts[], size_t n, const struct miniflow *src)
 {
-    size_t n_values = miniflow_n_values(src); /* Ò»¹²ÓĞ¶àÉÙ64bit */
+    size_t n_values = miniflow_n_values(src); /* ä¸€å…±æœ‰å¤šå°‘64bit */
     size_t data_size = MINIFLOW_VALUES_SIZE(n_values);
     struct miniflow *dst = xmalloc(n * (sizeof *src + data_size));
     size_t i;

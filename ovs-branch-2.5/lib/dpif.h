@@ -18,14 +18,14 @@
  * dpif, the DataPath InterFace.
  *
  * In Open vSwitch terminology, a "datapath" is a flow-based software switch.
- * Ò»¸ödatapathÊÇÒ»¸ö»ùÓÚÁ÷±íµÄÈí½»»»»ú
+ * ä¸€ä¸ªdatapathæ˜¯ä¸€ä¸ªåŸºäºæµè¡¨çš„è½¯äº¤æ¢æœº
  * A datapath has no intelligence of its own.  Rather, it relies entirely on
  * its client to set up flows.  The datapath layer is core to the Open vSwitch
  * software switch: one could say, without much exaggeration, that everything
  * in ovs-vswitchd above dpif exists only to make the correct decisions
  * interacting with dpif.
- * datapathÃ»ÓĞÈÎºÎÖÇÄÜ,ÖÇÄÜÒÀ¿¿¿Í»§Éè¶¨flow¡£datapath²ãÒ²ÊÇOpen vSwitchÈí½»»»»úµÄºËĞÄ
- * ¿ÉÒÔºÁ²»¿äÕÅµÄËµ£¬ovs-vswitchdËù×öµÄÒ»ÇĞ£¬¶¼Ö»ÊÇÎªÁËºÍdpif×öÕıÈ·µÄ½»»¥
+ * datapathæ²¡æœ‰ä»»ä½•æ™ºèƒ½,æ™ºèƒ½ä¾é å®¢æˆ·è®¾å®šflowã€‚datapathå±‚ä¹Ÿæ˜¯Open vSwitchè½¯äº¤æ¢æœºçš„æ ¸å¿ƒ
+ * å¯ä»¥æ¯«ä¸å¤¸å¼ çš„è¯´ï¼Œovs-vswitchdæ‰€åšçš„ä¸€åˆ‡ï¼Œéƒ½åªæ˜¯ä¸ºäº†å’Œdpifåšæ­£ç¡®çš„äº¤äº’
  *
  * Typically, the client of a datapath is the software switch module in
  * "ovs-vswitchd", but other clients can be written.  The "ovs-dpctl" utility
@@ -50,30 +50,30 @@
  * A datapath has a set of ports that are analogous to the ports on an Ethernet
  * switch.  At the datapath level, each port has the following information
  * associated with it:
- * Ò»¸ödatapathÓĞÒ»ÏµÁĞµÄ¶Ë¿Ú£¬ËüÃÇºÜÀàËÆÓÚÕæÊµ½»»»»úµÄÉÏµÄ¶Ë¿Ú.ÔÚdatapathµÄ²ãÃæÉÏ£¬
- * Ã¿¸ö¶Ë¿Ú°üº¬ÈçÏÂÊôĞÔ.
+ * ä¸€ä¸ªdatapathæœ‰ä¸€ç³»åˆ—çš„ç«¯å£ï¼Œå®ƒä»¬å¾ˆç±»ä¼¼äºçœŸå®äº¤æ¢æœºçš„ä¸Šçš„ç«¯å£.åœ¨datapathçš„å±‚é¢ä¸Šï¼Œ
+ * æ¯ä¸ªç«¯å£åŒ…å«å¦‚ä¸‹å±æ€§.
  *
  *    - A name, a short string that must be unique within the host.  This is
  *      typically a name that would be familiar to the system administrator,
  *      e.g. "eth0" or "vif1.1", but it is otherwise arbitrary.
- *    - Ãû³Æ£¬Õâ¸öÔÚÖ÷»úÉÏ±ØĞëÎ¨Ò»£¬±ÈÈçËµeth0,vif1.1
+ *    - åç§°ï¼Œè¿™ä¸ªåœ¨ä¸»æœºä¸Šå¿…é¡»å”¯ä¸€ï¼Œæ¯”å¦‚è¯´eth0,vif1.1
  *
  *    - A 32-bit port number that must be unique within the datapath but is
  *      otherwise arbitrary.  The port number is the most important identifier
  *      for a port in the datapath interface.
- *    - Ò»¸ö32bitµÄ¶Ë¿ÚÖµ£¬ÔÚdatapathÀïÃæ±ØĞëÎ¨Ò»£¬ÕâÊÇÒ»¸ö·Ç³£ÖØÒªµÄ±êÊ¶·û£¬ÔÚ
- *      datapath²ãÃæ
+ *    - ä¸€ä¸ª32bitçš„ç«¯å£å€¼ï¼Œåœ¨datapathé‡Œé¢å¿…é¡»å”¯ä¸€ï¼Œè¿™æ˜¯ä¸€ä¸ªéå¸¸é‡è¦çš„æ ‡è¯†ç¬¦ï¼Œåœ¨
+ *      datapathå±‚é¢
  *
  *    - A type, a short string that identifies the kind of port.  On a Linux
  *      host, typical types are "system" (for a network device such as eth0),
  *      "internal" (for a simulated port used to connect to the TCP/IP stack),
  *      and "gre" (for a GRE tunnel).
  *
- *    - ÀàĞÍ£¬Ò»¸ö×Ö·û´®£¬ÓÃÓÚ±íÊ¾ÕâÊÇºÎÖÖÀàĞÍµÄ¶Ë¿Ú£¬ÔÚlinuxÖ÷»úÖ÷»úÉÏ£¬µäĞÍµÄÀàĞÍ
- *      ÓĞsystem(±ÈÈçËµeth0), internal(±ÈÈçËµÒ»¸öĞéÄâµÄ¶Ë¿Ú£¬ÓÃÓÚÁ¬½ÓĞ­ÒéÕ»)
+ *    - ç±»å‹ï¼Œä¸€ä¸ªå­—ç¬¦ä¸²ï¼Œç”¨äºè¡¨ç¤ºè¿™æ˜¯ä½•ç§ç±»å‹çš„ç«¯å£ï¼Œåœ¨linuxä¸»æœºä¸»æœºä¸Šï¼Œå…¸å‹çš„ç±»å‹
+ *      æœ‰system(æ¯”å¦‚è¯´eth0), internal(æ¯”å¦‚è¯´ä¸€ä¸ªè™šæ‹Ÿçš„ç«¯å£ï¼Œç”¨äºè¿æ¥åè®®æ ˆ)
  *    - A Netlink PID for each upcall reading thread (see "Upcall Queuing and
  *      Ordering" below).
- *    - Ã¿Ò»¸öÉÏ±¨µÄ½ø³Ì¶¼ÓĞÒ»¸önelinkµÄpid
+ *    - æ¯ä¸€ä¸ªä¸ŠæŠ¥çš„è¿›ç¨‹éƒ½æœ‰ä¸€ä¸ªnelinkçš„pid
  *
  * The dpif interface has functions for adding and deleting ports.  When a
  * datapath implements these (e.g. as the Linux and netdev datapaths do), then
@@ -86,8 +86,8 @@
  * Each datapath must have a port, sometimes called the "local port", whose
  * name is the same as the datapath itself, with port number 0.  The local port
  * cannot be deleted.
- * Ã¿Ò»¸ödatapath¶¼±Ø¶¨ÓĞÒ»¸ö¶Ë¿Ú£¬Ò²±»³ÆÖ®Îªlocal port£¬ËüµÄÃû×Ö¾ÍÊÇdatapath±¾Éí
- * ¶Ë¿ÚºÅÎª0£¬local port²»ÄÜ±»É¾³ı
+ * æ¯ä¸€ä¸ªdatapathéƒ½å¿…å®šæœ‰ä¸€ä¸ªç«¯å£ï¼Œä¹Ÿè¢«ç§°ä¹‹ä¸ºlocal portï¼Œå®ƒçš„åå­—å°±æ˜¯datapathæœ¬èº«
+ * ç«¯å£å·ä¸º0ï¼Œlocal portä¸èƒ½è¢«åˆ é™¤
  *
  * Ports are available as "struct netdev"s.  To obtain a "struct netdev *" for
  * a port named 'name' with type 'port_type', in a datapath of type
@@ -116,7 +116,7 @@
  *
  * Flow Table
  * ==========
- * Á÷±í
+ * æµè¡¨
  *
  * The flow table is a collection of "flow entries".  Each flow entry contains:
  *
@@ -124,7 +124,7 @@
  *      flow must be unique within the flow table.  Flows are fine-grained
  *      entities that include L2, L3, and L4 headers.  A single TCP connection
  *      consists of two flows, one in each direction.
- *      Á÷±íÏî,ÊÇÒÔÌ«Íø°üÍ·²¿µÄÒ»¸ösummary,Ã¿¸öÁ÷±íÖĞµÄflow¶¼ÊÇÎ¨Ò»µÄ£¬
+ *      æµè¡¨é¡¹,æ˜¯ä»¥å¤ªç½‘åŒ…å¤´éƒ¨çš„ä¸€ä¸ªsummary,æ¯ä¸ªæµè¡¨ä¸­çš„flowéƒ½æ˜¯å”¯ä¸€çš„ï¼Œ
  *
  *      In Open vSwitch userspace, "struct flow" is the typical way to describe
  *      a flow, but the datapath interface uses a different data format to
@@ -447,7 +447,7 @@ const char *dpif_type(const struct dpif *);
 int dpif_delete(struct dpif *);
 
 /* Statistics for a dpif as a whole. 
- * dpifµÄÍ³¼ÆĞÅÏ¢ 
+ * dpifçš„ç»Ÿè®¡ä¿¡æ¯ 
  */
 struct dpif_dp_stats {
     uint64_t n_hit;             /* Number of flow table matches. */

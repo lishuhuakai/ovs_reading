@@ -128,7 +128,7 @@ netdev_class_mutex_initialize(void)
 }
 
 /*
- * ³õÊ¼»¯ÍøÂçÉè±¸Ïà¹ØµÄÄÚÈİ
+ * åˆå§‹åŒ–ç½‘ç»œè®¾å¤‡ç›¸å…³çš„å†…å®¹
  */
 static void
 netdev_initialize(void)
@@ -162,7 +162,7 @@ netdev_run(void)
     OVS_EXCLUDED(netdev_class_mutex, netdev_mutex)
 {
     struct netdev_registered_class *rc;
-    /* ×¢²á¸÷ÖÖÍøÂçÉè±¸Ïà¹ØµÄÀà */
+    /* æ³¨å†Œå„ç§ç½‘ç»œè®¾å¤‡ç›¸å…³çš„ç±» */
     netdev_initialize();
     ovs_mutex_lock(&netdev_class_mutex);
     HMAP_FOR_EACH (rc, hmap_node, &netdev_classes) {
@@ -338,7 +338,7 @@ netdev_is_reserved_name(const char *name)
  * (e.g. "system") and returns zero if successful, otherwise a positive errno
  * value.  On success, sets '*netdevp' to the new network device, otherwise to
  * null.
- * ´ò¿ªÒ»¸öÍøÂçÉè±¸
+ * æ‰“å¼€ä¸€ä¸ªç½‘ç»œè®¾å¤‡
  * Some network devices may need to be configured (with netdev_set_config())
  * before they can be used. */
 int
@@ -364,7 +364,7 @@ netdev_open(const char *name, const char *type, struct netdev **netdevp)
                 netdev->netdev_class = rc->class;
                 netdev->name = xstrdup(name);
                 netdev->change_seq = 1;
-                /* ËùÓĞµÄÍøÂçÉè±¸¶¼±»Ìí¼Óµ½ÁËnetdev_shashÖĞ */
+                /* æ‰€æœ‰çš„ç½‘ç»œè®¾å¤‡éƒ½è¢«æ·»åŠ åˆ°äº†netdev_shashä¸­ */
                 netdev->node = shash_add(&netdev_shash, name, netdev);
 
                 /* By default enable one tx and rx queue per netdev. */
@@ -1705,7 +1705,7 @@ netdev_get_class(const struct netdev *netdev)
 /* Returns the netdev with 'name' or NULL if there is none.
  *
  * The caller must free the returned netdev with netdev_close(). 
- * Í¨¹ıÍøÂçÉè±¸µÄÃû³ÆÀ´¹¹½¨Ò»¸öÍøÂçÉè±¸
+ * é€šè¿‡ç½‘ç»œè®¾å¤‡çš„åç§°æ¥æ„å»ºä¸€ä¸ªç½‘ç»œè®¾å¤‡
  */
 struct netdev *
 netdev_from_name(const char *name)

@@ -359,7 +359,7 @@ pvconn_pstream_wait(struct pvconn *pvconn)
 }
 
 /* Stream-based vconns and pvconns. */
-/* Á÷Ê½Ì×½Ó×Ö */
+/* æµå¼å¥—æ¥å­— */
 #define STREAM_INIT(NAME)                           \
     {                                               \
             NAME,                                   \
